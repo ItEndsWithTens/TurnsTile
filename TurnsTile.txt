@@ -1,6 +1,6 @@
 
 
-  --TurnsTile 0.3.0--
+  --TurnsTile 0.3.1--
 
         For AviSynth 2.5.x; latest release hosted at http://www.gyroshot.com/turnstile.htm
 
@@ -178,8 +178,9 @@
     there are no other requirements. This tilesheet generator isn't very flexible, and could
     certainly stand to be improved, so if anyone has any ideas I'd love to hear them.
 
-        CGApalette.avs is new for 0.3.0, and as stated in the comments is meant to be loaded by
-    AVISource as a sample palette for CLUTer. Open up the script to find more details.
+        CGApalette.avs was introduced along with CLUTer() in version 0.3.0, and as stated in the
+    comments is meant to be loaded by AVISource as a sample palette for that function. Open up the
+    script to find more details.
 
         Finally, also in the extras folder is a copy of the script version of TurnsTile 0.1.0. It
     requires GScript, along with GRunT ( http://forum.doom9.org/showthread.php?t=139337 ), also from
@@ -189,6 +190,10 @@
 
 
     --Changes--
+
+        0.3.1 - September 21st, 2011
+
+                    -Recompiled to remove SSE/SSE2 requirement and Visual C++ CRT dependency
 
         0.3.0 - May 6th, 2011
 
