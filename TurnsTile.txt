@@ -1,9 +1,9 @@
 
-  --TurnsTile 0.1.0--
+  --TurnsTile 0.2.0--
 
-        For AviSynth 2.5.x
+        For AviSynth 2.5.x; latest release hosted at http://www.gyroshot.com/turnstile.htm
 
-        Turns input clip into a mosaic built from pieces of a user-defined tilesheet.
+        Provides a mosaic effect based on either clip contents or a user-defined tilesheet.
 
         This is my first plugin (as opposed to script function), so please use with caution;
     although it seems I know enough C++ to have gotten this far, it's entirely possible, even
@@ -13,11 +13,13 @@
         Direct any questions or suggestions to robert.martens@gmail.com, or head to Twitter
     and find @ItEndsWithTens if you're a social networking hipster.
 
+
   --Usage--
 
-    TurnsTile(clip c, clip tilesheet, int tilew, int tileh, int res, int mode)
+    TurnsTile(	clip c, clip "tilesheet", int "tilew", int "tileh", int "res", int "mode",
+		string "levels", int "lotile", int "hitile")
 
-    c
+    c    clip
 
             The input clip, which can be RGB32, RGB24, or YUY2. The width of this clip must be a
         multiple of tilew, and the height must be a multiple of tileh. The same applies to tilesheet.
@@ -25,38 +27,35 @@
         for a script function of mine that can help with resizing (of particular interest are the
         modw and modh parameters).
 
-    tilesheet
+    tilesheet    clip
 
-            Tiles are pulled from this clip, which has the same colorspace restriction as 'c'. This can
-        be a still image or a video; in the latter case, tiles for a given frame of 'c' will be clipped
-        from the corresponding frame of 'tilesheet'.
+            Optional; if supplied, tiles will be pulled from this clip. The same colorspace restrictions
+        apply as for 'c'. This can be a still image or a video; in the latter case, tiles for a given frame
+        of 'c' will be clipped from the corresponding frame of 'tilesheet'.
             The tiles are numbered left to right, then top to bottom. Using the sheets I've provided as
         examples, with 16x16 pixel tiles in a 256x256 pixel image, the top left tile is number 0, top
         right is 15, bottom left is 240, and bottom right is 255. Design your own custom images accordingly,
-        with dark tones at the top left fading up to lighter ones at the bottom right.
+        with dark tones at the top left fading up to lighter ones at the bottom right (first left-to-right
+        across a row, then top-to-bottom one row at a time).
 
-    tilew, tileh    default 16
+    tilew, tileh    int, default largest square size <= 16x16 that fits a given input clip
 
             If your tiles aren't sixteen by sixteen, define your custom values here. For reference, the
         tiles in Dwarf Fortress' modified CP437, my personal favorite tileset, are 10x12 (that's for
         curses_800x600, the game also comes with a 16x16 version). Download from http://www.bay12games.com/
 
-    res    defaults to half the horizontal tile count
+    res    int, default 8
 
-            To choose tiles from 'tilesheet', I break the input image into chunks (sized the same as your
-        tile dimensions) and examine values from the center of each. Since I'm not averaging every pixel
-        in the input tile, the end result can look a bit "noisy", so to speak. Doing that average would
-        slow processing down significantly, so I cheat and take a shortcut, rounding each tile's index to
-        the nearest multiple of 'res'.
-            You'll probably need to adjust this per source, depending on how difficult it is to make out
-        recognizable objects in your scene. Higher values produce more banding, which will be desirable
-        in many cases. A large image with small tiles will probably benefit from a lower number, while
-        small images with larger tiles will tend to look more pleasant with larger numbers.
+            Behavior changed from 0.1.0, this now acts as the effective bit depth of your output. The range
+        of possible output values is broken up into 2 ** res steps, and each tile index or pixel component
+        is rounded accordingly. This is quite an effective technique for RGB footage, but thanks to the way
+        color is represented in YUV spaces, you won't be able to lower this too much with YUY2 input before
+        things begin to look strange.
 
-    mode    default 0
+    mode    integer, default 0
 
-            Chooses the component used to generate the tile index for a given tile. The possible values
-        are as follows:
+            Only works when tilesheet is supplied. This option chooses the component used to generate the
+        tile index for a given tile. The possible values are as follows:
 
             0:
               RGB:   Average of red, green, and blue values
@@ -79,6 +78,18 @@
               YUY2:  V
               RGB24: N/A
 
+    levels    string, "pc" or "tv", default "pc"
+
+            In order to scale the tile index or pixel component, I first need to know the range of input values.
+        Technically TV levels still fall within the possible range of 0-255, but if you'd like to map TV black and
+        white to the lowest and highest tiles in your tilesheet, respectively, use "tv" instead.
+
+    lotile, hitile    default 0 and tilecount - 1
+
+            A quick way to limit the tile selection to a given portion of your tilesheet; if you have a sheet with
+        an odd number of tiles, for example, and some spaces are blank, or if you just want to use a smaller range
+        of values without having to rebuild your tilesheet by hand, use these.
+
 
     --Extras--
 
@@ -91,7 +102,7 @@
     Said script isn't very flexible, and could certainly stand to be improved, so if anyone has any ideas I'd
     love to hear them.
 
-        Finally, also in the extras folder is a copy of the script version of this plugin. It requires GScript,
+        Finally, also in the extras folder is a copy of the script version of TurnsTile 0.1.0. It requires GScript,
     along with another support filter from Gavino, GRunT ( http://forum.doom9.org/showthread.php?t=139337 ), and
     doesn't run very quickly, to say the least. That barely measurable speed was the motivation for me to try
     developing an actual plugin, and I only include the script here for educational purposes. Please don't
@@ -99,6 +110,12 @@
 
     --Changes--
 
-        0.1.0 - December 24, 2010
+        0.2.0 - March 10th, 2011
+
+                    -Changed 'res' behavior to simulate bit depth adjustment
+                    -Added 'levels', 'lotile', 'hitile'
+                    -Added auto calculation of default tile size
+
+        0.1.0 - December 24th, 2010
 
                     -Initial release
