@@ -1,0 +1,104 @@
+
+  --TurnsTile 0.1.0--
+
+        For AviSynth 2.5.x
+
+        Turns input clip into a mosaic built from pieces of a user-defined tilesheet.
+
+        This is my first plugin (as opposed to script function), so please use with caution;
+    although it seems I know enough C++ to have gotten this far, it's entirely possible, even
+    likely, that I've done something stupid in my code. With any luck it won't brick your
+    computer, but I make no promises.
+
+        Direct any questions or suggestions to robert.martens@gmail.com, or head to Twitter
+    and find @ItEndsWithTens if you're a social networking hipster.
+
+  --Usage--
+
+    TurnsTile(clip c, clip tilesheet, int tilew, int tileh, int res, int mode)
+
+    c
+
+            The input clip, which can be RGB32, RGB24, or YUY2. The width of this clip must be a
+        multiple of tilew, and the height must be a multiple of tileh. The same applies to tilesheet.
+        If the clips don't meet those criteria, you may wish to check http://www.gyroshot.com/simpleslug.htm
+        for a script function of mine that can help with resizing (of particular interest are the
+        modw and modh parameters).
+
+    tilesheet
+
+            Tiles are pulled from this clip, which has the same colorspace restriction as 'c'. This can
+        be a still image or a video; in the latter case, tiles for a given frame of 'c' will be clipped
+        from the corresponding frame of 'tilesheet'.
+            The tiles are numbered left to right, then top to bottom. Using the sheets I've provided as
+        examples, with 16x16 pixel tiles in a 256x256 pixel image, the top left tile is number 0, top
+        right is 15, bottom left is 240, and bottom right is 255. Design your own custom images accordingly,
+        with dark tones at the top left fading up to lighter ones at the bottom right.
+
+    tilew, tileh    default 16
+
+            If your tiles aren't sixteen by sixteen, define your custom values here. For reference, the
+        tiles in Dwarf Fortress' modified CP437, my personal favorite tileset, are 10x12 (that's for
+        curses_800x600, the game also comes with a 16x16 version). Download from http://www.bay12games.com/
+
+    res    defaults to half the horizontal tile count
+
+            To choose tiles from 'tilesheet', I break the input image into chunks (sized the same as your
+        tile dimensions) and examine values from the center of each. Since I'm not averaging every pixel
+        in the input tile, the end result can look a bit "noisy", so to speak. Doing that average would
+        slow processing down significantly, so I cheat and take a shortcut, rounding each tile's index to
+        the nearest multiple of 'res'.
+            You'll probably need to adjust this per source, depending on how difficult it is to make out
+        recognizable objects in your scene. Higher values produce more banding, which will be desirable
+        in many cases. A large image with small tiles will probably benefit from a lower number, while
+        small images with larger tiles will tend to look more pleasant with larger numbers.
+
+    mode    default 0
+
+            Chooses the component used to generate the tile index for a given tile. The possible values
+        are as follows:
+
+            0:
+              RGB:   Average of red, green, and blue values
+              YUY2:  Average of Y1 and Y2
+
+            1:
+              RGB:   Blue
+              YUY2:  Y1
+
+            2:
+              RGB:   Green
+              YUY2:  U
+
+            3:
+              RGB:   Red
+              YUY2:  Y2
+
+            4:
+              RGB32: Alpha
+              YUY2:  V
+              RGB24: N/A
+
+
+    --Extras--
+
+        I've released TurnsTile under GPLv2; you'll find a copy of the license in the file COPYING, and
+    what little source code there is in the src folder.
+
+        In the extras directory, I've included a set of tilesheets to serve as a jumping off point for your
+    own experimentation, along with the AviSynth script I used to generate them. You'll need Gavino's GScript
+    to make it work ( http://forum.doom9.org/showthread.php?t=147846 ), but there are no other requirements.
+    Said script isn't very flexible, and could certainly stand to be improved, so if anyone has any ideas I'd
+    love to hear them.
+
+        Finally, also in the extras folder is a copy of the script version of this plugin. It requires GScript,
+    along with another support filter from Gavino, GRunT ( http://forum.doom9.org/showthread.php?t=139337 ), and
+    doesn't run very quickly, to say the least. That barely measurable speed was the motivation for me to try
+    developing an actual plugin, and I only include the script here for educational purposes. Please don't
+    think I advocate its use in the real world.
+
+    --Changes--
+
+        0.1.0 - December 24, 2010
+
+                    -Initial release
