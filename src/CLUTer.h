@@ -1,5 +1,5 @@
-#ifndef __TurnsTile_H__
-#define __TurnsTile_H__
+#ifndef __CLUTer_H__
+#define __CLUTer_H__
 
 
 
@@ -34,57 +34,31 @@
 
 
 
-class TurnsTile : public GenericVideoFilter
+class CLUTer : public GenericVideoFilter
 {
 
 public:
-	
-  TurnsTile(  PClip _child, PClip _tileSheet,
-              int _tileW, int _tileH,
-              int _res, int _mode,
-              const char* _levels,
-              int _loTile, int _hiTile,
-              bool _interlaced,
-              IScriptEnvironment* env);
 
-  TurnsTile(  PClip _child,
-              int _tileW, int _tileH,
-              int _res,
-              int _loTile, int _hiTile,
-              bool _interlaced,
-              IScriptEnvironment* env);
-  
-  ~TurnsTile();
-  
+  CLUTer(  PClip _child, PClip _palette,
+           int _pltFrame, bool _interlaced,
+           IScriptEnvironment* env);
+
+  ~CLUTer();
+
   PVideoFrame __stdcall GetFrame(int n, IScriptEnvironment* env);
   PVideoFrame __stdcall GetFrameInterleaved(int n, IScriptEnvironment* env);
   PVideoFrame __stdcall GetFramePlanar(int n, IScriptEnvironment* env);
-  
+
 private:
-  
-  PClip tileSheet;
 
-  bool userSheet;
+  std::vector<unsigned char> vecB, vecG, vecR, vecY, vecU, vecV;
 
-  int tileW, tileH, mode,
-      srcCols, srcRows,
-      shtCols, shtRows, shtTiles,
-      wStep, bytesPerPixel, tileBytes,
-      depthStep, copyMode;
-    
-  std::vector<unsigned char> componentLut;
-  std::vector<int> tileIdxLut;
+  int bytesPerPixel;
+
+  void paletteGen(PVideoFrame pltSrc, VideoInfo pltVi, IScriptEnvironment* env);
 
 };
 
 
 
-int TurnsTile_gcf(int a, int b);
-
-
-
-int TurnsTile_mod(int num, int mod, int min, int max);
-
-
-
-#endif // __TurnsTile_H__
+#endif // __CLUTer_H__
