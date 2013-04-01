@@ -1,5 +1,5 @@
 
-  --TurnsTile 0.2.0--
+  --TurnsTile 0.2.1--
 
         For AviSynth 2.5.x; latest release hosted at http://www.gyroshot.com/turnstile.htm
 
@@ -109,6 +109,10 @@
     think I advocate its use in the real world.
 
     --Changes--
+
+        0.2.1 - March 12th, 2011
+
+                    -Updated auto calc for tile size, now properly accounts for minimum YUY2 width
 
         0.2.0 - March 10th, 2011
 

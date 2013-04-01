@@ -1,5 +1,5 @@
 //
-//          TurnsTile 0.2.0 for AviSynth 2.5.x
+//          TurnsTile 0.2.1 for AviSynth 2.5.x
 //
 //  Provides a mosaic effect based on either clip contents or a user-defined
 //  tile sheet. Latest release hosted at http://www.gyroshot.com/turnstile.htm
@@ -491,8 +491,8 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
     for (gcfMaster; gcfBoth % gcfMaster > 0; gcfMaster--) {
     }
 
-    int tileW = args[2].AsInt(gcfMaster),
-        tileH = args[3].AsInt(gcfMaster);
+    int tileW = args[2].AsInt(gcfMaster <= minTileW ? minTileW : gcfMaster),
+        tileH = args[3].AsInt(gcfMaster <= 1 ? 1 : gcfMaster);
 
     if (tileW < minTileW) {
       args[0].AsClip()->GetVideoInfo().IsRGB() ?
@@ -550,8 +550,8 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
     for (gcfMaster; gcf % gcfMaster > 0; gcfMaster--) {
     }
 
-    int tileW = args[1].AsInt(gcfMaster),
-        tileH = args[2].AsInt(gcfMaster);
+    int tileW = args[1].AsInt(gcfMaster <= minTileW ? minTileW : gcfMaster),
+        tileH = args[2].AsInt(gcfMaster <= 1 ? 1 : gcfMaster);
     
     if (tileW < minTileW) {
       args[0].AsClip()->GetVideoInfo().IsRGB() ?
