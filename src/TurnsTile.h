@@ -1,5 +1,5 @@
 //
-//          TurnsTile 0.2.0 for AviSynth 2.5.x
+//          TurnsTile 0.2.1 for AviSynth 2.5.x
 //
 //  Provides a mosaic effect based on either clip contents or a user-defined
 //  tile sheet. Latest release hosted at http://www.gyroshot.com/turnstile.htm
