@@ -8,9 +8,10 @@ set(TURNSTILE_MAJOR 0)
 set(TURNSTILE_MINOR 3)
 set(TURNSTILE_PATCH 1)
 set(TURNSTILE_VERSION ${TURNSTILE_MAJOR}.${TURNSTILE_MINOR}.${TURNSTILE_PATCH})
-set(TURNSTILE_AUTHOR "Robert Martens <robert.martens@gmail.com>")
+set(TURNSTILE_AUTHOR "Robert Martens")
+set(TURNSTILE_AUTHOR_EMAIL "<robert.martens@gmail.com>")
 set(TURNSTILE_AVS_VERSION "2.5")
-
+set(TURNSTILE_DESCRIPTION "TurnsTile plugin for Avisynth ${TURNSTILE_AVS_VERSION}")
 
 
 ### Source files ###
@@ -22,9 +23,12 @@ set(SRCS
   src/interface.cpp
   src/TurnsTile.cpp
   src/CLUTer.cpp
-  src/TurnsTile.rc
 )
 
+configure_file(
+    src/TurnsTile.rc.in ${CMAKE_CURRENT_SOURCE_DIR}/src/TurnsTile.rc
+)
+list(APPEND SRCS src/TurnsTile.rc)
 if(MSVC)
   # CMake handles the Source and Header Files filters automatically, but not
   # Resource Files, the way VS does. This is just cosmetic, really.
