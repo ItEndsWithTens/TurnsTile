@@ -101,8 +101,10 @@ set(CPACK_SOURCE_IGNORE_FILES
   # Directories
   "\\\\.git"
   "build"
+  "scratch"
   # Project files
   "gitignore$"
+  "\\\\.db$"
   # Source
   "\\\\.rc$"
   "~$"
