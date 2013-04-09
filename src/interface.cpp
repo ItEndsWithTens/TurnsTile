@@ -51,10 +51,49 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
                   vi.IsYUY2() ? "YUY2" :
                   vi.IsYV12() ? "YV12" :
                                       "this";
-  
-  const int DEFAULT_TILESIZE = 16;
+
+
+  int dTileW = 16,
+      dTileH = 16;
+
+  int clipW = vi.width,
+      clipH = vi.height,
+      sheetW = 0,
+      sheetH = 0;
+  if (tilesheet)
+    sheetW = vi2.width, sheetH = vi2.height;
+
+  int lumaW, lumaH;
+
+  if (vi.IsYUV())
+    lumaW = 2;
+  else
+    lumaW = 1;
+
+  if (vi.IsYV12())
+    lumaH = 2;
+  else
+    lumaH = 1;
+
+  // Reduce each default tile dimension to the greatest size, less than or equal
+  // to its starting value, that's both a factor of the corresponding clip and
+  // tilesheet dimensions, and a multiple of the appropriate macropixel axis.
+  for (dTileW; clipW % dTileW > 0 || sheetW % dTileW > 0; dTileW -= lumaW) {
+  }
+  for (dTileH; clipH % dTileH > 0 || sheetH % dTileH > 0; dTileH -= lumaH) {
+  }
+
+  // Try to get square tiles, if possible.
+  if (dTileW != dTileH && clipW % dTileH == 0 && sheetW % dTileH == 0)
+    dTileW = dTileH;
+  if (dTileH != dTileW && clipH % dTileW == 0 && sheetH % dTileW == 0)
+    dTileH = dTileW;
+
+  int tileW = args[1].AsInt(dTileW),
+      tileH = args[2].AsInt(dTileH);
 
   int minTileW =  vi.IsYUY2() || vi.IsYV12() ? 2 : 1;
+
 
   PClip finalClip;
 
@@ -101,46 +140,9 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
     else if (vi.IsYV12() && (mode < 0 || mode > 6))
       env->ThrowError("TurnsTile: YV12 only allows modes 0-6!");
     
-    // I'm supremely disappointed with the complexity of this section, but the
-    // addition to version 0.3.0 of both the 'interlaced' parameter, which needs
-    // mod 2 height, and YV12, with its vertical chroma subsampling demanding
-    // mod 2 progressive height and mod 4 interlaced, made the auto calculation
-    // of tile size much more complicated. There's most likely a smarter way to
-    // do this, but I'm burned out for the moment.
-    int clipW =   vi.width,
-        sheetW =  vi2.width,
-        clipH =   vi.height,
-        sheetH =  vi2.height;
-
     int minTileH =  vi.IsYV12() && interlaced ? 4 :
                     vi.IsYV12() || interlaced ? 2 :
                     1;
-
-    // Just in case you decide to change DEFAULT_TILESIZE, I try to ensure it's
-    // still a multiple of the minimum for the colorspace in question.
-    int tileW = (DEFAULT_TILESIZE / minTileW) * minTileW,
-        tileH = (DEFAULT_TILESIZE / minTileH) * minTileH;
-
-    for (tileW; clipW % tileW > 0 || sheetW % tileW > 0; tileW -= minTileW) {
-    }
-
-    for (tileH; clipH % tileH > 0 || sheetH % tileH > 0; tileH -= minTileH) {
-    }
-
-    // After looping through the tile width and height, each is set to the
-    // highest value below 16 that's still a multiple of the appropriate clip
-    // dimension. Now, through a pair of ugly, brute force checks, I try to
-    // get square tiles if possible. I remind you I'm unhappy with this.
-    if (tileW != tileH && clipW % tileH == 0 && sheetW % tileH == 0)
-      tileW = tileH;
-
-    if (tileH != tileW && clipH % tileW == 0 && sheetH % tileW == 0)
-      tileH = tileW;
-
-    tileW = args[1].AsInt(tileW <= minTileW ? minTileW : tileW);
-    tileH = args[2].AsInt(tileH <= minTileH ? minTileH : tileH);
-
-    ////
 
     if (tileW < minTileW)
       env->ThrowError("TurnsTile: tilew must be at least %d for %s input!",
@@ -231,34 +233,9 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
     if (interlaced && vi.height % 2 != 0)
       env->ThrowError("TurnsTile: Height must be even when interlaced=true!");
 
-    ////
-
-    int clipW = vi.width,
-        clipH = vi.height;
-
     int minTileH =  vi.IsYV12() && interlaced ? 4 :
                     vi.IsYV12() || interlaced ? 2 :
                     1;
-
-    int tileW = (DEFAULT_TILESIZE / minTileW) * minTileW,
-        tileH = (DEFAULT_TILESIZE / minTileH) * minTileH;
-
-    for (tileW; clipW % tileW > 0; tileW -= minTileW) {
-    }
-
-    for (tileH; clipH % tileH > 0; tileH -= minTileH) {
-    }
-
-    if (tileW != tileH && clipW % tileH == 0 && tileH % minTileW == 0)
-      tileW = tileH;
-
-    if (tileH != tileW && clipH % tileW == 0 && tileW % minTileH == 0)
-      tileH = tileW;
-
-    tileW = args[1].AsInt(tileW <= minTileW ? minTileW : tileW);
-    tileH = args[2].AsInt(tileH <= minTileH ? minTileH : tileH);
-
-    ////
 
     if (tileW < minTileW)
       env->ThrowError("TurnsTile: tilew must be at least %d for %s input!",
