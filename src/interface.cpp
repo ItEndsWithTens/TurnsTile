@@ -42,11 +42,6 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
   if (tilesheet)
     vi2 = tilesheet->GetVideoInfo();
 
-  char* cspStrW = vi.IsRGB() ?  "RGB" :
-                  vi.IsYUY2() ? "YUY2" :
-                  vi.IsYV12() ? "YV12" :
-                                      "this";
-
 
   int dTileW = 16,
       dTileH = 16;
@@ -87,7 +82,51 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
   int tileW = args[1].AsInt(dTileW),
       tileH = args[2].AsInt(dTileH);
 
-  int minTileW =  vi.IsYUY2() || vi.IsYV12() ? 2 : 1;
+  
+  // I've saved most of my error handling for later, but I have to check for a
+  // possible divide by zero when calculating tileIdxMax below. Unfortunately,
+  // I also need to add another pair of checks, and the associated prep work,
+  // to prevent showing users a tile size warning before establishing that the
+  // clip they're using is even valid. Please excuse the out of place code.
+  
+  // Reading arguments out of order makes me feel icky, but I need this early.
+  bool interlaced = args[8].AsBool(false);  
+  
+  const char* const interlacedStr = interlaced ? "interlaced " : "";
+  const char* const cspStr =  vi.IsRGB() ?    "RGB" :
+                              vi.IsYUY2() ?   "YUY2" :
+                              vi.IsYV12() ?   "YV12" :
+                              interlaced ?    "" :
+                                              "this";  
+  
+  int minTileW = lumaW,
+      minTileH = lumaH;
+  if (interlaced)
+    minTileH *= 2;
+
+  if (interlaced) {
+
+    if (clipH % minTileH > 0)
+      env->ThrowError(
+        "TurnsTile: %s clip height must be mod %d when interlaced=true!",
+        cspStr, minTileH);
+
+    if (sheetH % minTileH > 0)
+      env->ThrowError(
+        "TurnsTile: %s tilesheet height must be mod %d when interlaced=true!",
+        cspStr, minTileH);
+
+  }
+
+  if (tileW < minTileW)
+    env->ThrowError(
+      "TurnsTile: tilew must be at least %d for %s input!",
+      minTileW, cspStr);
+
+  if (tileH < minTileH)
+    env->ThrowError(
+      "TurnsTile: tileh must be at least %d for %s%s input!",
+      minTileH, interlacedStr, cspStr);
 
 
   int res = args[3].AsInt(8);
@@ -113,34 +152,9 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
   int hiTile = args[7].AsInt(tileIdxMax);
 
 
-  bool interlaced = args[8].AsBool(false);
-
-
   PClip finalClip;
 
   if (tilesheet) {
-
-    // I handle the first four conditions here myself, as if left to AviSynth,
-    // the error won't show until I invoke SeparateFields() in my constructors'
-    // initializer lists. As a user, I'd be confused if I got a SeparateFields
-    // error when I hadn't explicitly called that function, hence the checks.
-    if (interlaced && vi.IsYV12() && vi.height % 4 != 0)
-      env->ThrowError("TurnsTile: YV12 clip height must be mod 4 "
-                      "when interlaced=true!");
-
-    if (interlaced && vi2.IsYV12() && vi2.height % 4 != 0)
-      env->ThrowError("TurnsTile: YV12 tilesheet height must be mod 4 "
-                      "when interlaced=true!");
-
-    if (interlaced && vi.height % 2 != 0)
-      env->ThrowError("TurnsTile: Clip height must be even "
-                      "when interlaced=true!");
-
-    if (interlaced && vi2.height % 2 != 0)
-      env->ThrowError("TurnsTile: Tilesheet height must be even "
-                      "when interlaced=true!");
-
-    ////
 
     if ( !vi.IsSameColorspace(vi2) )
       env->ThrowError("TurnsTile: c and tilesheet must share a colorspace!");
@@ -155,26 +169,7 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
       env->ThrowError("TurnsTile: YUY2 only allows modes 0-4!");
 
     else if (vi.IsYV12() && (mode < 0 || mode > 6))
-      env->ThrowError("TurnsTile: YV12 only allows modes 0-6!");
-    
-    int minTileH =  vi.IsYV12() && interlaced ? 4 :
-                    vi.IsYV12() || interlaced ? 2 :
-                    1;
-
-    if (tileW < minTileW)
-      env->ThrowError("TurnsTile: tilew must be at least %d for %s input!",
-                      minTileW, cspStrW);
-
-    char* cspStrH = vi.IsYV12() && interlaced ? "interlaced YV12" :
-                    interlaced ?                      "interlaced" :
-                    vi.IsRGB() ?                "RGB" :
-                    vi.IsYUY2() ?               "YUY2" :
-                    vi.IsYV12() ?               "YV12" :
-                                                      "this";
-
-    if (tileH < minTileH)
-      env->ThrowError("TurnsTile: tileh must be at least "
-                      "%d for %s input!", minTileH, cspStrH);
+      env->ThrowError("TurnsTile: YV12 only allows modes 0-6!");    
 
     int gcfW = TurnsTile_gcf(clipW, sheetW),
         gcfH = TurnsTile_gcf(clipH, sheetH);
@@ -227,31 +222,6 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
 
   } else { // No tilesheet
 
-    if (vi.IsYV12() && interlaced && vi.height % 4 != 0)
-      env->ThrowError("TurnsTile: YV12 height must be mod 4 when interlaced=true!");
-
-    if (interlaced && vi.height % 2 != 0)
-      env->ThrowError("TurnsTile: Height must be even when interlaced=true!");
-
-    int minTileH =  vi.IsYV12() && interlaced ? 4 :
-                    vi.IsYV12() || interlaced ? 2 :
-                    1;
-
-    if (tileW < minTileW)
-      env->ThrowError("TurnsTile: tilew must be at least %d for %s input!",
-                      minTileW, cspStrW);
-
-    char* cspStrH = vi.IsYV12() && interlaced ? "interlaced YV12" :
-                    interlaced ?                      "interlaced" :
-                    vi.IsRGB() ?                "RGB" :
-                    vi.IsYUY2() ?               "YUY2" :
-                    vi.IsYV12() ?               "YV12" :
-                                                      "this";
-
-    if (tileH < minTileH)
-      env->ThrowError("TurnsTile: tileh must be at least %d for %s input!",
-                      minTileH, cspStrH);
-
     if (tileW > clipW)
       env->ThrowError("TurnsTile: For this clip, tilew must not exceed %d!",
                       clipW);
@@ -265,8 +235,9 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
                       minTileW);
     
     if (tileH % minTileH > 0)
-      env->ThrowError("TurnsTile: For this clip, tileh must be a multiple of %d!",
-                      minTileH);
+      env->ThrowError(
+        "TurnsTile: For %s%s input, tileh must be a multiple of %d!",
+        interlacedStr, cspStr, minTileH);
 
     if (clipW % tileW > 0)
       env->ThrowError("TurnsTile: For this clip, tilew must be a factor of %d!",
