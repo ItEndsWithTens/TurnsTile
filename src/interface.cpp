@@ -183,17 +183,6 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
 
     const char* levels = env->Invoke("LCase",args[6].AsString("pc")).AsString();
 
-    // The proper location of this division is exceptionally important! Since,
-    // in case of interlaced=true, both the clip and tilesheet will later be run
-    // through SeparateFields, the tile height will need to be halved. Previous
-    // variables' calculations, however, depend on the initial value of tileH.
-    // Doing my work above, then changing the height here, strikes me as making
-    // the code easier to follow, and requires less mental gymnastics to clearly
-    // understand the earlier steps in the tilesize computation.
-    tileH = interlaced ?  static_cast<int> (
-                            ceil(static_cast<double> (tileH) / 2.0)
-                          ) : tileH;
-
     int sheetCols = vi2Create.width / tileW,
         sheetRows = vi2Create.height / tileH,
         sheetTiles = sheetCols * sheetRows,
@@ -209,6 +198,9 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
 
     if (loTile > hiTile)
       env->ThrowError("TurnsTile: lotile cannot be greater than hitile!");
+
+    if (interlaced)
+      tileH /= 2;
 
     finalClip = new TurnsTile(  args[0].AsClip(),       // c
                                 args[1].AsClip(),       // tilesheet
@@ -304,12 +296,6 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
       env->ThrowError("TurnsTile: For this clip, tileh must be a factor of %d!",
                       clipH);
 
-    ////
-
-    tileH = interlaced ?  static_cast<int> (
-                            ceil(static_cast<double> (tileH) / 2.0)
-                          ) : tileH;
-
     int loTile =  args[6].AsInt(0) <= 0 ? 0 :
                   args[6].AsInt() >= 255 ? 255 :
                   args[6].AsInt();
@@ -317,6 +303,9 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
     int hiTile =  args[7].AsInt(255) >= 255 ? 255:
                   args[7].AsInt() <= 0 ? 0 :
                   args[7].AsInt();
+
+    if (interlaced)
+      tileH /= 2;
 
     finalClip = new TurnsTile(  args[0].AsClip(), // c
                                 tileW,
