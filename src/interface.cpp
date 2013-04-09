@@ -95,6 +95,15 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
   int minTileW =  vi.IsYUY2() || vi.IsYV12() ? 2 : 1;
 
 
+  int res = args[3].AsInt(8);
+
+
+  int mode = args[4].AsInt(0);
+
+
+  const char* levels = env->Invoke("LCase",args[5].AsString("pc")).AsString();
+
+
   PClip finalClip;
 
   if (tilesheet) {
@@ -125,8 +134,6 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
 
     if ( !vi.IsSameColorspace(vi2) )
       env->ThrowError("TurnsTile: c and tilesheet must share a colorspace!");
-
-    int mode = args[4].AsInt(0);
 
     if (vi.IsRGB32() && (mode < 0 || mode > 4))
       env->ThrowError("TurnsTile: RGB32 only allows modes 0-4!");
@@ -211,7 +218,7 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
                                 tilesheet,
                                 tileW,
                                 tileH,
-                                args[3].AsInt(8),       // res
+                                res,
                                 mode,
                                 levels,
                                 loTile,
@@ -290,7 +297,7 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
     finalClip = new TurnsTile(  clip,
                                 tileW,
                                 tileH,
-                                args[3].AsInt(8), // res
+                                res,
                                 loTile,
                                 hiTile,
                                 interlaced,
