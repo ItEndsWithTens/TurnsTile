@@ -42,11 +42,6 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
   if (tilesheet)
     vi2 = tilesheet->GetVideoInfo();
 
-  if (vi.IsRGB() == false &&
-      vi.IsYUY2() == false &&
-      vi.IsYV12() == false)
-    env->ThrowError("TurnsTile: Only RGB, YUY2, and YV12 input supported!");
-
   char* cspStrW = vi.IsRGB() ?  "RGB" :
                   vi.IsYUY2() ? "YUY2" :
                   vi.IsYV12() ? "YV12" :
