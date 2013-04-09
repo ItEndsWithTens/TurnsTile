@@ -37,24 +37,24 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
 
   PClip clip = args[0][0].AsClip(),
         tilesheet = args[0][1].AsClip();
-  VideoInfo viCreate = clip->GetVideoInfo(),
-            vi2Create = viCreate;
+  VideoInfo vi = clip->GetVideoInfo(),
+            vi2 = vi;
   if (tilesheet)
-    vi2Create = tilesheet->GetVideoInfo();
+    vi2 = tilesheet->GetVideoInfo();
 
-  if (viCreate.IsRGB() == false &&
-      viCreate.IsYUY2() == false &&
-      viCreate.IsYV12() == false)
+  if (vi.IsRGB() == false &&
+      vi.IsYUY2() == false &&
+      vi.IsYV12() == false)
     env->ThrowError("TurnsTile: Only RGB, YUY2, and YV12 input supported!");
 
-  char* cspStrW = viCreate.IsRGB() ?  "RGB" :
-                  viCreate.IsYUY2() ? "YUY2" :
-                  viCreate.IsYV12() ? "YV12" :
+  char* cspStrW = vi.IsRGB() ?  "RGB" :
+                  vi.IsYUY2() ? "YUY2" :
+                  vi.IsYV12() ? "YV12" :
                                       "this";
   
   const int DEFAULT_TILESIZE = 16;
 
-  int minTileW =  viCreate.IsYUY2() || viCreate.IsYV12() ? 2 : 1;
+  int minTileW =  vi.IsYUY2() || vi.IsYV12() ? 2 : 1;
 
   PClip finalClip;
 
@@ -66,39 +66,39 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
     // the error won't show until I invoke SeparateFields() in my constructors'
     // initializer lists. As a user, I'd be confused if I got a SeparateFields
     // error when I hadn't explicitly called that function, hence the checks.
-    if (interlaced && viCreate.IsYV12() && viCreate.height % 4 != 0)
+    if (interlaced && vi.IsYV12() && vi.height % 4 != 0)
       env->ThrowError("TurnsTile: YV12 clip height must be mod 4 "
                       "when interlaced=true!");
 
-    if (interlaced && vi2Create.IsYV12() && vi2Create.height % 4 != 0)
+    if (interlaced && vi2.IsYV12() && vi2.height % 4 != 0)
       env->ThrowError("TurnsTile: YV12 tilesheet height must be mod 4 "
                       "when interlaced=true!");
 
-    if (interlaced && viCreate.height % 2 != 0)
+    if (interlaced && vi.height % 2 != 0)
       env->ThrowError("TurnsTile: Clip height must be even "
                       "when interlaced=true!");
 
-    if (interlaced && vi2Create.height % 2 != 0)
+    if (interlaced && vi2.height % 2 != 0)
       env->ThrowError("TurnsTile: Tilesheet height must be even "
                       "when interlaced=true!");
 
     ////
 
-    if ( !viCreate.IsSameColorspace(vi2Create) )
+    if ( !vi.IsSameColorspace(vi2) )
       env->ThrowError("TurnsTile: c and tilesheet must share a colorspace!");
 
     int mode = args[4].AsInt(0);
 
-    if (viCreate.IsRGB32() && (mode < 0 || mode > 4))
+    if (vi.IsRGB32() && (mode < 0 || mode > 4))
       env->ThrowError("TurnsTile: RGB32 only allows modes 0-4!");
 
-    else if (viCreate.IsRGB24() && (mode < 0 || mode > 3))
+    else if (vi.IsRGB24() && (mode < 0 || mode > 3))
       env->ThrowError("TurnsTile: RGB24 only allows modes 0-3!");
 
-    else if (viCreate.IsYUY2() && (mode < 0 || mode > 4))
+    else if (vi.IsYUY2() && (mode < 0 || mode > 4))
       env->ThrowError("TurnsTile: YUY2 only allows modes 0-4!");
 
-    else if (viCreate.IsYV12() && (mode < 0 || mode > 6))
+    else if (vi.IsYV12() && (mode < 0 || mode > 6))
       env->ThrowError("TurnsTile: YV12 only allows modes 0-6!");
     
     // I'm supremely disappointed with the complexity of this section, but the
@@ -107,13 +107,13 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
     // mod 2 progressive height and mod 4 interlaced, made the auto calculation
     // of tile size much more complicated. There's most likely a smarter way to
     // do this, but I'm burned out for the moment.
-    int clipW =   viCreate.width,
-        sheetW =  vi2Create.width,
-        clipH =   viCreate.height,
-        sheetH =  vi2Create.height;
+    int clipW =   vi.width,
+        sheetW =  vi2.width,
+        clipH =   vi.height,
+        sheetH =  vi2.height;
 
-    int minTileH =  viCreate.IsYV12() && interlaced ? 4 :
-                    viCreate.IsYV12() || interlaced ? 2 :
+    int minTileH =  vi.IsYV12() && interlaced ? 4 :
+                    vi.IsYV12() || interlaced ? 2 :
                     1;
 
     // Just in case you decide to change DEFAULT_TILESIZE, I try to ensure it's
@@ -146,11 +146,11 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
       env->ThrowError("TurnsTile: tilew must be at least %d for %s input!",
                       minTileW, cspStrW);
 
-    char* cspStrH = viCreate.IsYV12() && interlaced ? "interlaced YV12" :
+    char* cspStrH = vi.IsYV12() && interlaced ? "interlaced YV12" :
                     interlaced ?                      "interlaced" :
-                    viCreate.IsRGB() ?                "RGB" :
-                    viCreate.IsYUY2() ?               "YUY2" :
-                    viCreate.IsYV12() ?               "YV12" :
+                    vi.IsRGB() ?                "RGB" :
+                    vi.IsYUY2() ?               "YUY2" :
+                    vi.IsYV12() ?               "YV12" :
                                                       "this";
 
     if (tileH < minTileH)
@@ -186,8 +186,8 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
 
     const char* levels = env->Invoke("LCase",args[5].AsString("pc")).AsString();
 
-    int sheetCols = vi2Create.width / tileW,
-        sheetRows = vi2Create.height / tileH,
+    int sheetCols = vi2.width / tileW,
+        sheetRows = vi2.height / tileH,
         sheetTiles = sheetCols * sheetRows,
         tileIdxMax = sheetTiles - 1;
 
@@ -225,19 +225,19 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
 
     bool interlaced = args[8].AsBool(false);
 
-    if (viCreate.IsYV12() && interlaced && viCreate.height % 4 != 0)
+    if (vi.IsYV12() && interlaced && vi.height % 4 != 0)
       env->ThrowError("TurnsTile: YV12 height must be mod 4 when interlaced=true!");
 
-    if (interlaced && viCreate.height % 2 != 0)
+    if (interlaced && vi.height % 2 != 0)
       env->ThrowError("TurnsTile: Height must be even when interlaced=true!");
 
     ////
 
-    int clipW = viCreate.width,
-        clipH = viCreate.height;
+    int clipW = vi.width,
+        clipH = vi.height;
 
-    int minTileH =  viCreate.IsYV12() && interlaced ? 4 :
-                    viCreate.IsYV12() || interlaced ? 2 :
+    int minTileH =  vi.IsYV12() && interlaced ? 4 :
+                    vi.IsYV12() || interlaced ? 2 :
                     1;
 
     int tileW = (DEFAULT_TILESIZE / minTileW) * minTileW,
@@ -264,11 +264,11 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
       env->ThrowError("TurnsTile: tilew must be at least %d for %s input!",
                       minTileW, cspStrW);
 
-    char* cspStrH = viCreate.IsYV12() && interlaced ? "interlaced YV12" :
+    char* cspStrH = vi.IsYV12() && interlaced ? "interlaced YV12" :
                     interlaced ?                      "interlaced" :
-                    viCreate.IsRGB() ?                "RGB" :
-                    viCreate.IsYUY2() ?               "YUY2" :
-                    viCreate.IsYV12() ?               "YV12" :
+                    vi.IsRGB() ?                "RGB" :
+                    vi.IsYUY2() ?               "YUY2" :
+                    vi.IsYV12() ?               "YV12" :
                                                       "this";
 
     if (tileH < minTileH)
