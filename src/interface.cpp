@@ -35,7 +35,12 @@
 AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnvironment* env)
 {
 
-  VideoInfo viCreate = args[0][0].AsClip()->GetVideoInfo();
+  PClip clip = args[0][0].AsClip(),
+        tilesheet = args[0][1].AsClip();
+  VideoInfo viCreate = clip->GetVideoInfo(),
+            vi2Create = viCreate;
+  if (tilesheet)
+    vi2Create = tilesheet->GetVideoInfo();
 
   if (viCreate.IsRGB() == false &&
       viCreate.IsYUY2() == false &&
@@ -53,9 +58,7 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
 
   PClip finalClip;
 
-  if (args[0][1].IsClip()) { // With user provided tilesheet
-
-    VideoInfo vi2Create = args[0][1].AsClip()->GetVideoInfo();
+  if (tilesheet) {
 
     bool interlaced = args[8].AsBool(false);
 
@@ -202,8 +205,8 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
     if (interlaced)
       tileH /= 2;
 
-    finalClip = new TurnsTile(  args[0][0].AsClip(),       // c
-                                args[0][1].AsClip(),       // tilesheet
+    finalClip = new TurnsTile(  clip,
+                                tilesheet,
                                 tileW,
                                 tileH,
                                 args[3].AsInt(8),       // res
@@ -307,7 +310,7 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
     if (interlaced)
       tileH /= 2;
 
-    finalClip = new TurnsTile(  args[0][0].AsClip(), // c
+    finalClip = new TurnsTile(  clip,
                                 tileW,
                                 tileH,
                                 args[3].AsInt(8), // res
