@@ -35,7 +35,7 @@
 AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnvironment* env)
 {
 
-  VideoInfo viCreate = args[0].AsClip()->GetVideoInfo();
+  VideoInfo viCreate = args[0][0].AsClip()->GetVideoInfo();
 
   if (viCreate.IsRGB() == false &&
       viCreate.IsYUY2() == false &&
@@ -53,11 +53,11 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
 
   PClip finalClip;
 
-  if (args[1].IsClip()) { // With user provided tilesheet
+  if (args[0][1].IsClip()) { // With user provided tilesheet
 
-    VideoInfo vi2Create = args[1].AsClip()->GetVideoInfo();
+    VideoInfo vi2Create = args[0][1].AsClip()->GetVideoInfo();
 
-    bool interlaced = args[9].AsBool(false);
+    bool interlaced = args[8].AsBool(false);
 
     // I handle the first four conditions here myself, as if left to AviSynth,
     // the error won't show until I invoke SeparateFields() in my constructors'
@@ -84,7 +84,7 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
     if ( !viCreate.IsSameColorspace(vi2Create) )
       env->ThrowError("TurnsTile: c and tilesheet must share a colorspace!");
 
-    int mode = args[5].AsInt(0);
+    int mode = args[4].AsInt(0);
 
     if (viCreate.IsRGB32() && (mode < 0 || mode > 4))
       env->ThrowError("TurnsTile: RGB32 only allows modes 0-4!");
@@ -134,8 +134,8 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
     if (tileH != tileW && clipH % tileW == 0 && sheetH % tileW == 0)
       tileH = tileW;
 
-    tileW = args[2].AsInt(tileW <= minTileW ? minTileW : tileW);
-    tileH = args[3].AsInt(tileH <= minTileH ? minTileH : tileH);
+    tileW = args[1].AsInt(tileW <= minTileW ? minTileW : tileW);
+    tileH = args[2].AsInt(tileH <= minTileH ? minTileH : tileH);
 
     ////
 
@@ -181,20 +181,20 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
       env->ThrowError("TurnsTile: For this clip and tilesheet, "
                       "tileh must be a factor of %d!", gcfH);
 
-    const char* levels = env->Invoke("LCase",args[6].AsString("pc")).AsString();
+    const char* levels = env->Invoke("LCase",args[5].AsString("pc")).AsString();
 
     int sheetCols = vi2Create.width / tileW,
         sheetRows = vi2Create.height / tileH,
         sheetTiles = sheetCols * sheetRows,
         tileIdxMax = sheetTiles - 1;
 
-    int loTile =  args[7].AsInt(0) <= 0 ? 0 :
-                  args[7].AsInt() >= tileIdxMax ? tileIdxMax :
-                  args[7].AsInt();
+    int loTile =  args[6].AsInt(0) <= 0 ? 0 :
+                  args[6].AsInt() >= tileIdxMax ? tileIdxMax :
+                  args[6].AsInt();
 
-    int hiTile =  args[8].AsInt(tileIdxMax) >= tileIdxMax ? tileIdxMax :
-                  args[8].AsInt() <= 0 ? 0 :
-                  args[8].AsInt();
+    int hiTile =  args[7].AsInt(tileIdxMax) >= tileIdxMax ? tileIdxMax :
+                  args[7].AsInt() <= 0 ? 0 :
+                  args[7].AsInt();
 
     if (loTile > hiTile)
       env->ThrowError("TurnsTile: lotile cannot be greater than hitile!");
@@ -202,11 +202,11 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
     if (interlaced)
       tileH /= 2;
 
-    finalClip = new TurnsTile(  args[0].AsClip(),       // c
-                                args[1].AsClip(),       // tilesheet
+    finalClip = new TurnsTile(  args[0][0].AsClip(),       // c
+                                args[0][1].AsClip(),       // tilesheet
                                 tileW,
                                 tileH,
-                                args[4].AsInt(8),       // res
+                                args[3].AsInt(8),       // res
                                 mode,
                                 levels,
                                 loTile,
@@ -307,7 +307,7 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
     if (interlaced)
       tileH /= 2;
 
-    finalClip = new TurnsTile(  args[0].AsClip(), // c
+    finalClip = new TurnsTile(  args[0][0].AsClip(), // c
                                 tileW,
                                 tileH,
                                 args[3].AsInt(8), // res
@@ -367,19 +367,10 @@ extern "C" __declspec(dllexport) const char* __stdcall AvisynthPluginInit2(IScri
   env->AddFunction("CLUTer", "cc[paletteframe]i[interlaced]b",
                                   Create_CLUTer, 0);
 
-  env->AddFunction("TurnsTile", "cc[tileW]i[tileH]i[res]i[mode]i[levels]s"
+  env->AddFunction("TurnsTile", "c+[tileW]i[tileH]i[res]i[mode]i[levels]s"
                                 "[lotile]i[hitile]i[interlaced]b",
                                 Create_TurnsTile, 0);
 
-  // Although this version of TurnsTile, without a user-supplied tilesheet,
-  // doesn't end up using mode or levels, I still include them, in an effort to
-  // prevent "TurnsTile doesn't have a named argument 'Foo'" errors. Instead,
-  // they're just dummies, and Create_TurnsTile up above simply ignores them if
-  // calling the constructor with no sheet.
-  env->AddFunction("TurnsTile", "c[tileW]i[tileH]i[res]i[mode]i[levels]s"
-                                "[lotile]i[hitile]i[interlaced]b",
-                                Create_TurnsTile, 0);
-  
   return "`TurnsTile' - Mosaic and palette effects";
 
 }
