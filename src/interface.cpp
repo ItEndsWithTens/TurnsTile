@@ -104,11 +104,26 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
   const char* levels = env->Invoke("LCase",args[5].AsString("pc")).AsString();
 
 
+  int loTile = args[6].AsInt(0);
+
+  // Doesn't make a difference here whether interlaced is true or not, since if
+  // that's the case we'll later be halving both the tilesheet height and tile
+  // height. A / B == (A/2) / (B/2), so tileIdxMax is the same either way.
+  int tileIdxMax;
+  if (tilesheet)
+    tileIdxMax = ((sheetW / tileW) * (sheetH / tileH)) - 1;
+  else
+    tileIdxMax = 255;
+
+  int hiTile = args[7].AsInt(tileIdxMax);
+
+
+  bool interlaced = args[8].AsBool(false);
+
+
   PClip finalClip;
 
   if (tilesheet) {
-
-    bool interlaced = args[8].AsBool(false);
 
     // I handle the first four conditions here myself, as if left to AviSynth,
     // the error won't show until I invoke SeparateFields() in my constructors'
@@ -193,21 +208,6 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
       env->ThrowError("TurnsTile: For this clip and tilesheet, "
                       "tileh must be a factor of %d!", gcfH);
 
-    const char* levels = env->Invoke("LCase",args[5].AsString("pc")).AsString();
-
-    int sheetCols = vi2.width / tileW,
-        sheetRows = vi2.height / tileH,
-        sheetTiles = sheetCols * sheetRows,
-        tileIdxMax = sheetTiles - 1;
-
-    int loTile =  args[6].AsInt(0) <= 0 ? 0 :
-                  args[6].AsInt() >= tileIdxMax ? tileIdxMax :
-                  args[6].AsInt();
-
-    int hiTile =  args[7].AsInt(tileIdxMax) >= tileIdxMax ? tileIdxMax :
-                  args[7].AsInt() <= 0 ? 0 :
-                  args[7].AsInt();
-
     if (loTile > hiTile)
       env->ThrowError("TurnsTile: lotile cannot be greater than hitile!");
 
@@ -231,8 +231,6 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
             finalClip;
 
   } else { // No tilesheet
-
-    bool interlaced = args[8].AsBool(false);
 
     if (vi.IsYV12() && interlaced && vi.height % 4 != 0)
       env->ThrowError("TurnsTile: YV12 height must be mod 4 when interlaced=true!");
@@ -282,14 +280,6 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
     if (clipH % tileH > 0)
       env->ThrowError("TurnsTile: For this clip, tileh must be a factor of %d!",
                       clipH);
-
-    int loTile =  args[6].AsInt(0) <= 0 ? 0 :
-                  args[6].AsInt() >= 255 ? 255 :
-                  args[6].AsInt();
-
-    int hiTile =  args[7].AsInt(255) >= 255 ? 255:
-                  args[7].AsInt() <= 0 ? 0 :
-                  args[7].AsInt();
 
     if (interlaced)
       tileH /= 2;
