@@ -126,8 +126,9 @@ install(
 
 install(
   FILES
-  TurnsTile.txt
+  README.txt
   DESTINATION .
+  RENAME TurnsTile.txt
 )
 
 # Build the source package by changing to your build directory and
