@@ -1,10 +1,10 @@
 //
-//          TurnsTile 0.3.0 for AviSynth 2.5.x
+//          TurnsTile 0.3.2 for AviSynth 2.5.x
 //
 //  Provides customizable mosaic and palette effects. Latest release
 //  hosted at http://www.gyroshot.com/turnstile.htm
 //
-//          Copyright 2010-2011 Robert Martens  robert.martens@gmail.com
+//          Copyright 2010, 2011, 2013 Robert Martens  robert.martens@gmail.com
 //
 //  This program is free software; you can redistribute it and/or
 //  modify it under the terms of the GNU General Public License

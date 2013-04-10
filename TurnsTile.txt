@@ -1,6 +1,6 @@
 
 
-  --TurnsTile 0.3.1--
+  --TurnsTile 0.3.2--
 
         For AviSynth 2.5.x; latest release hosted at http://www.gyroshot.com/turnstile.htm
 
@@ -190,6 +190,10 @@
 
 
     --Changes--
+
+        0.3.2 - April 10th, 2013
+
+                    -Fix tilesheet processing for interlaced clips
 
         0.3.1 - September 21st, 2011
 
