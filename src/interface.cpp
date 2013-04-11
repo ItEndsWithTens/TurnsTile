@@ -26,6 +26,7 @@
 #include "TurnsTile.h"
 
 #include <cmath>
+#include <cstring>
 #include <Windows.h>
 
 #include "avisynth.h"
@@ -94,6 +95,9 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
   // Reading arguments out of order makes me feel icky, but I need this early.
   bool interlaced = args[8].AsBool(false);  
   
+  if (!vi.IsSameColorspace(vi2))
+      env->ThrowError("TurnsTile: clip and tilesheet must share a colorspace!");
+
   const char* const interlacedStr = interlaced ? "interlaced " : "";
   const char* const cspStr =  vi.IsRGB() ?    "RGB" :
                               vi.IsYUY2() ?   "YUY2" :
@@ -154,57 +158,80 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
   int hiTile = args[7].AsInt(tileIdxMax);
 
 
+  int maxTileW = TurnsTile_gcf(clipW, sheetW),
+      maxTileH = TurnsTile_gcf(clipH, sheetH);
+
+  // These two errors, unlike the two above and the two below, don't mention
+  // anything about interlacing or colorspace since the check is performed based
+  // only on the greatest common factor of the clip and tilesheet width/height.
+  if (tileW > maxTileW)
+    env->ThrowError(
+      "TurnsTile: For this input, tilew must not exceed %d!",
+      maxTileW);
+
+  if (tileH > maxTileH)
+    env->ThrowError(
+      "TurnsTile: For this input, tileh must not exceed %d!",
+      maxTileH);
+
+  if (tileW % minTileW > 0)
+    env->ThrowError(
+      "TurnsTile: For %s input, tilew must be a multiple of %d!",
+      cspStr, minTileW);
+  
+  if (tileH % minTileH > 0)
+    env->ThrowError(
+      "TurnsTile: For %s%s input, tileh must be a multiple of %d!",
+      interlacedStr, cspStr, minTileH);
+
+  if (maxTileW % tileW > 0)
+    env->ThrowError(
+      "TurnsTile: For %s input, tilew must be a factor of %d!",
+      cspStr, maxTileW);
+
+  if (maxTileH % tileH > 0)
+    env->ThrowError(
+      "TurnsTile: For %s%s input, tileh must be a factor of %d!",
+      interlacedStr, cspStr, maxTileH);
+
+
+  int modeMax;
+  if (vi.IsYUV())
+    modeMax = (lumaW * lumaH) + 2;
+  else
+    modeMax = vi.BytesFromPixels(1);
+
+  if (mode < 0 || mode > modeMax)
+    env->ThrowError(
+      "TurnsTile: %s only allows modes 0-%d!",
+      cspStr, modeMax);
+
+
+  if (strcmp(levels, "pc") != 0 && strcmp(levels, "tv") != 0)
+    env->ThrowError(
+      "TurnsTile: levels must be either \"pc\" or \"tv\"!");
+
+
+  if (loTile < 0 || loTile > tileIdxMax)
+    env->ThrowError(
+      "TurnsTile: Valid lotile range is 0-%d!",
+      tileIdxMax);
+
+  if (hiTile < 0 || hiTile > tileIdxMax)
+    env->ThrowError(
+      "TurnsTile: Valid hitile range is 0-%d!",
+      tileIdxMax);
+
+  if (loTile > hiTile)
+    env->ThrowError(
+      "TurnsTile: lotile must not be greater than hitile!");
+
+
+  if (interlaced)
+    tileH /= 2;
+  
   PClip finalClip;
-
   if (tilesheet) {
-
-    if ( !vi.IsSameColorspace(vi2) )
-      env->ThrowError("TurnsTile: c and tilesheet must share a colorspace!");
-
-    if (vi.IsRGB32() && (mode < 0 || mode > 4))
-      env->ThrowError("TurnsTile: RGB32 only allows modes 0-4!");
-
-    else if (vi.IsRGB24() && (mode < 0 || mode > 3))
-      env->ThrowError("TurnsTile: RGB24 only allows modes 0-3!");
-
-    else if (vi.IsYUY2() && (mode < 0 || mode > 4))
-      env->ThrowError("TurnsTile: YUY2 only allows modes 0-4!");
-
-    else if (vi.IsYV12() && (mode < 0 || mode > 6))
-      env->ThrowError("TurnsTile: YV12 only allows modes 0-6!");    
-
-    int gcfW = TurnsTile_gcf(clipW, sheetW),
-        gcfH = TurnsTile_gcf(clipH, sheetH);
-
-    if (tileW > gcfW)
-      env->ThrowError("TurnsTile: For this clip and tilesheet, "
-                      "tilew must not exceed %d!", gcfW);
-    
-    if (tileH > gcfH)
-      env->ThrowError("TurnsTile: For this clip and tilesheet, "
-                      "tileh must not exceed %d!", gcfH);
-
-    if (tileW % minTileW > 0)
-      env->ThrowError("TurnsTile: For this clip, tilew must be a multiple of %d!",
-                      minTileW);
-    
-    if (tileH % minTileH > 0)
-      env->ThrowError("TurnsTile: For this clip, tileh must be a multiple of %d!",
-                      minTileH);
-
-    if (gcfW % tileW > 0)
-      env->ThrowError("TurnsTile: For this clip and tilesheet, "
-                      "tilew must be a factor of %d!", gcfW);
-
-    if (gcfH % tileH > 0)
-      env->ThrowError("TurnsTile: For this clip and tilesheet, "
-                      "tileh must be a factor of %d!", gcfH);
-
-    if (loTile > hiTile)
-      env->ThrowError("TurnsTile: lotile cannot be greater than hitile!");
-
-    if (interlaced)
-      tileH /= 2;
 
     finalClip = new TurnsTile(  clip,
                                 tilesheet,
@@ -217,40 +244,7 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
                                 hiTile,
                                 interlaced,
                                 env);
-
-    return  interlaced && finalClip->GetVideoInfo().IsFieldBased() ?
-              env->Invoke("Weave", finalClip) :
-            finalClip;
-
-  } else { // No tilesheet
-
-    if (tileW > clipW)
-      env->ThrowError("TurnsTile: For this clip, tilew must not exceed %d!",
-                      clipW);
-    
-    if (tileH > clipH)
-      env->ThrowError("TurnsTile: For this clip, tileh must not exceed %d!",
-                      clipH);
-        
-    if (tileW % minTileW > 0)
-      env->ThrowError("TurnsTile: For this clip, tilew must be a multiple of %d!",
-                      minTileW);
-    
-    if (tileH % minTileH > 0)
-      env->ThrowError(
-        "TurnsTile: For %s%s input, tileh must be a multiple of %d!",
-        interlacedStr, cspStr, minTileH);
-
-    if (clipW % tileW > 0)
-      env->ThrowError("TurnsTile: For this clip, tilew must be a factor of %d!",
-                      clipW);
-    
-    if (clipH % tileH > 0)
-      env->ThrowError("TurnsTile: For this clip, tileh must be a factor of %d!",
-                      clipH);
-
-    if (interlaced)
-      tileH /= 2;
+  } else {
 
     finalClip = new TurnsTile(  clip,
                                 tileW,
@@ -261,11 +255,11 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
                                 interlaced,
                                 env);
 
-    return  interlaced && finalClip->GetVideoInfo().IsFieldBased() ?
-              env->Invoke("Weave", finalClip) :
-            finalClip;
-
   }
+
+  return  interlaced && finalClip->GetVideoInfo().IsFieldBased() ?
+            env->Invoke("Weave", finalClip) :
+          finalClip;
 
 }
 
