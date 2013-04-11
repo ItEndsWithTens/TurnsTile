@@ -39,14 +39,8 @@ TurnsTile::TurnsTile( PClip _child, PClip _tileSheet,
                       int _loTile, int _hiTile,
                       bool _interlaced,
                       IScriptEnvironment* env) :
-                      GenericVideoFilter(
-                        _interlaced && !_child->GetVideoInfo().IsFieldBased() ?
-                          env->Invoke("SeparateFields", _child).AsClip() :
-                        _child),
-                      tileSheet(
-                        _interlaced && !_tileSheet->GetVideoInfo().IsFieldBased() ?
-                          env->Invoke("SeparateFields", _tileSheet).AsClip() :
-                        _tileSheet),
+                      GenericVideoFilter(_child),
+                      tileSheet(_tileSheet),
                       tileW(_tileW), tileH(_tileH),
                       mode(_mode)
 {
@@ -133,10 +127,7 @@ TurnsTile::TurnsTile( PClip _child,
                       int _loTile, int _hiTile,
                       bool _interlaced,
                       IScriptEnvironment* env) :
-                      GenericVideoFilter(
-                        _interlaced && !_child->GetVideoInfo().IsFieldBased() ?
-                          env->Invoke("SeparateFields", _child).AsClip() :
-                        _child),
+                      GenericVideoFilter(_child),
                       tileW(_tileW), tileH(_tileH)
 {
   

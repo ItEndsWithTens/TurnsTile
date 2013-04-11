@@ -227,8 +227,15 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
       "TurnsTile: lotile must not be greater than hitile!");
 
 
-  if (interlaced)
+  if (interlaced) {
+
     tileH /= 2;
+    if (!clip->GetVideoInfo().IsFieldBased())
+      clip = env->Invoke("SeparateFields", clip).AsClip();
+    if (tilesheet && !tilesheet->GetVideoInfo().IsFieldBased())
+      tilesheet = env->Invoke("SeparateFields", tilesheet).AsClip();
+
+  }
   
   PClip finalClip;
   if (tilesheet) {
