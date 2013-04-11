@@ -36,7 +36,9 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
 {
 
   PClip clip = args[0][0].AsClip(),
-        tilesheet = args[0][1].AsClip();
+        tilesheet = 0;
+  if (args[0].ArraySize() > 1)
+    tilesheet = args[0][1].AsClip();
   VideoInfo vi = clip->GetVideoInfo(),
             vi2 = vi;
   if (tilesheet)
