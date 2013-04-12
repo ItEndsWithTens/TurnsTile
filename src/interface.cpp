@@ -236,33 +236,19 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
       tilesheet = env->Invoke("SeparateFields", tilesheet).AsClip();
 
   }
-  
-  PClip finalClip;
-  if (tilesheet) {
 
-    finalClip = new TurnsTile(  clip,
-                                tilesheet,
-                                tileW,
-                                tileH,
-                                res,
-                                mode,
-                                levels,
-                                loTile,
-                                hiTile,
-                                interlaced,
-                                env);
-  } else {
-
-    finalClip = new TurnsTile(  clip,
-                                tileW,
-                                tileH,
-                                res,
-                                loTile,
-                                hiTile,
-                                interlaced,
-                                env);
-
-  }
+  PClip finalClip = new TurnsTile(  clip,
+                                    tilesheet,
+                                    vi2,
+                                    tileW,
+                                    tileH,
+                                    res,
+                                    mode,
+                                    levels,
+                                    loTile,
+                                    hiTile,
+                                    interlaced,
+                                    env);
 
   return  interlaced && finalClip->GetVideoInfo().IsFieldBased() ?
             env->Invoke("Weave", finalClip) :

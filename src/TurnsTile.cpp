@@ -32,7 +32,7 @@
 
 
 
-TurnsTile::TurnsTile( PClip _child, PClip _tileSheet,
+TurnsTile::TurnsTile( PClip _child, PClip _tileSheet, VideoInfo _vi2,
                       int _tileW, int _tileH,
                       int _res, int _mode,
                       const char* _levels,
@@ -44,16 +44,12 @@ TurnsTile::TurnsTile( PClip _child, PClip _tileSheet,
                       tileW(_tileW), tileH(_tileH),
                       mode(_mode)
 {
- 
-  userSheet = true;
-
-  VideoInfo vi2 = tileSheet->GetVideoInfo();
 
   srcCols = vi.width / tileW;
   srcRows = vi.height / tileH;
 
-  shtCols = vi2.width / tileW;
-  shtRows = vi2.height / tileH;
+  shtCols = _vi2.width / tileW;
+  shtRows = _vi2.height / tileH;
   
   int idxInMin =  strcmp(_levels, "pc") == 0 ? 0 : 16;
   int idxInMax =  strcmp(_levels, "pc") == 0 ? 255 :
@@ -67,9 +63,6 @@ TurnsTile::TurnsTile( PClip _child, PClip _tileSheet,
                   vi.IsYUY2() ?   2 : 0;
 
   tileBytes = tileW * bytesPerPixel;
-
-  double idxScaleFactor = static_cast<double> (idxInMax - idxInMin) /
-                          static_cast<double> (_hiTile - _loTile);
 
   // An easy way to simulate the look of decreased bit depth; treat 'res'
   // as desired number of bits per component, then cut the output range
@@ -95,82 +88,61 @@ TurnsTile::TurnsTile( PClip _child, PClip _tileSheet,
                 )
               );
 
-  for (int in = 0; in < 256; ++in) {
+  if (tileSheet) {
 
-    // The proper, generic form of this scaling formula would be:
-    //
-    // ((number) /
-    //   ((inMax - inMin) / (outMax - outMin))) +
-    // outMin
-    //
-    // Using TurnsTile_mod() to round the result is a unique requirement of the
-    // 'res' feature I've got in TurnsTile, you don't need it if only scaling.
-    int scaled =  static_cast<int> (
-                    (static_cast<double> (in) / idxScaleFactor) + 0.5
-                  ) + _loTile;
+    userSheet = true;
+
+    copyMode = vi.IsRGB24() ? 2 : 1;
   
-    int out = TurnsTile_mod(scaled, depthStep, _loTile, _hiTile);
+    double idxScaleFactor = static_cast<double> (idxInMax - idxInMin) /
+                            static_cast<double> (_hiTile - _loTile);
 
-    tileIdxLut.push_back(out);
+    for (int in = 0; in < 256; ++in) {
 
-  }  
-
-  copyMode = vi.IsRGB24() ? 2 : 1;
-
-}
-
-
-
-TurnsTile::TurnsTile( PClip _child,
-                      int _tileW, int _tileH,
-                      int _res,
-                      int _loTile, int _hiTile,
-                      bool _interlaced,
-                      IScriptEnvironment* env) :
-                      GenericVideoFilter(_child),
-                      tileW(_tileW), tileH(_tileH)
-{
+      // The proper, generic form of this scaling formula would be:
+      //
+      // ((number) /
+      //   ((inMax - inMin) / (outMax - outMin))) +
+      // outMin
+      //
+      // Using TurnsTile_mod() to round the result is a unique requirement of the
+      // 'res' feature I've got in TurnsTile, you don't need it if only scaling.
+      int scaled =  static_cast<int> (
+                      (static_cast<double> (in) / idxScaleFactor) + 0.5
+                    ) + _loTile;
   
-  userSheet = false;
+      int out = TurnsTile_mod(scaled, depthStep, _loTile, _hiTile);
 
-  tileSheet = child;
-    
-  srcCols = vi.width / tileW;
-  srcRows = vi.height / tileH;
+      tileIdxLut.push_back(out);
 
-  wStep = vi.IsRGB() ? 1 : 2;
-  
-  bytesPerPixel = vi.IsRGB32() ?  4 :
-                  vi.IsRGB24() ?  3 :
-                  vi.IsYUY2() ?   2 : 0;
+    }
 
-  tileBytes = tileW * bytesPerPixel;
-  
-  depthStep = static_cast<int>  (
-                ceil(
-                  static_cast<double> (_hiTile - _loTile) /
-                  (pow(2.0, static_cast<double> (_res)) - 1.0)
-                )
-              );
+  } else {
 
-  // No need to scale 'in' here, as in the above constructor, since this
-  // version of TurnsTile only deals with component values (not tile indices),
-  // which with 8bpc color will always be less than 256.
-  for (int in = 0; in < 256; ++in) {
+    userSheet = false;
 
-    unsigned char out = static_cast<unsigned char> (
-                          TurnsTile_mod(in, depthStep, _loTile, _hiTile)
-                        );
+    tileSheet = child;
 
-    componentLut.push_back(out);
+    copyMode =  vi.IsRGB32() ?  3 :
+                vi.IsRGB24() ?  4 :
+                vi.IsYUY2() ?   5 :
+                vi.IsYV12() ?   2 :
+                                0;
+
+    // No need to scale 'in' here, as above, since this only deals with
+    // component values (not tile indices), which with 8bpc color will always
+    // be less than 256.
+    for (int in = 0; in < 256; ++in) {
+
+      unsigned char out = static_cast<unsigned char> (
+                            TurnsTile_mod(in, depthStep, _loTile, _hiTile)
+                          );
+
+      componentLut.push_back(out);
+
+    }
 
   }
-
-  copyMode =  vi.IsRGB32() ?  3 :
-              vi.IsRGB24() ?  4 :
-              vi.IsYUY2() ?   5 :
-              vi.IsYV12() ?   2 :
-                              0;
 
 }
 

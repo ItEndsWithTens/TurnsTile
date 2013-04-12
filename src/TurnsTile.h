@@ -39,17 +39,10 @@ class TurnsTile : public GenericVideoFilter
 
 public:
 	
-  TurnsTile(  PClip _child, PClip _tileSheet,
+  TurnsTile(  PClip _child, PClip _tileSheet, VideoInfo _vi2,
               int _tileW, int _tileH,
               int _res, int _mode,
               const char* _levels,
-              int _loTile, int _hiTile,
-              bool _interlaced,
-              IScriptEnvironment* env);
-
-  TurnsTile(  PClip _child,
-              int _tileW, int _tileH,
-              int _res,
               int _loTile, int _hiTile,
               bool _interlaced,
               IScriptEnvironment* env);
