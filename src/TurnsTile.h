@@ -67,10 +67,18 @@ private:
       srcCols, srcRows,
       shtCols, shtRows, shtTiles,
       wStep, bytesPerPixel, tileBytes,
-      depthStep, copyMode;
+      depthStep;
+
+  IScriptEnvironment* host;
     
   std::vector<unsigned char> componentLut;
   std::vector<int> tileIdxLut;
+
+  template<typename Tsample, typename Tpixel>
+  void fillTile(
+    Tsample* dstp, const int DST_PITCH,
+    const Tsample* srcp, const int SRC_PITCH,
+    const int width, const int height, const Tpixel fillVal) const;
 
 };
 

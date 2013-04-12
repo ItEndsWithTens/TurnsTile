@@ -26,6 +26,9 @@
 
 #include <cmath>
 #include <cstring>
+
+#include <algorithm>
+
 #include <Windows.h>
 
 #include "avisynth.h"
@@ -43,7 +46,8 @@ GenericVideoFilter(_child), tileSheet(_tileSheet),
 tileW(_tileW), tileH(_tileH), mode(_mode),
 srcRows(vi.height / tileH), srcCols(vi.width / tileW),
 shtRows(_vi2.height / tileH), shtCols(_vi2.width / tileW),
-bytesPerPixel(vi.BytesFromPixels(1)), tileBytes(tileW * bytesPerPixel)
+bytesPerPixel(vi.BytesFromPixels(1)), tileBytes(tileW * bytesPerPixel),
+host(env)
 {
   
   int idxInMin =  strcmp(_levels, "pc") == 0 ? 0 : 16;
@@ -81,8 +85,6 @@ bytesPerPixel(vi.BytesFromPixels(1)), tileBytes(tileW * bytesPerPixel)
 
     userSheet = true;
 
-    copyMode = vi.IsRGB24() ? 2 : 1;
-  
     double idxScaleFactor = static_cast<double> (idxInMax - idxInMin) /
                             static_cast<double> (_hiTile - _loTile);
 
@@ -111,12 +113,6 @@ bytesPerPixel(vi.BytesFromPixels(1)), tileBytes(tileW * bytesPerPixel)
     userSheet = false;
 
     tileSheet = child;
-
-    copyMode =  vi.IsRGB32() ?  3 :
-                vi.IsRGB24() ?  4 :
-                vi.IsYUY2() ?   5 :
-                vi.IsYV12() ?   2 :
-                                0;
 
     // No need to scale 'in' here, as above, since this only deals with
     // component values (not tile indices), which with 8bpc color will always
@@ -247,63 +243,50 @@ PVideoFrame __stdcall TurnsTile::GetFrameInterleaved(int n, IScriptEnvironment* 
         cropTop = SHT_PITCH * tileIdxY * tileH;
 
       }
-		
-      for (int h = 0; h < tileH; ++h) {
 
-        int dstLine = DST_PITCH * h,
-            shtLine = SHT_PITCH * h;
+      unsigned char* dstTile = dstp + dstRow + curCol;
+      const unsigned char* shtTile = shtp + cropTop + cropLeft;
 
-        for (int w = 0; w < tileW; w += wStep) {
-          
-          int wBytes = w * bytesPerPixel;
+      if (userSheet) {
 
-          int dstOffset = dstRow + curCol + dstLine + wBytes,
-              shtOffset = cropLeft + cropTop + shtLine + wBytes;
+        fillTile(dstTile, DST_PITCH, shtTile, SHT_PITCH, tileW, tileH, 0);
 
-          switch (copyMode) {
+      } else {
 
-          case 1 :
-            // RGB32 / YUY2 with tilesheet
-            *(dstp + dstOffset) =      *(shtp + shtOffset);
-            *(dstp + dstOffset + 1) =  *(shtp + shtOffset + 1);
-            *(dstp + dstOffset + 2) =  *(shtp + shtOffset + 2);
-            *(dstp + dstOffset + 3) =  *(shtp + shtOffset + 3);
-            break;
+        unsigned char by = componentLut[*(srcp + tileCtr)],
+                      gu = componentLut[*(srcp + tileCtr + 1)],
+                      ry = componentLut[*(srcp + tileCtr + 2)],
+                      av = componentLut[*(srcp + tileCtr + 3)];
 
-          case 2 :
-            // RGB24 with tilesheet
-            *(dstp + dstOffset) =     *(shtp + shtOffset);
-            *(dstp + dstOffset + 1) = *(shtp + shtOffset + 1);
-            *(dstp + dstOffset + 2) =	*(shtp + shtOffset + 2);
-            break;
+        if (vi.IsRGB32() || vi.IsYUY2()) {
 
-          case 3 :
-            // RGB32 without tilesheet
-            *(dstp + dstOffset) =      componentLut[*(shtp + tileCtr)];
-            *(dstp + dstOffset + 1) =  componentLut[*(shtp + tileCtr + 1)];
-            *(dstp + dstOffset + 2) =  componentLut[*(shtp + tileCtr + 2)];
-            *(dstp + dstOffset + 3) =  componentLut[*(shtp + tileCtr + 3)];
-            break;
+          unsigned int fillVal;
+          if (vi.IsRGB32())
+            fillVal = (av << 24) | (ry << 16) | (gu << 8) | by;
+          else
+            fillVal = (av << 24) | (by << 16) | (gu << 8) | by;
 
-          case 4 :
-            // RGB24 without tilesheet
-            *(dstp + dstOffset) =      componentLut[*(shtp + tileCtr)];
-            *(dstp + dstOffset + 1) =  componentLut[*(shtp + tileCtr + 1)];
-            *(dstp + dstOffset + 2) =  componentLut[*(shtp + tileCtr + 2)];
-            break;
+          fillTile(
+            dstTile, DST_PITCH, static_cast<const unsigned char*>(0), 0,
+            tileW, tileH, fillVal);
 
-          case 5 :
-            // YUY2 without tilesheet
-            *(dstp + dstOffset) =      componentLut[*(shtp + tileCtr)];
-            *(dstp + dstOffset + 1) =  componentLut[*(shtp + tileCtr + 1)];
-            *(dstp + dstOffset + 2) =  componentLut[*(shtp + tileCtr)];
-            *(dstp + dstOffset + 3) =  componentLut[*(shtp + tileCtr + 3)];
-            break;
+        } else {
 
-          default :
-            env->ThrowError("TurnsTile: Invalid interleaved copyMode; "
-                            "please contact me!");
-            break;
+          // For the time being, I'm giving RGB24 its own slow, manual loop,
+          // instead of trying to get fillTile to handle a funny stepping
+          // sequence for a three byte pixel written four bytes at a time.
+          for (int h = 0; h < tileH; ++h) {
+
+            int dstLine = DST_PITCH * h;
+
+            for (int w = 0; w < tileW; ++w) {
+
+              int dstOffset = dstRow + curCol + dstLine + (w * bytesPerPixel);
+
+              for (int i = 0; i < bytesPerPixel; ++i)
+                *(dstp + dstOffset + i) = componentLut[*(srcp + tileCtr + i)];
+
+            }
 
           }
 
@@ -365,6 +348,11 @@ PVideoFrame __stdcall TurnsTile::GetFramePlanar(int n, IScriptEnvironment* env)
 
       int curColY =   col * tileW,
           curColUV =  col * (tileW / 2);
+
+      unsigned char
+          * dstTileY = dstY + dstRowY + curColY,
+          * dstTileU = dstU + dstRowUV + curColUV,
+          * dstTileV = dstV + dstRowUV + curColUV;
 
       // As you'll note, in the if (userSheet) code below I read four Y
       // values for every 2x2 block of YV12. Those four are read relative
@@ -435,69 +423,70 @@ PVideoFrame __stdcall TurnsTile::GetFramePlanar(int n, IScriptEnvironment* env)
         cropTopY =  SHT_PITCH_Y * (tileIdx / shtCols) * tileH;
         cropTopUV = SHT_PITCH_UV * (tileIdx / shtCols) * (tileH / 2);
 
-      }
-        
-      for (int h = 0; h < tileH / 2; ++h) {
+        const unsigned char
+          * shtTileY = shtY + cropLeftY + cropTopY,
+          * shtTileU = shtU + cropLeftUV + cropTopUV,
+          * shtTileV = shtV + cropLeftUV + cropTopUV;
 
-        int dstLineY =  DST_PITCH_Y * h * 2,
-            dstLineUV = DST_PITCH_UV * h;
+        fillTile(
+          dstTileY, SRC_PITCH_Y, shtTileY, SHT_PITCH_Y, tileW, tileH, 0);
+        fillTile(
+          dstTileU, SRC_PITCH_UV, shtTileU, SHT_PITCH_UV, tileW / 2, tileH / 2, 0);
+        fillTile(
+          dstTileV, SRC_PITCH_UV, shtTileV, SHT_PITCH_UV, tileW / 2, tileH / 2, 0);
 
-        int shtLineY =  SHT_PITCH_Y * h * 2,
-            shtLineUV = SHT_PITCH_UV * h;
+      } else {
 
-        for (int w = 0; w < tileW / 2; ++w) {
-
-          int curSampleY =  w * 2,
-              curSampleUV = w;
-
-          int dstOffsetY =  dstRowY + curColY + dstLineY + curSampleY,
-              dstOffsetUV = dstRowUV + curColUV + dstLineUV + curSampleUV;
-
-          int shtOffsetY =  cropLeftY + cropTopY + shtLineY + curSampleY,
-              shtOffsetUV = cropLeftUV + cropTopUV + shtLineUV + curSampleUV;
-
-          unsigned char finalY;
-
-          switch (copyMode) {
-
-          case 1 : // YV12 with tilesheet
-            *(dstU + dstOffsetUV) =  *(shtU + shtOffsetUV);
-            *(dstV + dstOffsetUV) =  *(shtV + shtOffsetUV);
-
-            *(dstY + dstOffsetY) =                    *(shtY + shtOffsetY);
-            *(dstY + dstOffsetY + 1) =                *(shtY + shtOffsetY + 1);
-            *(dstY + dstOffsetY + DST_PITCH_Y) =      *(shtY + shtOffsetY + SHT_PITCH_Y);
-            *(dstY + dstOffsetY + DST_PITCH_Y + 1) =  *(shtY + shtOffsetY + SHT_PITCH_Y + 1);
-            break;
-
-          case 2 : // YV12 without tilesheet
-            *(dstU + dstOffsetUV) = componentLut[*(srcU + tileCtrUV)];
-            *(dstV + dstOffsetUV) = componentLut[*(srcV + tileCtrUV)];
-
-            finalY = componentLut[*(srcY + tileCtrY)];
-              
-            *(dstY + dstOffsetY) =                   finalY;
-            *(dstY + dstOffsetY + 1) =               finalY;
-            *(dstY + dstOffsetY + DST_PITCH_Y) =     finalY;
-            *(dstY + dstOffsetY + DST_PITCH_Y + 1) = finalY;
-            break;
-
-          default :
-            env->ThrowError("TurnsTile: Invalid planar copyMode; "
-                            "please contact me!");
-            break;
-
-          }
-            
-        }        
+        fillTile(
+          dstTileY, SRC_PITCH_Y, static_cast<unsigned char*>(0), 0,
+          tileW, tileH, static_cast<unsigned char>(componentLut[*(srcY + tileCtrY)]));
+        fillTile(
+          dstTileU, SRC_PITCH_UV, static_cast<unsigned char*>(0), 0,
+          tileW / 2, tileH / 2, static_cast<unsigned char>(componentLut[*(srcU + tileCtrUV)]));
+        fillTile(
+          dstTileV, SRC_PITCH_UV, static_cast<unsigned char*>(0), 0,
+          tileW / 2, tileH / 2, static_cast<unsigned char>(componentLut[*(srcV + tileCtrUV)]));
 
       }
-                        		
+
     }
 
   }
 
   return dst;
+
+}
+
+
+
+template<typename Tsample, typename Tpixel>
+void TurnsTile::fillTile(
+  Tsample* dstp, const int DST_PITCH,
+  const Tsample* srcp, const int SRC_PITCH,
+  const int width, const int height, const Tpixel fillVal) const
+{
+
+  int widthSamples = width * bytesPerPixel;
+
+  if (srcp) {
+
+    host->BitBlt(
+      dstp, DST_PITCH, srcp, SRC_PITCH, widthSamples, height);
+
+  } else {
+
+    for (int h = 0; h < height; ++h) {
+    
+      Tsample* lineStart = dstp + (DST_PITCH * h);
+      Tsample* lineEnd = lineStart + widthSamples;
+      std::fill(
+        reinterpret_cast<Tpixel*>(lineStart),
+        reinterpret_cast<Tpixel*>(lineEnd),
+        fillVal);
+    
+    }
+
+  }
 
 }
 
