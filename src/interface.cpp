@@ -158,8 +158,8 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
   int hiTile = args[7].AsInt(tileIdxMax);
 
 
-  int maxTileW = TurnsTile_gcf(clipW, sheetW),
-      maxTileH = TurnsTile_gcf(clipH, sheetH);
+  int maxTileW = TurnsTile::gcf(clipW, sheetW),
+      maxTileH = TurnsTile::gcf(clipH, sheetH);
 
   // These two errors, unlike the two above and the two below, don't mention
   // anything about interlacing or colorspace since the check is performed based

@@ -94,13 +94,13 @@ bytesPerPixel(vi.BytesFromPixels(1)), tileBytes(tileW * bytesPerPixel)
       //   ((inMax - inMin) / (outMax - outMin))) +
       // outMin
       //
-      // Using TurnsTile_mod() to round the result is a unique requirement of the
+      // Using TurnsTile::mod() to round the result is a unique requirement of the
       // 'res' feature I've got in TurnsTile, you don't need it if only scaling.
       int scaled =  static_cast<int> (
                       (static_cast<double> (in) / idxScaleFactor) + 0.5
                     ) + _loTile;
   
-      int out = TurnsTile_mod(scaled, depthStep, _loTile, _hiTile);
+      int out = TurnsTile::mod(scaled, depthStep, _loTile, _hiTile);
 
       tileIdxLut.push_back(out);
 
@@ -124,7 +124,7 @@ bytesPerPixel(vi.BytesFromPixels(1)), tileBytes(tileW * bytesPerPixel)
     for (int in = 0; in < 256; ++in) {
 
       unsigned char out = static_cast<unsigned char> (
-                            TurnsTile_mod(in, depthStep, _loTile, _hiTile)
+                            TurnsTile::mod(in, depthStep, _loTile, _hiTile)
                           );
 
       componentLut.push_back(out);
@@ -503,10 +503,7 @@ PVideoFrame __stdcall TurnsTile::GetFramePlanar(int n, IScriptEnvironment* env)
 
 
 
-// Global functions, I know, ick, but this is the simplest solution I could
-// find for making these available to my Create_TurnsTile function. I said I
-// was new to C++, didn't I? Cut a guy some slack.
-int TurnsTile_mod(int num, int mod, int min, int max)
+int TurnsTile::mod(int num, int mod, int min, int max)
 {
 
   int base =  static_cast<int>  (
@@ -520,11 +517,11 @@ int TurnsTile_mod(int num, int mod, int min, int max)
 
 
 
-int TurnsTile_gcf(int a, int b) {  
+int TurnsTile::gcf(int a, int b) {  
 
   if (b == 0)
     return a;
   else
-    return TurnsTile_gcf(b, a % b);
+    return TurnsTile::gcf(b, a % b);
 
 }

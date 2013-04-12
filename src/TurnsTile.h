@@ -52,7 +52,11 @@ public:
   PVideoFrame __stdcall GetFrame(int n, IScriptEnvironment* env);
   PVideoFrame __stdcall GetFrameInterleaved(int n, IScriptEnvironment* env);
   PVideoFrame __stdcall GetFramePlanar(int n, IScriptEnvironment* env);
-  
+
+  static int gcf(int a, int b);
+
+  static int mod(int num, int mod, int min, int max);
+
 private:
   
   PClip tileSheet;
@@ -69,15 +73,5 @@ private:
   std::vector<int> tileIdxLut;
 
 };
-
-
-
-int TurnsTile_gcf(int a, int b);
-
-
-
-int TurnsTile_mod(int num, int mod, int min, int max);
-
-
 
 #endif // __TurnsTile_H__
