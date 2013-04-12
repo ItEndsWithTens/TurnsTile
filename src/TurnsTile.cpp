@@ -39,17 +39,12 @@ TurnsTile::TurnsTile( PClip _child, PClip _tileSheet, VideoInfo _vi2,
                       int _loTile, int _hiTile,
                       bool _interlaced,
                       IScriptEnvironment* env) :
-                      GenericVideoFilter(_child),
-                      tileSheet(_tileSheet),
-                      tileW(_tileW), tileH(_tileH),
-                      mode(_mode)
+GenericVideoFilter(_child), tileSheet(_tileSheet),
+tileW(_tileW), tileH(_tileH), mode(_mode),
+srcRows(vi.height / tileH), srcCols(vi.width / tileW),
+shtRows(_vi2.height / tileH), shtCols(_vi2.width / tileW),
+bytesPerPixel(vi.BytesFromPixels(1)), tileBytes(tileW * bytesPerPixel)
 {
-
-  srcCols = vi.width / tileW;
-  srcRows = vi.height / tileH;
-
-  shtCols = _vi2.width / tileW;
-  shtRows = _vi2.height / tileH;
   
   int idxInMin =  strcmp(_levels, "pc") == 0 ? 0 : 16;
   int idxInMax =  strcmp(_levels, "pc") == 0 ? 255 :
@@ -57,12 +52,6 @@ TurnsTile::TurnsTile( PClip _child, PClip _tileSheet, VideoInfo _vi2,
                   (vi.IsYV12() && (mode == 5 || mode == 6)) ? 240 : 235;
 
   wStep = vi.IsRGB() ? 1 : 2;
-  
-  bytesPerPixel = vi.IsRGB32() ?  4 :
-                  vi.IsRGB24() ?  3 :
-                  vi.IsYUY2() ?   2 : 0;
-
-  tileBytes = tileW * bytesPerPixel;
 
   // An easy way to simulate the look of decreased bit depth; treat 'res'
   // as desired number of bits per component, then cut the output range
