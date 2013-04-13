@@ -50,8 +50,24 @@ public:
   ~TurnsTile();
   
   PVideoFrame __stdcall GetFrame(int n, IScriptEnvironment* env);
-  PVideoFrame __stdcall GetFrameInterleaved(int n, IScriptEnvironment* env);
-  PVideoFrame __stdcall GetFramePlanar(int n, IScriptEnvironment* env);
+  
+  void __stdcall TurnsTile::processFramePacked(
+    const unsigned char* srcp, const unsigned char* shtp, unsigned char* dstp,
+    const int SRC_PITCH, const int SHT_PITCH, const int DST_PITCH);
+
+  void __stdcall TurnsTile::processFramePlanar(
+    const unsigned char* srcY,
+    const unsigned char* srcU,
+    const unsigned char* srcV,
+    const unsigned char* shtY,
+    const unsigned char* shtU,
+    const unsigned char* shtV,
+    unsigned char* dstY,
+    unsigned char* dstU,
+    unsigned char* dstV,
+    const int SRC_PITCH_Y, const int SRC_PITCH_UV,
+    const int SHT_PITCH_Y, const int SHT_PITCH_UV,
+    const int DST_PITCH_Y, const int DST_PITCH_UV);
 
   static int gcf(int a, int b);
 

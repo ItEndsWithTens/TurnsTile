@@ -141,14 +141,6 @@ TurnsTile::~TurnsTile()
 
 PVideoFrame __stdcall TurnsTile::GetFrame(int n, IScriptEnvironment* env)
 {
-  return vi.IsPlanar() ?  GetFramePlanar(n, env) :
-                          GetFrameInterleaved(n, env);
-}
-
-
-
-PVideoFrame __stdcall TurnsTile::GetFrameInterleaved(int n, IScriptEnvironment* env)
-{
 
   PVideoFrame
     src = child->GetFrame(n, env),
@@ -156,16 +148,48 @@ PVideoFrame __stdcall TurnsTile::GetFrameInterleaved(int n, IScriptEnvironment* 
     dst = env->NewVideoFrame(vi);
 
   const unsigned char
-    * srcp = src->GetReadPtr(),
-    * shtp = sht->GetReadPtr();
+    * srcY = src->GetReadPtr(PLANAR_Y),
+    * srcU = src->GetReadPtr(PLANAR_U),
+    * srcV = src->GetReadPtr(PLANAR_V),
+    * shtY = sht->GetReadPtr(PLANAR_Y),
+    * shtU = sht->GetReadPtr(PLANAR_U),
+    * shtV = sht->GetReadPtr(PLANAR_V);
 
   unsigned char
-    * dstp = dst->GetWritePtr();
+    * dstY = dst->GetWritePtr(PLANAR_Y),
+    * dstU = dst->GetWritePtr(PLANAR_U),
+    * dstV = dst->GetWritePtr(PLANAR_V);
 
   const int
-    SRC_PITCH = src->GetPitch(),
-    SHT_PITCH = sht->GetPitch(),
-    DST_PITCH = dst->GetPitch();
+    SRC_PITCH_Y = src->GetPitch(PLANAR_Y),
+    SRC_PITCH_UV = src->GetPitch(PLANAR_U),
+    SHT_PITCH_Y = sht->GetPitch(PLANAR_Y),
+    SHT_PITCH_UV = sht->GetPitch(PLANAR_U),
+    DST_PITCH_Y = dst->GetPitch(PLANAR_Y),
+    DST_PITCH_UV = dst->GetPitch(PLANAR_U);
+
+  if (vi.IsPlanar())
+    TurnsTile::processFramePlanar(
+      srcY, srcU, srcV,
+      shtY, shtU, shtV,
+      dstY, dstU, dstV,
+      SRC_PITCH_Y, SRC_PITCH_UV,
+      SHT_PITCH_Y, SHT_PITCH_UV,
+      DST_PITCH_Y, DST_PITCH_UV);
+  else
+    TurnsTile::processFramePacked(
+      srcY, shtY, dstY, SRC_PITCH_Y, SHT_PITCH_Y, DST_PITCH_Y);
+
+  return dst;
+
+}
+
+
+
+void __stdcall TurnsTile::processFramePacked(
+  const unsigned char* srcp, const unsigned char* shtp, unsigned char* dstp,
+  const int SRC_PITCH, const int SHT_PITCH, const int DST_PITCH)
+{
 
   for (int row = 0; row < srcRows; ++row) {
   
@@ -298,43 +322,24 @@ PVideoFrame __stdcall TurnsTile::GetFrameInterleaved(int n, IScriptEnvironment* 
 
   }
 
-  return dst;
-
 }
 
 
 
-PVideoFrame __stdcall TurnsTile::GetFramePlanar(int n, IScriptEnvironment* env)
+void __stdcall TurnsTile::processFramePlanar(
+  const unsigned char* srcY,
+  const unsigned char* srcU,
+  const unsigned char* srcV,
+  const unsigned char* shtY,
+  const unsigned char* shtU,
+  const unsigned char* shtV,
+  unsigned char* dstY,
+  unsigned char* dstU,
+  unsigned char* dstV,
+  const int SRC_PITCH_Y, const int SRC_PITCH_UV,
+  const int SHT_PITCH_Y, const int SHT_PITCH_UV,
+  const int DST_PITCH_Y, const int DST_PITCH_UV)
 {
-
-  PVideoFrame src = child->GetFrame(n, env);
-  PVideoFrame sht = tileSheet->GetFrame(n, env);
-  PVideoFrame dst = env->NewVideoFrame(vi);
-  
-  const unsigned char
-    * srcY = src->GetReadPtr(PLANAR_Y),
-    * srcU = src->GetReadPtr(PLANAR_U),
-    * srcV = src->GetReadPtr(PLANAR_V);
-
-  const unsigned char
-    * shtY = sht->GetReadPtr(PLANAR_Y),
-    * shtU = sht->GetReadPtr(PLANAR_U),
-    * shtV = sht->GetReadPtr(PLANAR_V);
-
-  unsigned char
-    * dstY = dst->GetWritePtr(PLANAR_Y),
-    * dstU = dst->GetWritePtr(PLANAR_U),
-    * dstV = dst->GetWritePtr(PLANAR_V);
-
-  const int
-    SRC_PITCH_Y = src->GetPitch(PLANAR_Y),
-    SHT_PITCH_Y = sht->GetPitch(PLANAR_Y),
-    DST_PITCH_Y = dst->GetPitch(PLANAR_Y);
-
-  const int
-    SRC_PITCH_UV = src->GetPitch(PLANAR_U),
-    SHT_PITCH_UV = sht->GetPitch(PLANAR_U),
-    DST_PITCH_UV = dst->GetPitch(PLANAR_U);  
 
   for (int row = 0; row < srcRows; ++row) {
 
@@ -452,8 +457,6 @@ PVideoFrame __stdcall TurnsTile::GetFramePlanar(int n, IScriptEnvironment* env)
     }
 
   }
-
-  return dst;
 
 }
 
