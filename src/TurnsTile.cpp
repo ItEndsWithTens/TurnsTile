@@ -40,7 +40,6 @@ TurnsTile::TurnsTile( PClip _child, PClip _tileSheet, VideoInfo _vi2,
                       int _res, int _mode,
                       const char* _levels,
                       int _loTile, int _hiTile,
-                      bool _interlaced,
                       IScriptEnvironment* env) :
 GenericVideoFilter(_child), tileSheet(_tileSheet),
 tileW(_tileW), tileH(_tileH), mode(_mode),
@@ -74,16 +73,10 @@ host(env)
   // The mod() function caps that 256 at 255, but the problem of three values
   // instead of two remains. I want 0 and 256 to be the two options, and frankly
   // the only solution I was able to work out was the subtraction.
-  depthStep = static_cast<int>  (
-                ceil(
-                  static_cast<double> (_hiTile - _loTile) /
-                  (pow(2.0, static_cast<double> (_res)) - 1.0)
-                )
-              );
+  depthStep = static_cast<int>(ceil(  (_hiTile - _loTile) /
+                                      (pow(2.0, _res) - 1.0)  ));
 
   if (tileSheet) {
-
-    userSheet = true;
 
     double idxScaleFactor = static_cast<double> (idxInMax - idxInMin) /
                             static_cast<double> (_hiTile - _loTile);
@@ -98,9 +91,7 @@ host(env)
       //
       // Using TurnsTile::mod() to round the result is a unique requirement of the
       // 'res' feature I've got in TurnsTile, you don't need it if only scaling.
-      int scaled =  static_cast<int> (
-                      (static_cast<double> (in) / idxScaleFactor) + 0.5
-                    ) + _loTile;
+      int scaled =  static_cast<int>((in / idxScaleFactor) + 0.5) + _loTile;
   
       int out = TurnsTile::mod(scaled, depthStep, _loTile, _hiTile);
 
@@ -109,10 +100,6 @@ host(env)
     }
 
   } else {
-
-    userSheet = false;
-
-    tileSheet = child;
 
     // No need to scale 'in' here, as above, since this only deals with
     // component values (not tile indices), which with 8bpc color will always
@@ -144,29 +131,42 @@ PVideoFrame __stdcall TurnsTile::GetFrame(int n, IScriptEnvironment* env)
 
   PVideoFrame
     src = child->GetFrame(n, env),
-    sht = tileSheet->GetFrame(n, env),
+    sht = 0,
     dst = env->NewVideoFrame(vi);
 
   const unsigned char
     * srcY = src->GetReadPtr(PLANAR_Y),
     * srcU = src->GetReadPtr(PLANAR_U),
     * srcV = src->GetReadPtr(PLANAR_V),
-    * shtY = sht->GetReadPtr(PLANAR_Y),
-    * shtU = sht->GetReadPtr(PLANAR_U),
-    * shtV = sht->GetReadPtr(PLANAR_V);
+    * shtY = 0,
+    * shtU = 0,
+    * shtV = 0;
 
   unsigned char
     * dstY = dst->GetWritePtr(PLANAR_Y),
     * dstU = dst->GetWritePtr(PLANAR_U),
     * dstV = dst->GetWritePtr(PLANAR_V);
 
-  const int
+  int
     SRC_PITCH_Y = src->GetPitch(PLANAR_Y),
     SRC_PITCH_UV = src->GetPitch(PLANAR_U),
-    SHT_PITCH_Y = sht->GetPitch(PLANAR_Y),
-    SHT_PITCH_UV = sht->GetPitch(PLANAR_U),
+    SHT_PITCH_Y = 0,
+    SHT_PITCH_UV = 0,
     DST_PITCH_Y = dst->GetPitch(PLANAR_Y),
     DST_PITCH_UV = dst->GetPitch(PLANAR_U);
+
+  if (tileSheet) {
+
+    sht = tileSheet->GetFrame(n, env);
+
+    shtY = sht->GetReadPtr(PLANAR_Y),
+    shtU = sht->GetReadPtr(PLANAR_U),
+    shtV = sht->GetReadPtr(PLANAR_V);
+
+    SHT_PITCH_Y = sht->GetPitch(PLANAR_Y),
+    SHT_PITCH_UV = sht->GetPitch(PLANAR_U);
+
+  }
 
   if (vi.IsPlanar())
     TurnsTile::processFramePlanar(
@@ -213,7 +213,7 @@ void __stdcall TurnsTile::processFramePacked(
       int cropLeft = 0,
           cropTop = 0;
 
-      if (userSheet) {
+      if (tileSheet) {
 
         int rawIdx = 0;
         
@@ -271,7 +271,7 @@ void __stdcall TurnsTile::processFramePacked(
       unsigned char* dstTile = dstp + dstRow + curCol;
       const unsigned char* shtTile = shtp + cropTop + cropLeft;
 
-      if (userSheet) {
+      if (tileSheet) {
 
         fillTile(dstTile, DST_PITCH, shtTile, SHT_PITCH, tileW, tileH, 0);
 
@@ -359,7 +359,7 @@ void __stdcall TurnsTile::processFramePlanar(
           * dstTileU = dstU + dstRowUV + curColUV,
           * dstTileV = dstV + dstRowUV + curColUV;
 
-      // As you'll note, in the if (userSheet) code below I read four Y
+      // As you'll note, in the if (tileSheet) code below I read four Y
       // values for every 2x2 block of YV12. Those four are read relative
       // to the starting position, so I need to start at the top left corner
       // of the block, not the center. Otherwise, y1 through y4, u and v would
@@ -378,12 +378,7 @@ void __stdcall TurnsTile::processFramePlanar(
       int tileCtrY =   srcRowY + curColY + ctrW_Y + ctrH_Y,
           tileCtrUV =  srcRowUV + curColUV + ctrW_UV + ctrH_UV;
 
-      int cropLeftY = 0,
-          cropLeftUV = 0,
-          cropTopY = 0,
-          cropTopUV = 0;
-
-      if (userSheet) {
+      if (tileSheet) {
 
         int rawIdx = 0;
 
@@ -422,11 +417,10 @@ void __stdcall TurnsTile::processFramePlanar(
 
         int tileIdx = tileIdxLut[rawIdx];
 		    
-        cropLeftY =  (tileIdx % shtCols) * tileW;
-        cropLeftUV = (tileIdx % shtCols) * (tileW / 2);
-
-        cropTopY =  SHT_PITCH_Y * (tileIdx / shtCols) * tileH;
-        cropTopUV = SHT_PITCH_UV * (tileIdx / shtCols) * (tileH / 2);
+        int cropLeftY =  (tileIdx % shtCols) * tileW,
+            cropLeftUV = (tileIdx % shtCols) * (tileW / 2),
+            cropTopY =  SHT_PITCH_Y * (tileIdx / shtCols) * tileH,
+            cropTopUV = SHT_PITCH_UV * (tileIdx / shtCols) * (tileH / 2);
 
         const unsigned char
           * shtTileY = shtY + cropLeftY + cropTopY,

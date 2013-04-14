@@ -44,18 +44,17 @@ public:
               int _res, int _mode,
               const char* _levels,
               int _loTile, int _hiTile,
-              bool _interlaced,
               IScriptEnvironment* env);
   
   ~TurnsTile();
   
   PVideoFrame __stdcall GetFrame(int n, IScriptEnvironment* env);
   
-  void __stdcall TurnsTile::processFramePacked(
+  void __stdcall processFramePacked(
     const unsigned char* srcp, const unsigned char* shtp, unsigned char* dstp,
     const int SRC_PITCH, const int SHT_PITCH, const int DST_PITCH);
 
-  void __stdcall TurnsTile::processFramePlanar(
+  void __stdcall processFramePlanar(
     const unsigned char* srcY,
     const unsigned char* srcU,
     const unsigned char* srcV,
@@ -77,11 +76,9 @@ private:
   
   PClip tileSheet;
 
-  bool userSheet;
-
   int tileW, tileH, mode,
       srcCols, srcRows,
-      shtCols, shtRows, shtTiles,
+      shtCols, shtRows,
       wStep, bytesPerPixel, tileBytes,
       depthStep;
 

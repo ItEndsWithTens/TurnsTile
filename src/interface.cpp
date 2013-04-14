@@ -247,7 +247,6 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
                                     levels,
                                     loTile,
                                     hiTile,
-                                    interlaced,
                                     env);
 
   return  interlaced && finalClip->GetVideoInfo().IsFieldBased() ?
