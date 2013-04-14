@@ -226,40 +226,22 @@ void __stdcall TurnsTile::processFramePacked(
 
       if (tileSheet) {
 
-        int rawIdx = 0;
-        
-        switch (mode) {
+        int tileIdx;
+        if (mode > 0) {
 
-        case 1 :  rawIdx =  *(srcp + tileCtr);     // Y1 / Blue
-          break;
+          tileIdx = tileIdxLut[*(srcp + tileCtr + (mode - 1))];
 
-        case 2 :  rawIdx =  *(srcp + tileCtr + 1); // U /  Green
-          break;
+        } else {
 
-        case 3 :  rawIdx =  *(srcp + tileCtr + 2); // Y2 / Red
-          break;
-
-        case 4 :  rawIdx =  *(srcp + tileCtr + 3); // V /  Alpha
-          break;
-
-        default :
-          vi.IsYUY2() ?
-                  rawIdx = (*(srcp + tileCtr) +
-                            *(srcp + tileCtr + 2)) / 2 :
-
-                  // As Charles Poynton and countless others can tell you, this
-                  // average of R, G, and B is not the same as "brightness". It
-                  // is, however, simple, and close enough to achieve pleasing
-                  // results for such trivial purposes.
-                  rawIdx = (*(srcp + tileCtr) +
-                            *(srcp + tileCtr + 1) +
-                            *(srcp + tileCtr + 2)) / 3;                    
-          break;
+          // The hardcoded three assumes the only packed formats that might come
+          // this way are RGB32, RGB24, and YUY2, which is true of Avisynth.
+          int sum = 0, count = 0;
+          for (int i = 0; i < 3; i += lumaW, ++count)
+            sum += *(srcp + tileCtr + i);
+          tileIdx = tileIdxLut[sum / count];
 
         }
 
-        int tileIdx = tileIdxLut[rawIdx];
-		
         // If I didn't have to worry about the differences in data storage
         // between RGB and YUV, I would skip declaring tileIdxY and just jump
         // right to cropTop, making it SHT_PITCH * (tileIdx / shtCols) * tileH.
@@ -381,43 +363,37 @@ void __stdcall TurnsTile::processFramePlanar(
 
       if (tileSheet) {
 
-        int rawIdx = 0;
+        int tileIdx;
+        if (mode == lumaW * lumaH + 2) {
 
-        unsigned char
-          y1 =  *(srcY + tileCtrY),
-          y2 =  *(srcY + tileCtrY + 1),
-          y3 =  *(srcY + tileCtrY + SRC_PITCH_Y),
-          y4 =  *(srcY + tileCtrY + SRC_PITCH_Y + 1),
-          u =   *(srcU + tileCtrUV),
-          v =   *(srcV + tileCtrUV);
+          tileIdx = tileIdxLut[*(srcV + tileCtrUV)];
 
-        switch (mode) {
+        } else if (mode == lumaW * lumaH + 1) {
 
-        case 1 : rawIdx =   y1;
-          break;
+          tileIdx = tileIdxLut[*(srcU + tileCtrUV)];
 
-        case 2 : rawIdx =   y2;
-          break;
+        } else {
 
-        case 3 : rawIdx =   y3;
-          break;
+          if (mode > 0) {
 
-        case 4 : rawIdx =   y4;
-          break;
+            // This works assuming the luma samples in a macropixel are treated
+            // as being numbered from zero, left to right, top to bottom.
+            int lumaModeOfs = (((mode - 1) / lumaH) * SRC_PITCH_Y) +
+                              ((mode - 1) % lumaW);
+            tileIdx = tileIdxLut[*(srcY + tileCtrY + lumaModeOfs)];
 
-        case 5 : rawIdx =   u;
-          break;
+          } else {
 
-        case 6 : rawIdx =   v;
-          break;
+            int sum = 0, count = 0;
+            for (int i = 0; i < lumaH; ++i)
+              for (int j = 0; j < lumaW; ++j, ++count)
+                sum += *(srcY + tileCtrY + (SRC_PITCH_Y * i) + j);
+            tileIdx = tileIdxLut[sum / count];
 
-        default : rawIdx =  (y1 + y2 + y3 + y4) / 4;
-          break;
+          }
 
         }
 
-        int tileIdx = tileIdxLut[rawIdx];
-		    
         int cropLeftY =  (tileIdx % shtCols) * tileW,
             cropLeftUV = (tileIdx % shtCols) * tileW_UV,
             cropTopY =  SHT_PITCH_Y * (tileIdx / shtCols) * tileH,
