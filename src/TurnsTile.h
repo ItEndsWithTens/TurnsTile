@@ -70,7 +70,7 @@ public:
 
   static int gcf(int a, int b);
 
-  static int mod(int num, int mod, int min, int max);
+  static int mod(int num, int mod, int min, int max, int dir);
 
 private:
   

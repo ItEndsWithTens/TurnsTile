@@ -93,7 +93,7 @@ host(env)
       // 'res' feature I've got in TurnsTile, you don't need it if only scaling.
       int scaled =  static_cast<int>((in / idxScaleFactor) + 0.5) + _loTile;
   
-      int out = TurnsTile::mod(scaled, depthStep, _loTile, _hiTile);
+      int out = TurnsTile::mod(scaled, depthStep, _loTile, _hiTile, 0);
 
       tileIdxLut.push_back(out);
 
@@ -107,7 +107,7 @@ host(env)
     for (int in = 0; in < 256; ++in) {
 
       unsigned char out = static_cast<unsigned char> (
-                            TurnsTile::mod(in, depthStep, _loTile, _hiTile)
+                            TurnsTile::mod(in, depthStep, _loTile, _hiTile, 0)
                           );
 
       componentLut.push_back(out);
@@ -489,15 +489,22 @@ void TurnsTile::fillTile(
 
 
 
-int TurnsTile::mod(int num, int mod, int min, int max)
+// Round 'num' to the nearest multiple of 'mod', in direction 'dir', limiting
+// the result to the range 'min' through 'max'.
+int TurnsTile::mod(int num, int mod, int min, int max, int dir)
 {
 
-  int base =  static_cast<int>  (
-                ( static_cast<double> (num) /
-                  static_cast<double> (mod) ) + 0.5
-              ) * mod;
+  double base = static_cast<double>(num) / static_cast<double>(mod);
 
-  return base >= max ? max : base <= min ? min : base;
+  int rounded;
+  if (dir == -1)
+    rounded = static_cast<int>(floor(base)) * mod;
+  else if (dir == 1)
+    rounded = static_cast<int>(ceil(base)) * mod;
+  else
+    rounded = static_cast<int>(base + 0.5) * mod;
+
+  return rounded >= min && rounded <= max ? rounded : rounded < min ? min : max;
 
 }
 
