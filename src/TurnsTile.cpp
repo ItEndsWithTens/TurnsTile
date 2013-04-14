@@ -49,10 +49,26 @@ bytesPerPixel(vi.BytesFromPixels(1)), tileBytes(tileW * bytesPerPixel),
 host(env)
 {
   
-  int idxInMin =  strcmp(_levels, "pc") == 0 ? 0 : 16;
-  int idxInMax =  strcmp(_levels, "pc") == 0 ? 255 :
-                  (vi.IsYUY2() && (mode == 2 || mode == 4)) ||
-                  (vi.IsYV12() && (mode == 5 || mode == 6)) ? 240 : 235;
+  if (vi.IsYV12())
+    lumaW = 2, lumaH = 2;
+  else if (vi.IsYUY2())
+    lumaW = 2, lumaH = 1;
+  else
+    lumaW = 1, lumaH = 1;
+
+  tileW_UV = tileW / lumaW,
+  tileH_UV = tileH / lumaH;
+
+  int idxInMin = 0;
+  if (strcmp(_levels, "pc") != 0)
+    idxInMin = 16;
+
+  int idxInMax = 255;
+  if (strcmp(_levels, "pc") != 0)
+    if (mode > lumaW * lumaH)
+      idxInMax = 240;
+    else
+      idxInMax = 235;
 
   wStep = vi.IsRGB() ? 1 : 2;
 
@@ -199,14 +215,9 @@ void __stdcall TurnsTile::processFramePacked(
     for (int col = 0; col < srcCols; ++col) {
       
       int curCol = col * tileBytes;
-      
-      int minTileW = vi.IsYUY2() ? 2 : 1;
 
-      // Be careful with operations like this center offset stuff; early on, I
-      // wasn't careful with my parentheses, and had to track down an obnoxious
-      // bug that shifted the picture when minimum-size tiles were used.
-      int ctrW = ((tileW / 2) / minTileW) * minTileW * bytesPerPixel;
-      int ctrH = SRC_PITCH * (tileH / 2);
+      int ctrW = mod(tileW / 2, lumaW, 0, tileW, -1) * bytesPerPixel,
+          ctrH = mod(tileH / 2, lumaH, 0, tileH, -1) * SRC_PITCH;
 
       int tileCtr = srcRow + curCol + ctrW + ctrH;
       
@@ -344,36 +355,26 @@ void __stdcall TurnsTile::processFramePlanar(
   for (int row = 0; row < srcRows; ++row) {
 
     int srcRowY =   SRC_PITCH_Y * row * tileH,
-        srcRowUV =  SRC_PITCH_UV * row * (tileH / 2);
+        srcRowUV =  SRC_PITCH_UV * row * tileH_UV;
 
     int dstRowY =   DST_PITCH_Y * row * tileH,
-        dstRowUV =  DST_PITCH_UV * row * (tileH / 2);
+        dstRowUV =  DST_PITCH_UV * row * tileH_UV;
 
     for (int col = 0; col < srcCols; ++col) {
 
       int curColY =   col * tileW,
-          curColUV =  col * (tileW / 2);
+          curColUV =  col * tileW_UV;
 
       unsigned char
           * dstTileY = dstY + dstRowY + curColY,
           * dstTileU = dstU + dstRowUV + curColUV,
           * dstTileV = dstV + dstRowUV + curColUV;
 
-      // As you'll note, in the if (tileSheet) code below I read four Y
-      // values for every 2x2 block of YV12. Those four are read relative
-      // to the starting position, so I need to start at the top left corner
-      // of the block, not the center. Otherwise, y1 through y4, u and v would
-      // be read from the wrong locations.
-      //
-      // Rounding these center offsets to the next lowest multiple of the
-      // block size gets me to the proper position. I use / 4 for the U and V
-      // centers because I need the center of the tile (/ 2) and for YV12 the
-      // U and V plane dimensions are half the Y plane (another / 2).
-      int ctrW_Y =  ((tileW / 2) / 2) * 2,
-          ctrW_UV = ((tileW / 4) / 4) * 4;
-        
-      int ctrH_Y =  SRC_PITCH_Y * ((tileH / 2) / 2) * 2,
-          ctrH_UV = SRC_PITCH_UV * ((tileH / 4) / 4) * 4;
+      int ctrW_Y = mod(tileW / 2, lumaW, 0, tileW, -1),
+          ctrW_UV = mod(tileW_UV / 2, lumaW, 0, tileW_UV, -1);
+
+      int ctrH_Y = mod(tileH / 2, lumaH, 0, tileH, -1) * SRC_PITCH_Y,
+          ctrH_UV = mod(tileH_UV / 2, lumaH, 0, tileH_UV, -1) * SRC_PITCH_UV;
 
       int tileCtrY =   srcRowY + curColY + ctrW_Y + ctrH_Y,
           tileCtrUV =  srcRowUV + curColUV + ctrW_UV + ctrH_UV;
@@ -418,9 +419,9 @@ void __stdcall TurnsTile::processFramePlanar(
         int tileIdx = tileIdxLut[rawIdx];
 		    
         int cropLeftY =  (tileIdx % shtCols) * tileW,
-            cropLeftUV = (tileIdx % shtCols) * (tileW / 2),
+            cropLeftUV = (tileIdx % shtCols) * tileW_UV,
             cropTopY =  SHT_PITCH_Y * (tileIdx / shtCols) * tileH,
-            cropTopUV = SHT_PITCH_UV * (tileIdx / shtCols) * (tileH / 2);
+            cropTopUV = SHT_PITCH_UV * (tileIdx / shtCols) * tileH_UV;
 
         const unsigned char
           * shtTileY = shtY + cropLeftY + cropTopY,
@@ -428,23 +429,29 @@ void __stdcall TurnsTile::processFramePlanar(
           * shtTileV = shtV + cropLeftUV + cropTopUV;
 
         fillTile(
-          dstTileY, SRC_PITCH_Y, shtTileY, SHT_PITCH_Y, tileW, tileH, 0);
+          dstTileY, SRC_PITCH_Y, shtTileY, SHT_PITCH_Y,
+          tileW, tileH, 0);
         fillTile(
-          dstTileU, SRC_PITCH_UV, shtTileU, SHT_PITCH_UV, tileW / 2, tileH / 2, 0);
+          dstTileU, SRC_PITCH_UV, shtTileU, SHT_PITCH_UV,
+          tileW_UV, tileH_UV, 0);
         fillTile(
-          dstTileV, SRC_PITCH_UV, shtTileV, SHT_PITCH_UV, tileW / 2, tileH / 2, 0);
+          dstTileV, SRC_PITCH_UV, shtTileV, SHT_PITCH_UV,
+          tileW_UV, tileH_UV, 0);
 
       } else {
 
         fillTile(
           dstTileY, SRC_PITCH_Y, static_cast<unsigned char*>(0), 0,
-          tileW, tileH, static_cast<unsigned char>(componentLut[*(srcY + tileCtrY)]));
+          tileW, tileH,
+          static_cast<unsigned char>(componentLut[*(srcY + tileCtrY)]));
         fillTile(
           dstTileU, SRC_PITCH_UV, static_cast<unsigned char*>(0), 0,
-          tileW / 2, tileH / 2, static_cast<unsigned char>(componentLut[*(srcU + tileCtrUV)]));
+          tileW_UV, tileH_UV,
+          static_cast<unsigned char>(componentLut[*(srcU + tileCtrUV)]));
         fillTile(
           dstTileV, SRC_PITCH_UV, static_cast<unsigned char*>(0), 0,
-          tileW / 2, tileH / 2, static_cast<unsigned char>(componentLut[*(srcV + tileCtrUV)]));
+          tileW_UV, tileH_UV,
+          static_cast<unsigned char>(componentLut[*(srcV + tileCtrUV)]));
 
       }
 

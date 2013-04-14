@@ -80,7 +80,7 @@ private:
       srcCols, srcRows,
       shtCols, shtRows,
       wStep, bytesPerPixel, tileBytes,
-      depthStep;
+      depthStep, lumaW, lumaH, tileW_UV, tileH_UV;
 
   IScriptEnvironment* host;
     
