@@ -439,6 +439,38 @@ void __stdcall TurnsTile::processFramePlanar(
 
 
 
+int TurnsTile::gcf(int a, int b) {
+
+  if (b == 0)
+    return a;
+  else
+    return TurnsTile::gcf(b, a % b);
+
+}
+
+
+
+// Round 'num' to the nearest multiple of 'mod', in direction 'dir', limiting
+// the result to the range 'min' through 'max'.
+int TurnsTile::mod(int num, int mod, int min, int max, int dir)
+{
+
+  double base = static_cast<double>(num) / static_cast<double>(mod);
+
+  int rounded;
+  if (dir == -1)
+    rounded = static_cast<int>(floor(base)) * mod;
+  else if (dir == 1)
+    rounded = static_cast<int>(ceil(base)) * mod;
+  else
+    rounded = static_cast<int>(base + 0.5) * mod;
+
+  return rounded >= min && rounded <= max ? rounded : rounded < min ? min : max;
+
+}
+
+
+
 template<typename Tsample, typename Tpixel>
 void TurnsTile::fillTile(
   Tsample* dstp, const int DST_PITCH,
@@ -467,37 +499,5 @@ void TurnsTile::fillTile(
     }
 
   }
-
-}
-
-
-
-// Round 'num' to the nearest multiple of 'mod', in direction 'dir', limiting
-// the result to the range 'min' through 'max'.
-int TurnsTile::mod(int num, int mod, int min, int max, int dir)
-{
-
-  double base = static_cast<double>(num) / static_cast<double>(mod);
-
-  int rounded;
-  if (dir == -1)
-    rounded = static_cast<int>(floor(base)) * mod;
-  else if (dir == 1)
-    rounded = static_cast<int>(ceil(base)) * mod;
-  else
-    rounded = static_cast<int>(base + 0.5) * mod;
-
-  return rounded >= min && rounded <= max ? rounded : rounded < min ? min : max;
-
-}
-
-
-
-int TurnsTile::gcf(int a, int b) {  
-
-  if (b == 0)
-    return a;
-  else
-    return TurnsTile::gcf(b, a % b);
 
 }
