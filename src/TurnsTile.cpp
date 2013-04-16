@@ -10,12 +10,12 @@
 //  modify it under the terms of the GNU General Public License
 //  as published by the Free Software Foundation; either version 2
 //  of the License, or (at your option) any later version.
-//  
+//
 //  This program is distributed in the hope that it will be useful,
 //  but WITHOUT ANY WARRANTY; without even the implied warranty of
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //  GNU General Public License for more details.
-//  
+//
 //  You should have received a copy of the GNU General Public License
 //  along with this program; if not, write to the Free Software Foundation,
 //  Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -35,20 +35,18 @@
 
 
 
-TurnsTile::TurnsTile( PClip _child, PClip _tileSheet, VideoInfo _vi2,
-                      int _tileW, int _tileH,
-                      int _res, int _mode,
-                      const char* _levels,
-                      int _loTile, int _hiTile,
+TurnsTile::TurnsTile( PClip _child, PClip _tilesheet, VideoInfo _vi2,
+                      int _tileW, int _tileH, int _res, int _mode,
+                      const char* _levels, int _loTile, int _hiTile,
                       IScriptEnvironment* env) :
-GenericVideoFilter(_child), tileSheet(_tileSheet),
+GenericVideoFilter(_child), tilesheet(_tilesheet),
 tileW(_tileW), tileH(_tileH), mode(_mode),
 srcRows(vi.height / tileH), srcCols(vi.width / tileW),
 shtRows(_vi2.height / tileH), shtCols(_vi2.width / tileW),
 bytesPerPixel(vi.BytesFromPixels(1)), tileBytes(tileW * bytesPerPixel),
 host(env)
 {
-  
+
   if (vi.IsYV12())
     lumaW = 2, lumaH = 2;
   else if (vi.IsYUY2())
@@ -56,8 +54,8 @@ host(env)
   else
     lumaW = 1, lumaH = 1;
 
-  tileW_UV = tileW / lumaW,
-  tileH_UV = tileH / lumaH;
+  tileW_U = tileW / lumaW,
+  tileH_U = tileH / lumaH;
 
   int idxInMin = 0;
   if (strcmp(_levels, "pc") != 0)
@@ -69,8 +67,6 @@ host(env)
       idxInMax = 240;
     else
       idxInMax = 235;
-
-  wStep = vi.IsRGB() ? 1 : 2;
 
   // An easy way to simulate the look of decreased bit depth; treat 'res'
   // as desired number of bits per component, then cut the output range
@@ -89,10 +85,10 @@ host(env)
   // The mod() function caps that 256 at 255, but the problem of three values
   // instead of two remains. I want 0 and 256 to be the two options, and frankly
   // the only solution I was able to work out was the subtraction.
-  depthStep = static_cast<int>(ceil(  (_hiTile - _loTile) /
-                                      (pow(2.0, _res) - 1.0)  ));
+  depthMod = static_cast<int>(ceil(  (_hiTile - _loTile) /
+                                     (pow(2.0, _res) - 1.0)  ));
 
-  if (tileSheet) {
+  if (tilesheet) {
 
     double idxScaleFactor = static_cast<double> (idxInMax - idxInMin) /
                             static_cast<double> (_hiTile - _loTile);
@@ -108,8 +104,8 @@ host(env)
       // Using TurnsTile::mod() to round the result is a unique requirement of the
       // 'res' feature I've got in TurnsTile, you don't need it if only scaling.
       int scaled =  static_cast<int>((in / idxScaleFactor) + 0.5) + _loTile;
-  
-      int out = TurnsTile::mod(scaled, depthStep, _loTile, _hiTile, 0);
+
+      int out = mod(scaled, depthMod, _loTile, _hiTile, 0);
 
       tileIdxLut.push_back(out);
 
@@ -123,7 +119,7 @@ host(env)
     for (int in = 0; in < 256; ++in) {
 
       unsigned char out = static_cast<unsigned char> (
-                            TurnsTile::mod(in, depthStep, _loTile, _hiTile, 0)
+                            mod(in, depthMod, _loTile, _hiTile, 0)
                           );
 
       componentLut.push_back(out);
@@ -165,36 +161,35 @@ PVideoFrame __stdcall TurnsTile::GetFrame(int n, IScriptEnvironment* env)
 
   int
     SRC_PITCH_Y = src->GetPitch(PLANAR_Y),
-    SRC_PITCH_UV = src->GetPitch(PLANAR_U),
+    SRC_PITCH_U = src->GetPitch(PLANAR_U),
     SHT_PITCH_Y = 0,
-    SHT_PITCH_UV = 0,
+    SHT_PITCH_U = 0,
     DST_PITCH_Y = dst->GetPitch(PLANAR_Y),
-    DST_PITCH_UV = dst->GetPitch(PLANAR_U);
+    DST_PITCH_U = dst->GetPitch(PLANAR_U);
 
-  if (tileSheet) {
+  if (tilesheet) {
 
-    sht = tileSheet->GetFrame(n, env);
+    sht = tilesheet->GetFrame(n, env);
 
     shtY = sht->GetReadPtr(PLANAR_Y),
     shtU = sht->GetReadPtr(PLANAR_U),
     shtV = sht->GetReadPtr(PLANAR_V);
 
     SHT_PITCH_Y = sht->GetPitch(PLANAR_Y),
-    SHT_PITCH_UV = sht->GetPitch(PLANAR_U);
+    SHT_PITCH_U = sht->GetPitch(PLANAR_U);
 
   }
 
   if (vi.IsPlanar())
-    TurnsTile::processFramePlanar(
+    processFramePlanar(
       srcY, srcU, srcV,
       shtY, shtU, shtV,
       dstY, dstU, dstV,
-      SRC_PITCH_Y, SRC_PITCH_UV,
-      SHT_PITCH_Y, SHT_PITCH_UV,
-      DST_PITCH_Y, DST_PITCH_UV);
+      SRC_PITCH_Y, SRC_PITCH_U,
+      SHT_PITCH_Y, SHT_PITCH_U,
+      DST_PITCH_Y, DST_PITCH_U);
   else
-    TurnsTile::processFramePacked(
-      srcY, shtY, dstY, SRC_PITCH_Y, SHT_PITCH_Y, DST_PITCH_Y);
+    processFramePacked(srcY, shtY, dstY, SRC_PITCH_Y, SHT_PITCH_Y, DST_PITCH_Y);
 
   return dst;
 
@@ -208,23 +203,23 @@ void __stdcall TurnsTile::processFramePacked(
 {
 
   for (int row = 0; row < srcRows; ++row) {
-  
+
     int srcRow = SRC_PITCH * row * tileH,
         dstRow = DST_PITCH * row * tileH;
 
     for (int col = 0; col < srcCols; ++col) {
-      
+
       int curCol = col * tileBytes;
 
       int ctrW = mod(tileW / 2, lumaW, 0, tileW, -1) * bytesPerPixel,
           ctrH = mod(tileH / 2, lumaH, 0, tileH, -1) * SRC_PITCH;
 
       int tileCtr = srcRow + curCol + ctrW + ctrH;
-      
+
       int cropLeft = 0,
           cropTop = 0;
 
-      if (tileSheet) {
+      if (tilesheet) {
 
         int tileIdx;
         if (mode > 0) {
@@ -264,16 +259,17 @@ void __stdcall TurnsTile::processFramePacked(
       unsigned char* dstTile = dstp + dstRow + curCol;
       const unsigned char* shtTile = shtp + cropTop + cropLeft;
 
-      if (tileSheet) {
+      if (tilesheet) {
 
         fillTile(dstTile, DST_PITCH, shtTile, SHT_PITCH, tileW, tileH, 0);
 
       } else {
 
-        unsigned char by = componentLut[*(srcp + tileCtr)],
-                      gu = componentLut[*(srcp + tileCtr + 1)],
-                      ry = componentLut[*(srcp + tileCtr + 2)],
-                      av = componentLut[*(srcp + tileCtr + 3)];
+        unsigned char
+          by = componentLut[*(srcp + tileCtr)],
+          gu = componentLut[*(srcp + tileCtr + 1)],
+          ry = componentLut[*(srcp + tileCtr + 2)],
+          av = componentLut[*(srcp + tileCtr + 3)];
 
         if (vi.IsRGB32() || vi.IsYUY2()) {
 
@@ -310,7 +306,7 @@ void __stdcall TurnsTile::processFramePacked(
         }
 
       }
-		
+
     }
 
   }
@@ -329,48 +325,48 @@ void __stdcall TurnsTile::processFramePlanar(
   unsigned char* dstY,
   unsigned char* dstU,
   unsigned char* dstV,
-  const int SRC_PITCH_Y, const int SRC_PITCH_UV,
-  const int SHT_PITCH_Y, const int SHT_PITCH_UV,
-  const int DST_PITCH_Y, const int DST_PITCH_UV)
+  const int SRC_PITCH_Y, const int SRC_PITCH_U,
+  const int SHT_PITCH_Y, const int SHT_PITCH_U,
+  const int DST_PITCH_Y, const int DST_PITCH_U)
 {
 
   for (int row = 0; row < srcRows; ++row) {
 
-    int srcRowY =   SRC_PITCH_Y * row * tileH,
-        srcRowUV =  SRC_PITCH_UV * row * tileH_UV;
+    int srcRowY = SRC_PITCH_Y * row * tileH,
+        srcRowU = SRC_PITCH_U * row * tileH_U;
 
-    int dstRowY =   DST_PITCH_Y * row * tileH,
-        dstRowUV =  DST_PITCH_UV * row * tileH_UV;
+    int dstRowY = DST_PITCH_Y * row * tileH,
+        dstRowU = DST_PITCH_U * row * tileH_U;
 
     for (int col = 0; col < srcCols; ++col) {
 
-      int curColY =   col * tileW,
-          curColUV =  col * tileW_UV;
+      int curColY = col * tileW,
+          curColU = col * tileW_U;
 
       unsigned char
           * dstTileY = dstY + dstRowY + curColY,
-          * dstTileU = dstU + dstRowUV + curColUV,
-          * dstTileV = dstV + dstRowUV + curColUV;
+          * dstTileU = dstU + dstRowU + curColU,
+          * dstTileV = dstV + dstRowU + curColU;
 
       int ctrW_Y = mod(tileW / 2, lumaW, 0, tileW, -1),
-          ctrW_UV = mod(tileW_UV / 2, lumaW, 0, tileW_UV, -1);
+          ctrW_U = mod(tileW_U / 2, lumaW, 0, tileW_U, -1);
 
       int ctrH_Y = mod(tileH / 2, lumaH, 0, tileH, -1) * SRC_PITCH_Y,
-          ctrH_UV = mod(tileH_UV / 2, lumaH, 0, tileH_UV, -1) * SRC_PITCH_UV;
+          ctrH_U = mod(tileH_U / 2, lumaH, 0, tileH_U, -1) * SRC_PITCH_U;
 
-      int tileCtrY =   srcRowY + curColY + ctrW_Y + ctrH_Y,
-          tileCtrUV =  srcRowUV + curColUV + ctrW_UV + ctrH_UV;
+      int tileCtrY = srcRowY + curColY + ctrW_Y + ctrH_Y,
+          tileCtrU = srcRowU + curColU + ctrW_U + ctrH_U;
 
-      if (tileSheet) {
+      if (tilesheet) {
 
         int tileIdx;
         if (mode == lumaW * lumaH + 2) {
 
-          tileIdx = tileIdxLut[*(srcV + tileCtrUV)];
+          tileIdx = tileIdxLut[*(srcV + tileCtrU)];
 
         } else if (mode == lumaW * lumaH + 1) {
 
-          tileIdx = tileIdxLut[*(srcU + tileCtrUV)];
+          tileIdx = tileIdxLut[*(srcU + tileCtrU)];
 
         } else {
 
@@ -394,25 +390,22 @@ void __stdcall TurnsTile::processFramePlanar(
 
         }
 
-        int cropLeftY =  (tileIdx % shtCols) * tileW,
-            cropLeftUV = (tileIdx % shtCols) * tileW_UV,
-            cropTopY =  SHT_PITCH_Y * (tileIdx / shtCols) * tileH,
-            cropTopUV = SHT_PITCH_UV * (tileIdx / shtCols) * tileH_UV;
+        int cropLeftY = (tileIdx % shtCols) * tileW,
+            cropLeftU = (tileIdx % shtCols) * tileW_U,
+            cropTopY = (tileIdx / shtCols) * SHT_PITCH_Y * tileH,
+            cropTopU = (tileIdx / shtCols) * SHT_PITCH_U * tileH_U;
 
         const unsigned char
           * shtTileY = shtY + cropLeftY + cropTopY,
-          * shtTileU = shtU + cropLeftUV + cropTopUV,
-          * shtTileV = shtV + cropLeftUV + cropTopUV;
+          * shtTileU = shtU + cropLeftU + cropTopU,
+          * shtTileV = shtV + cropLeftU + cropTopU;
 
         fillTile(
-          dstTileY, SRC_PITCH_Y, shtTileY, SHT_PITCH_Y,
-          tileW, tileH, 0);
+          dstTileY, SRC_PITCH_Y, shtTileY, SHT_PITCH_Y, tileW, tileH, 0);
         fillTile(
-          dstTileU, SRC_PITCH_UV, shtTileU, SHT_PITCH_UV,
-          tileW_UV, tileH_UV, 0);
+          dstTileU, SRC_PITCH_U, shtTileU, SHT_PITCH_U, tileW_U, tileH_U, 0);
         fillTile(
-          dstTileV, SRC_PITCH_UV, shtTileV, SHT_PITCH_UV,
-          tileW_UV, tileH_UV, 0);
+          dstTileV, SRC_PITCH_U, shtTileV, SHT_PITCH_U, tileW_U, tileH_U, 0);
 
       } else {
 
@@ -421,13 +414,13 @@ void __stdcall TurnsTile::processFramePlanar(
           tileW, tileH,
           static_cast<unsigned char>(componentLut[*(srcY + tileCtrY)]));
         fillTile(
-          dstTileU, SRC_PITCH_UV, static_cast<unsigned char*>(0), 0,
-          tileW_UV, tileH_UV,
-          static_cast<unsigned char>(componentLut[*(srcU + tileCtrUV)]));
+          dstTileU, SRC_PITCH_U, static_cast<unsigned char*>(0), 0,
+          tileW_U, tileH_U,
+          static_cast<unsigned char>(componentLut[*(srcU + tileCtrU)]));
         fillTile(
-          dstTileV, SRC_PITCH_UV, static_cast<unsigned char*>(0), 0,
-          tileW_UV, tileH_UV,
-          static_cast<unsigned char>(componentLut[*(srcV + tileCtrUV)]));
+          dstTileV, SRC_PITCH_U, static_cast<unsigned char*>(0), 0,
+          tileW_U, tileH_U,
+          static_cast<unsigned char>(componentLut[*(srcV + tileCtrU)]));
 
       }
 
@@ -444,7 +437,7 @@ int TurnsTile::gcf(int a, int b) {
   if (b == 0)
     return a;
   else
-    return TurnsTile::gcf(b, a % b);
+    return gcf(b, a % b);
 
 }
 
@@ -488,14 +481,14 @@ void TurnsTile::fillTile(
   } else {
 
     for (int h = 0; h < height; ++h) {
-    
+
       Tsample* lineStart = dstp + (DST_PITCH * h);
       Tsample* lineEnd = lineStart + widthSamples;
       std::fill(
         reinterpret_cast<Tpixel*>(lineStart),
         reinterpret_cast<Tpixel*>(lineEnd),
         fillVal);
-    
+
     }
 
   }

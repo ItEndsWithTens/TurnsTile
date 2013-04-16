@@ -14,12 +14,12 @@
 //  modify it under the terms of the GNU General Public License
 //  as published by the Free Software Foundation; either version 2
 //  of the License, or (at your option) any later version.
-//  
+//
 //  This program is distributed in the hope that it will be useful,
 //  but WITHOUT ANY WARRANTY; without even the implied warranty of
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //  GNU General Public License for more details.
-//  
+//
 //  You should have received a copy of the GNU General Public License
 //  along with this program; if not, write to the Free Software Foundation,
 //  Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -38,18 +38,16 @@ class TurnsTile : public GenericVideoFilter
 {
 
 public:
-	
-  TurnsTile(  PClip _child, PClip _tileSheet, VideoInfo _vi2,
-              int _tileW, int _tileH,
-              int _res, int _mode,
-              const char* _levels,
-              int _loTile, int _hiTile,
+
+  TurnsTile(  PClip _child, PClip _tilesheet, VideoInfo _vi2,
+              int _tileW, int _tileH, int _res, int _mode,
+              const char* _levels, int _loTile, int _hiTile,
               IScriptEnvironment* env);
-  
+
   ~TurnsTile();
-  
+
   PVideoFrame __stdcall GetFrame(int n, IScriptEnvironment* env);
-  
+
   void __stdcall processFramePacked(
     const unsigned char* srcp, const unsigned char* shtp, unsigned char* dstp,
     const int SRC_PITCH, const int SHT_PITCH, const int DST_PITCH);
@@ -64,26 +62,26 @@ public:
     unsigned char* dstY,
     unsigned char* dstU,
     unsigned char* dstV,
-    const int SRC_PITCH_Y, const int SRC_PITCH_UV,
-    const int SHT_PITCH_Y, const int SHT_PITCH_UV,
-    const int DST_PITCH_Y, const int DST_PITCH_UV);
+    const int SRC_PITCH_Y, const int SRC_PITCH_U,
+    const int SHT_PITCH_Y, const int SHT_PITCH_U,
+    const int DST_PITCH_Y, const int DST_PITCH_U);
 
   static int gcf(int a, int b);
 
   static int mod(int num, int mod, int min, int max, int dir);
 
 private:
-  
-  PClip tileSheet;
+
+  PClip tilesheet;
 
   int tileW, tileH, mode,
       srcCols, srcRows,
       shtCols, shtRows,
-      wStep, bytesPerPixel, tileBytes,
-      depthStep, lumaW, lumaH, tileW_UV, tileH_UV;
+      bytesPerPixel, tileBytes,
+      depthMod, lumaW, lumaH, tileW_U, tileH_U;
 
   IScriptEnvironment* host;
-    
+
   std::vector<unsigned char> componentLut;
   std::vector<int> tileIdxLut;
 

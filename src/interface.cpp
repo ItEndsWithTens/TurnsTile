@@ -10,12 +10,12 @@
 //  modify it under the terms of the GNU General Public License
 //  as published by the Free Software Foundation; either version 2
 //  of the License, or (at your option) any later version.
-//  
+//
 //  This program is distributed in the hope that it will be useful,
 //  but WITHOUT ANY WARRANTY; without even the implied warranty of
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //  GNU General Public License for more details.
-//  
+//
 //  You should have received a copy of the GNU General Public License
 //  along with this program; if not, write to the Free Software Foundation,
 //  Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -85,16 +85,16 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
   int tileW = args[1].AsInt(dTileW),
       tileH = args[2].AsInt(dTileH);
 
-  
+
   // I've saved most of my error handling for later, but I have to check for a
   // possible divide by zero when calculating tileIdxMax below. Unfortunately,
   // I also need to add another pair of checks, and the associated prep work,
   // to prevent showing users a tile size warning before establishing that the
   // clip they're using is even valid. Please excuse the out of place code.
-  
+
   // Reading arguments out of order makes me feel icky, but I need this early.
-  bool interlaced = args[8].AsBool(false);  
-  
+  bool interlaced = args[8].AsBool(false);
+
   if (!vi.IsSameColorspace(vi2))
       env->ThrowError("TurnsTile: clip and tilesheet must share a colorspace!");
 
@@ -103,8 +103,8 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
                               vi.IsYUY2() ?   "YUY2" :
                               vi.IsYV12() ?   "YV12" :
                               interlaced ?    "" :
-                                              "this";  
-  
+                                              "this";
+
   int minTileW = lumaW,
       minTileH = lumaH;
   if (interlaced)
@@ -178,7 +178,7 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
     env->ThrowError(
       "TurnsTile: For %s input, tilew must be a multiple of %d!",
       cspStr, minTileW);
-  
+
   if (tileH % minTileH > 0)
     env->ThrowError(
       "TurnsTile: For %s%s input, tileh must be a multiple of %d!",
@@ -259,7 +259,7 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
 
 AVSValue __cdecl Create_CLUTer(AVSValue args, void* user_data, IScriptEnvironment* env)
 {
-  
+
   VideoInfo viCreate = args[0].AsClip()->GetVideoInfo();
 
   if (viCreate.IsRGB() == false &&
@@ -276,7 +276,7 @@ AVSValue __cdecl Create_CLUTer(AVSValue args, void* user_data, IScriptEnvironmen
     env->ThrowError("CLUTer: YV12 height must be mod 4 when interlaced=true!");
 
   if (interlaced && viCreate.height % 2 != 0)
-    env->ThrowError("CLUTer: Height must be even when interlaced=true!");  
+    env->ThrowError("CLUTer: Height must be even when interlaced=true!");
 
   PClip finalClip = new CLUTer(  args[0].AsClip(), // c
                                  args[1].AsClip(), // palette
