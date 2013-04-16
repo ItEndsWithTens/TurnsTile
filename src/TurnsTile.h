@@ -82,8 +82,7 @@ private:
 
   IScriptEnvironment* host;
 
-  std::vector<unsigned char> componentLut;
-  std::vector<int> tileIdxLut;
+  std::vector<int> lut;
 
   template<typename Tsample, typename Tpixel>
   void fillTile(

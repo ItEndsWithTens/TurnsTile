@@ -105,9 +105,7 @@ host(env)
       // 'res' feature I've got in TurnsTile, you don't need it if only scaling.
       int scaled =  static_cast<int>((in / idxScaleFactor) + 0.5) + _loTile;
 
-      int out = mod(scaled, depthMod, _loTile, _hiTile, 0);
-
-      tileIdxLut.push_back(out);
+      lut.push_back(mod(scaled, depthMod, _loTile, _hiTile, 0));
 
     }
 
@@ -116,15 +114,8 @@ host(env)
     // No need to scale 'in' here, as above, since this only deals with
     // component values (not tile indices), which with 8bpc color will always
     // be less than 256.
-    for (int in = 0; in < 256; ++in) {
-
-      unsigned char out = static_cast<unsigned char> (
-                            mod(in, depthMod, _loTile, _hiTile, 0)
-                          );
-
-      componentLut.push_back(out);
-
-    }
+    for (int in = 0; in < 256; ++in)
+      lut.push_back(mod(in, depthMod, _loTile, _hiTile, 0));
 
   }
 
@@ -224,7 +215,7 @@ void __stdcall TurnsTile::processFramePacked(
         int tileIdx;
         if (mode > 0) {
 
-          tileIdx = tileIdxLut[*(srcp + tileCtr + (mode - 1))];
+          tileIdx = lut[*(srcp + tileCtr + (mode - 1))];
 
         } else {
 
@@ -233,7 +224,7 @@ void __stdcall TurnsTile::processFramePacked(
           int sum = 0, count = 0;
           for (int i = 0; i < 3; i += lumaW, ++count)
             sum += *(srcp + tileCtr + i);
-          tileIdx = tileIdxLut[sum / count];
+          tileIdx = lut[sum / count];
 
         }
 
@@ -266,10 +257,10 @@ void __stdcall TurnsTile::processFramePacked(
       } else {
 
         unsigned char
-          by = componentLut[*(srcp + tileCtr)],
-          gu = componentLut[*(srcp + tileCtr + 1)],
-          ry = componentLut[*(srcp + tileCtr + 2)],
-          av = componentLut[*(srcp + tileCtr + 3)];
+          by = lut[*(srcp + tileCtr)],
+          gu = lut[*(srcp + tileCtr + 1)],
+          ry = lut[*(srcp + tileCtr + 2)],
+          av = lut[*(srcp + tileCtr + 3)];
 
         if (vi.IsRGB32() || vi.IsYUY2()) {
 
@@ -297,7 +288,7 @@ void __stdcall TurnsTile::processFramePacked(
               int dstOffset = dstRow + curCol + dstLine + (w * bytesPerPixel);
 
               for (int i = 0; i < bytesPerPixel; ++i)
-                *(dstp + dstOffset + i) = componentLut[*(srcp + tileCtr + i)];
+                *(dstp + dstOffset + i) = lut[*(srcp + tileCtr + i)];
 
             }
 
@@ -362,11 +353,11 @@ void __stdcall TurnsTile::processFramePlanar(
         int tileIdx;
         if (mode == lumaW * lumaH + 2) {
 
-          tileIdx = tileIdxLut[*(srcV + tileCtrU)];
+          tileIdx = lut[*(srcV + tileCtrU)];
 
         } else if (mode == lumaW * lumaH + 1) {
 
-          tileIdx = tileIdxLut[*(srcU + tileCtrU)];
+          tileIdx = lut[*(srcU + tileCtrU)];
 
         } else {
 
@@ -376,7 +367,7 @@ void __stdcall TurnsTile::processFramePlanar(
             // as being numbered from zero, left to right, top to bottom.
             int lumaModeOfs = (((mode - 1) / lumaH) * SRC_PITCH_Y) +
                               ((mode - 1) % lumaW);
-            tileIdx = tileIdxLut[*(srcY + tileCtrY + lumaModeOfs)];
+            tileIdx = lut[*(srcY + tileCtrY + lumaModeOfs)];
 
           } else {
 
@@ -384,7 +375,7 @@ void __stdcall TurnsTile::processFramePlanar(
             for (int i = 0; i < lumaH; ++i)
               for (int j = 0; j < lumaW; ++j, ++count)
                 sum += *(srcY + tileCtrY + (SRC_PITCH_Y * i) + j);
-            tileIdx = tileIdxLut[sum / count];
+            tileIdx = lut[sum / count];
 
           }
 
@@ -412,15 +403,15 @@ void __stdcall TurnsTile::processFramePlanar(
         fillTile(
           dstTileY, SRC_PITCH_Y, static_cast<unsigned char*>(0), 0,
           tileW, tileH,
-          static_cast<unsigned char>(componentLut[*(srcY + tileCtrY)]));
+          static_cast<unsigned char>(lut[*(srcY + tileCtrY)]));
         fillTile(
           dstTileU, SRC_PITCH_U, static_cast<unsigned char*>(0), 0,
           tileW_U, tileH_U,
-          static_cast<unsigned char>(componentLut[*(srcU + tileCtrU)]));
+          static_cast<unsigned char>(lut[*(srcU + tileCtrU)]));
         fillTile(
           dstTileV, SRC_PITCH_U, static_cast<unsigned char*>(0), 0,
           tileW_U, tileH_U,
-          static_cast<unsigned char>(componentLut[*(srcV + tileCtrU)]));
+          static_cast<unsigned char>(lut[*(srcV + tileCtrU)]));
 
       }
 
