@@ -202,13 +202,12 @@ void __stdcall TurnsTile::processFramePacked(
 
       int curCol = col * tileBytes;
 
+      unsigned char* dstTile = dstp + dstRow + curCol;
+
       int ctrW = mod(tileW / 2, lumaW, 0, tileW, -1) * bytesPerPixel,
           ctrH = mod(tileH / 2, lumaH, 0, tileH, -1) * SRC_PITCH;
 
       int tileCtr = srcRow + curCol + ctrW + ctrH;
-
-      int cropLeft = 0,
-          cropTop = 0;
 
       if (tilesheet) {
 
@@ -242,15 +241,10 @@ void __stdcall TurnsTile::processFramePacked(
 
         // Modulo here has the effect of "wrapping around" the horizontal tile
         // count for the sheet you've provided.
-        cropLeft = (tileIdx % shtCols) * tileBytes;
-        cropTop = SHT_PITCH * tileIdxY * tileH;
+        int cropLeft = (tileIdx % shtCols) * tileBytes,
+            cropTop = SHT_PITCH * tileIdxY * tileH;
 
-      }
-
-      unsigned char* dstTile = dstp + dstRow + curCol;
-      const unsigned char* shtTile = shtp + cropTop + cropLeft;
-
-      if (tilesheet) {
+        const unsigned char* shtTile = shtp + cropTop + cropLeft;
 
         fillTile(dstTile, DST_PITCH, shtTile, SHT_PITCH, tileW, tileH, 0);
 
