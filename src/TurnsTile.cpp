@@ -43,7 +43,7 @@ GenericVideoFilter(_child), tilesheet(_tilesheet),
 tileW(_tileW), tileH(_tileH), mode(_mode),
 srcRows(vi.height / tileH), srcCols(vi.width / tileW),
 shtRows(_vi2.height / tileH), shtCols(_vi2.width / tileW),
-bytesPerPixel(vi.BytesFromPixels(1)), tileBytes(tileW * bytesPerPixel),
+bytesPerSample(1), samplesPerPixel(vi.BytesFromPixels(1) / bytesPerSample),
 host(env)
 {
 
@@ -200,11 +200,11 @@ void __stdcall TurnsTile::processFramePacked(
 
     for (int col = 0; col < srcCols; ++col) {
 
-      int curCol = col * tileBytes;
+      int curCol = col * tileW * samplesPerPixel;
 
       unsigned char* dstTile = dstp + dstRow + curCol;
 
-      int ctrW = mod(tileW / 2, lumaW, 0, tileW, -1) * bytesPerPixel,
+      int ctrW = mod(tileW / 2, lumaW, 0, tileW, -1) * samplesPerPixel,
           ctrH = mod(tileH / 2, lumaH, 0, tileH, -1) * SRC_PITCH;
 
       int tileCtr = srcRow + curCol + ctrW + ctrH;
@@ -241,7 +241,7 @@ void __stdcall TurnsTile::processFramePacked(
 
         // Modulo here has the effect of "wrapping around" the horizontal tile
         // count for the sheet you've provided.
-        int cropLeft = (tileIdx % shtCols) * tileBytes,
+        int cropLeft = (tileIdx % shtCols) * tileW * samplesPerPixel,
             cropTop = SHT_PITCH * tileIdxY * tileH;
 
         const unsigned char* shtTile = shtp + cropTop + cropLeft;
@@ -279,9 +279,9 @@ void __stdcall TurnsTile::processFramePacked(
 
             for (int w = 0; w < tileW; ++w) {
 
-              int dstOffset = dstRow + curCol + dstLine + (w * bytesPerPixel);
+              int dstOffset = dstRow + curCol + dstLine + (w * samplesPerPixel);
 
-              for (int i = 0; i < bytesPerPixel; ++i)
+              for (int i = 0; i < samplesPerPixel; ++i)
                 *(dstp + dstOffset + i) = lut[*(srcp + tileCtr + i)];
 
             }
@@ -456,12 +456,13 @@ void TurnsTile::fillTile(
   const int width, const int height, const Tpixel fillVal) const
 {
 
-  int widthSamples = width * bytesPerPixel;
+  int widthSamples = width * samplesPerPixel;
 
   if (srcp) {
 
+    int widthBytes = widthSamples * bytesPerSample;
     host->BitBlt(
-      dstp, DST_PITCH, srcp, SRC_PITCH, widthSamples, height);
+      dstp, DST_PITCH, srcp, SRC_PITCH, widthBytes, height);
 
   } else {
 
