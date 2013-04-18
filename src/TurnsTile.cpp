@@ -85,8 +85,8 @@ host(env)
   // The mod() function caps that 256 at 255, but the problem of three values
   // instead of two remains. I want 0 and 256 to be the two options, and frankly
   // the only solution I was able to work out was the subtraction.
-  depthMod = static_cast<int>(ceil(  (_hiTile - _loTile) /
-                                     (pow(2.0, _res) - 1.0)  ));
+  int depthMod = static_cast<int>(ceil( (_hiTile - _loTile) /
+                                        (pow(2.0, _res) - 1.0) ));
 
   if (tilesheet) {
 

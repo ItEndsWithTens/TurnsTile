@@ -78,7 +78,7 @@ private:
       srcCols, srcRows,
       shtCols, shtRows,
       bytesPerSample, samplesPerPixel,
-      depthMod, lumaW, lumaH, tileW_U, tileH_U;
+      lumaW, lumaH, tileW_U, tileH_U;
 
   IScriptEnvironment* host;
 
