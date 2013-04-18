@@ -39,10 +39,7 @@ using std::vector;
 CLUTer::CLUTer( PClip _child, PClip _palette,
                 int _pltFrame, bool _interlaced,
                 IScriptEnvironment* env) :
-                GenericVideoFilter(
-                  _interlaced && !_child->GetVideoInfo().IsFieldBased() ?
-                    env->Invoke("SeparateFields", _child).AsClip() :
-                  _child)
+GenericVideoFilter(_child)
 {
 
   bytesPerPixel = vi.IsRGB32() ?  4 :

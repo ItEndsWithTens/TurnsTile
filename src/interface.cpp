@@ -260,6 +260,8 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
 AVSValue __cdecl Create_CLUTer(AVSValue args, void* user_data, IScriptEnvironment* env)
 {
 
+  PClip clip = args[0].AsClip();
+
   VideoInfo viCreate = args[0].AsClip()->GetVideoInfo();
 
   if (viCreate.IsRGB() == false &&
@@ -278,7 +280,10 @@ AVSValue __cdecl Create_CLUTer(AVSValue args, void* user_data, IScriptEnvironmen
   if (interlaced && viCreate.height % 2 != 0)
     env->ThrowError("CLUTer: Height must be even when interlaced=true!");
 
-  PClip finalClip = new CLUTer(  args[0].AsClip(), // c
+  if (interlaced)
+    clip = env->Invoke("SeparateFields", clip).AsClip();
+
+  PClip finalClip = new CLUTer(  clip,
                                  args[1].AsClip(), // palette
                                  args[2].AsInt(0), // paletteframe
                                  interlaced,
