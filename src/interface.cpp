@@ -260,32 +260,48 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
 AVSValue __cdecl Create_CLUTer(AVSValue args, void* user_data, IScriptEnvironment* env)
 {
 
-  PClip clip = args[0].AsClip();
+  PClip clip = args[0].AsClip(),
+        palette = args[1].AsClip();
+  VideoInfo vi = clip->GetVideoInfo();
 
-  VideoInfo viCreate = args[0].AsClip()->GetVideoInfo();
 
-  if (viCreate.IsRGB() == false &&
-      viCreate.IsYUY2() == false &&
-      viCreate.IsYV12() == false)
-    env->ThrowError("CLUTer: Only RGB, YUY2, and YV12 input supported!");
+  int paletteFrame = args[2].AsInt(0);
+
 
   bool interlaced = args[3].AsBool(false);
 
-  if ( !viCreate.IsSameColorspace(args[1].AsClip()->GetVideoInfo()) )
-    env->ThrowError("CLUTer: c and palette must share a colorspace!");
 
-  if (viCreate.IsYV12() && interlaced && viCreate.height % 4 != 0)
-    env->ThrowError("CLUTer: YV12 height must be mod 4 when interlaced=true!");
+  if (!vi.IsSameColorspace(args[1].AsClip()->GetVideoInfo()))
+    env->ThrowError("CLUTer: clip and palette must share a colorspace!");
 
-  if (interlaced && viCreate.height % 2 != 0)
-    env->ThrowError("CLUTer: Height must be even when interlaced=true!");
 
-  if (interlaced)
-    clip = env->Invoke("SeparateFields", clip).AsClip();
+  if (interlaced) {
+
+    const char* const cspStr =  vi.IsRGB() ?  "RGB" :
+                                vi.IsYUY2() ? "YUY2" :
+                                vi.IsYV12() ? "YV12" :
+                                              "";
+
+    int minClipH;
+    if (vi.IsYV12())
+      minClipH = 4;
+    else
+      minClipH = 2;
+
+    if (vi.height % minClipH != 0)
+      env->ThrowError(
+        "CLUTer: %s clip height must be mod %d when interlaced=true!",
+        cspStr, minClipH);
+
+    if (!vi.IsFieldBased())
+      clip = env->Invoke("SeparateFields", clip).AsClip();
+
+  }
+
 
   PClip finalClip = new CLUTer(  clip,
-                                 args[1].AsClip(), // palette
-                                 args[2].AsInt(0), // paletteframe
+                                 palette,
+                                 paletteFrame,
                                  interlaced,
                                  env);
 
