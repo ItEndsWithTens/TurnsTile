@@ -227,54 +227,33 @@ void CLUTer::paletteGen(PVideoFrame pltSrc, VideoInfo pltVi, IScriptEnvironment*
   int pltH = pltSrc->GetHeight(),
       pltW = pltSrc->GetRowSize() / bytesPerPixel;
 
-  if (pltVi.IsRGB()) {
+  if (!pltVi.IsPlanar()) {
 
-    // No concern for upside down RGB here, as with TurnsTile's "tileIdxY",
-    // since I'm just flying through every pixel in the frame and pushing
-    // each unique value onto the palette.
     for (int h = 0; h != pltH; ++h) {
 
       int pltLine = PLT_PITCH * h;
 
-      for (int w = 0; w != pltW; ++w) {
+      for (int w = 0; w != pltW; w += pltVi.IsRGB() ? 1 : 2) {
         
         int wBytes = w * bytesPerPixel;
         int pltOffset = pltLine + wBytes;
 
-        int b = *(pltp + pltOffset),
-            g = *(pltp + pltOffset + 1),
-            r = *(pltp + pltOffset + 2);
+        int by = *(pltp + pltOffset),
+            gu = *(pltp + pltOffset + 1),
+            ry = *(pltp + pltOffset + 2),
+            av = *(pltp + pltOffset + 3);
 
-        pltMain.push_back((r << 16) | (g << 8) | b);
-
-      }
-
-    }
-
-  } else if (pltVi.IsYUY2()) {
-
-    for (int h = 0; h != pltH; ++h) {
-
-      int pltLine = PLT_PITCH * h;
-
-      for (int w = 0; w != pltW; w += 2) {
-
-        int wBytes = w * bytesPerPixel;
-        int pltOffset = pltLine + wBytes;
-
-        int y1 =  *(pltp + pltOffset),
-            u =   *(pltp + pltOffset + 1),
-            y2 =  *(pltp + pltOffset + 2),
-            v =   *(pltp + pltOffset + 3);
-
-        pltMain.push_back((y1 << 16) | (u << 8) | v),
-        pltMain.push_back((y2 << 16) | (u << 8) | v);
+        if (pltVi.IsRGB())
+          pltMain.push_back((ry << 16) | (gu << 8) | by);
+        else
+          pltMain.push_back((by << 16) | (gu << 8) | av),
+          pltMain.push_back((ry << 16) | (gu << 8) | av);
 
       }
 
     }
 
-  } else if (pltVi.IsYV12()) {
+  } else {
 
     PVideoFrame src = pltSrc;
     
