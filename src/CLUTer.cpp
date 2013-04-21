@@ -222,10 +222,6 @@ void CLUTer::paletteGen(PVideoFrame pltSrc, VideoInfo pltVi, IScriptEnvironment*
   const unsigned char* pltp = pltSrc->GetReadPtr();
   const int PLT_PITCH =       pltSrc->GetPitch();
   
-  int rgbInt = 0,
-      yuvInt1 = 0,
-      yuvInt2 = 0;
-  
   vector<int> pltMain;
 
   int pltH = pltSrc->GetHeight(),
@@ -249,10 +245,7 @@ void CLUTer::paletteGen(PVideoFrame pltSrc, VideoInfo pltVi, IScriptEnvironment*
             g = *(pltp + pltOffset + 1),
             r = *(pltp + pltOffset + 2);
 
-        rgbInt = ((r << 16) | (g << 8)) | b;
-
-        if (find(pltMain.begin(), pltMain.end(), rgbInt) == pltMain.end())
-          pltMain.push_back(rgbInt);
+        pltMain.push_back((r << 16) | (g << 8) | b);
 
       }
 
@@ -274,14 +267,8 @@ void CLUTer::paletteGen(PVideoFrame pltSrc, VideoInfo pltVi, IScriptEnvironment*
             y2 =  *(pltp + pltOffset + 2),
             v =   *(pltp + pltOffset + 3);
 
-        yuvInt1 = ((y1 << 16) | (u << 8)) | v;
-        yuvInt2 = ((y2 << 16) | (u << 8)) | v;
-
-        if (find(pltMain.begin(), pltMain.end(), yuvInt1) == pltMain.end())
-          pltMain.push_back(yuvInt1);
-        
-        if (find(pltMain.begin(), pltMain.end(), yuvInt2) == pltMain.end())
-          pltMain.push_back(yuvInt2);
+        pltMain.push_back((y1 << 16) | (u << 8) | v),
+        pltMain.push_back((y2 << 16) | (u << 8) | v);
 
       }
 
@@ -329,23 +316,10 @@ void CLUTer::paletteGen(PVideoFrame pltSrc, VideoInfo pltVi, IScriptEnvironment*
           y3 = *(srcY + srcOffsetY + SRC_PITCH_Y),      // Bottom left
           y4 = *(srcY + srcOffsetY + SRC_PITCH_Y + 1);  // Bottom right
 
-        int
-          yuvInt1 = ((y1 << 16) | (u << 8)) | v,
-          yuvInt2 = ((y2 << 16) | (u << 8)) | v,
-          yuvInt3 = ((y3 << 16) | (u << 8)) | v,
-          yuvInt4 = ((y4 << 16) | (u << 8)) | v;
-
-        if (find(pltMain.begin(), pltMain.end(), yuvInt1) == pltMain.end())
-          pltMain.push_back(yuvInt1);
-        
-        if (find(pltMain.begin(), pltMain.end(), yuvInt2) == pltMain.end())
-          pltMain.push_back(yuvInt2);
-
-        if (find(pltMain.begin(), pltMain.end(), yuvInt3) == pltMain.end())
-          pltMain.push_back(yuvInt3);
-        
-        if (find(pltMain.begin(), pltMain.end(), yuvInt4) == pltMain.end())
-          pltMain.push_back(yuvInt4);
+        pltMain.push_back((y1 << 16) | (u << 8) | v),
+        pltMain.push_back((y2 << 16) | (u << 8) | v),
+        pltMain.push_back((y3 << 16) | (u << 8) | v),
+        pltMain.push_back((y4 << 16) | (u << 8) | v);
               
       }
            
@@ -353,6 +327,12 @@ void CLUTer::paletteGen(PVideoFrame pltSrc, VideoInfo pltVi, IScriptEnvironment*
 
   }
   
+  // Adding all colors from the input palette to the pltMain vector, then
+  // sorting it and stripping out the duplicate values, is frighteningly fast,
+  // and handily beats the std::find method I'd used previously.
+  std::sort(pltMain.begin(), pltMain.end());
+  pltMain.erase(std::unique(pltMain.begin(), pltMain.end()), pltMain.end());
+
   // All unique colors have been read from the input, and the palette's been
   // loaded; now it's time to find the closest match for each possible output.
   // This is another of my naive brute force techniques, but it works, and until
