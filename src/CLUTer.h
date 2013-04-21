@@ -51,7 +51,7 @@ public:
 
 private:
 
-  std::vector<unsigned char> vecB, vecG, vecR, vecY, vecU, vecV;
+  std::vector<unsigned char> vecRY, vecGU, vecBV;
 
   int bytesPerPixel;
 

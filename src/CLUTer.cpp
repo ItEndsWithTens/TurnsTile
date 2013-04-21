@@ -106,9 +106,9 @@ PVideoFrame __stdcall CLUTer::GetFrameInterleaved(int n, IScriptEnvironment* env
 
         int sheetDec = ((r << 16) | (g << 8)) | b;
 
-        *(dstp + dstOffset) =      vecB[sheetDec];
-        *(dstp + dstOffset + 1) =  vecG[sheetDec];
-        *(dstp + dstOffset + 2) =  vecR[sheetDec];
+        *(dstp + dstOffset) =      vecBV[sheetDec];
+        *(dstp + dstOffset + 1) =  vecGU[sheetDec];
+        *(dstp + dstOffset + 2) =  vecRY[sheetDec];
         *(dstp + dstOffset + 3) =  *(srcp + srcOffset + 3);
 
       } else {
@@ -121,10 +121,10 @@ PVideoFrame __stdcall CLUTer::GetFrameInterleaved(int n, IScriptEnvironment* env
 
         int sheetDec = ((y1 << 16) | (u << 8)) | v;
 
-        *(dstp + dstOffset) =     vecY[sheetDec];
-        *(dstp + dstOffset + 1) = vecU[sheetDec];
-        *(dstp + dstOffset + 2) = vecY[sheetDec];
-        *(dstp + dstOffset + 3) = vecV[sheetDec];
+        *(dstp + dstOffset) =     vecRY[sheetDec];
+        *(dstp + dstOffset + 1) = vecGU[sheetDec];
+        *(dstp + dstOffset + 2) = vecRY[sheetDec];
+        *(dstp + dstOffset + 3) = vecBV[sheetDec];
 
       }
       
@@ -189,8 +189,8 @@ PVideoFrame __stdcall CLUTer::GetFramePlanar(int n, IScriptEnvironment* env)
     
       int sheetDec = ((y << 16) | (u << 8)) | v;
     
-      *(dstU + dstOffsetUV) = vecU[sheetDec];
-      *(dstV + dstOffsetUV) = vecV[sheetDec];
+      *(dstU + dstOffsetUV) = vecGU[sheetDec];
+      *(dstV + dstOffsetUV) = vecBV[sheetDec];
 
       // I set each luma component in the 2x2 block to the same value, as
       // otherwise it'd be possible to end up with colors in the output that
@@ -199,7 +199,7 @@ PVideoFrame __stdcall CLUTer::GetFramePlanar(int n, IScriptEnvironment* env)
       // wouldn't be worth the effort. CLUTer is, after all, meant to be used
       // with TurnsTile, which will typically involve tiles large enough to
       // hide my little shortcut.
-      unsigned char yOut = vecY[sheetDec];
+      unsigned char yOut = vecRY[sheetDec];
 
       *(dstY + dstOffsetY) =                   yOut;
       *(dstY + dstOffsetY + 1) =               yOut;
@@ -353,126 +353,62 @@ void CLUTer::paletteGen(PVideoFrame pltSrc, VideoInfo pltVi, IScriptEnvironment*
 
   }
   
-  // For a while, during development of version 0.3.0, this value was computed
-  // from a pair of defines; I'm sure the pros out there would have found it
-  // adorable, but the novelty of such ornate, unnecessary, and potentially
-  // dangerous future proofing wore off, and I did eventually wise up, so now
-  // it's hardcoded.
-  int totalColors = 16777216;
-
   // All unique colors have been read from the input, and the palette's been
   // loaded; now it's time to find the closest match for each possible output.
   // This is another of my naive brute force techniques, but it works, and until
   // I get smarter I'll take working over efficient.
-  if (pltVi.IsRGB()) {
+  for (int i = 0; i < 16777216; ++i) {
 
-    for (int i = 0; i < totalColors; ++i) {
+    int inRY = (i >> 16) & 255,
+        inGU = (i >> 8) & 255,
+        inBV = i & 255;
 
-      int blueIn =  i & 255,
-          greenIn = (i >> 8) & 255,
-          redIn =   (i >> 16) & 255;
+    int base = pltMain[0];
 
-      int base = pltMain[0];
+    int pltRY = (base >> 16) & 255,
+        pltGU = (base >> 8) & 255,
+        pltBV = base & 255;
 
-      int pltB = base & 255,
-          pltG = (base >> 8) & 255,
-          pltR = (base >> 16) & 255;
+    int diffRY = abs(inRY - pltRY),
+        diffGU = abs(inGU - pltGU),
+        diffBV = abs(inBV - pltBV);
 
-      int diffB = abs(blueIn - pltB),
-          diffG = abs(greenIn - pltG),
-          diffR = abs(redIn - pltR);
+    // The so-called "Euclidean Distance" between colors doesn't quite model
+    // the human eye/brain, to say the least, but it's simple to implement,
+    // and for a toy like CLUTer it gets close enough. Perhaps XYZ/L*a*b*
+    // computations will come into the picture in the future, who knows?
+    int euclidRef = (diffRY * diffRY) +
+                    (diffGU * diffGU) +
+                    (diffBV * diffBV);
 
-      // The so-called "Euclidean Distance" between colors doesn't quite model
-      // the human eye/brain, to say the least, but it's simple to implement,
-      // and for a toy like CLUTer it gets close enough. Perhaps XYZ/L*a*b*
-      // computations will come into the picture in the future, who knows?
-      int euclidRef = (diffB * diffB) +
-                      (diffG * diffG) +
-                      (diffR * diffR);
+    int outInt = base;
 
-      int outRgbInt = base;
-
-      for (vector<int>::iterator j = pltMain.begin(); j != pltMain.end(); ++j) {
+    for (vector<int>::iterator j = pltMain.begin(); j != pltMain.end(); ++j) {
       
-        int pltInt = *j;
+      int pltInt = *j;
       
-        pltB = pltInt & 255;
-        pltG = (pltInt >> 8) & 255;
-        pltR = (pltInt >> 16) & 255;
+      pltRY = (pltInt >> 16) & 255;
+      pltGU = (pltInt >> 8) & 255;
+      pltBV = pltInt & 255;
 
-        diffB = abs(blueIn - pltB);
-        diffG = abs(greenIn - pltG);
-        diffR = abs(redIn - pltR);
+      diffRY = abs(inRY - pltRY);
+      diffGU = abs(inGU - pltGU);
+      diffBV = abs(inBV - pltBV);
 
-        int euclidCur = (diffB * diffB) +
-                        (diffG * diffG) +
-                        (diffR * diffR);
+      int euclidCur = (diffBV * diffBV) +
+                      (diffGU * diffGU) +
+                      (diffRY * diffRY);
 
-        if (euclidCur < euclidRef) {
-          euclidRef = euclidCur;
-          outRgbInt = pltInt;
-        }
-
+      if (euclidCur < euclidRef) {
+        euclidRef = euclidCur;
+        outInt = pltInt;
       }
 
-      vecB.push_back( outRgbInt & 255 );
-      vecG.push_back( (outRgbInt >> 8) & 255 );
-      vecR.push_back( (outRgbInt >> 16) & 255 );
-
     }
-  
-  } else {
 
-    for (int i = 0; i < totalColors; ++i) {
-    
-      int yIn = (i >> 16) & 255,
-          uIn = (i >> 8) & 255,
-          vIn = i & 255;
-    
-      int base = pltMain[0];
-
-      int pltY = (base >> 16) & 255,
-          pltU = (base >> 8) & 255,
-          pltV = base & 255;
-
-      int diffY = abs(yIn - pltY),
-          diffU = abs(uIn - pltU),
-          diffV = abs(vIn - pltV);
-
-      int euclidRef = (diffY * diffY) +
-                      (diffU * diffU) +
-                      (diffV * diffV);
-
-      int outYuvInt = base;
-
-      for (vector<int>::iterator j = pltMain.begin(); j != pltMain.end(); ++j) {
-
-        int pltInt = *j;
-      
-        pltY = (pltInt >> 16) & 255;
-        pltU = (pltInt >> 8) & 255;
-        pltV = pltInt & 255;
-        
-        diffY = abs(yIn - pltY);
-        diffU = abs(uIn - pltU);
-        diffV = abs(vIn - pltV);
-
-        int euclidCur = (diffY * diffY) +
-                        (diffU * diffU) +
-                        (diffV * diffV);
-
-        if (euclidCur < euclidRef) {
-          euclidRef = euclidCur;
-          outYuvInt = pltInt;
-        }
-
-      }
-
-      vecY.push_back( (outYuvInt >> 16) & 255 );
-      vecU.push_back( (outYuvInt >> 8) & 255 );
-      vecV.push_back( outYuvInt & 255 );      
-    
-    }
+    vecRY.push_back( (outInt >> 16) & 255 );
+    vecGU.push_back( (outInt >> 8) & 255 );
+    vecBV.push_back( outInt & 255 );
 
   }
 
