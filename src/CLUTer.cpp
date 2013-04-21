@@ -369,17 +369,13 @@ void CLUTer::paletteGen(PVideoFrame pltSrc, VideoInfo pltVi, IScriptEnvironment*
         pltGU = (base >> 8) & 255,
         pltBV = base & 255;
 
-    int diffRY = abs(inRY - pltRY),
-        diffGU = abs(inGU - pltGU),
-        diffBV = abs(inBV - pltBV);
-
-    // The so-called "Euclidean Distance" between colors doesn't quite model
-    // the human eye/brain, to say the least, but it's simple to implement,
-    // and for a toy like CLUTer it gets close enough. Perhaps XYZ/L*a*b*
-    // computations will come into the picture in the future, who knows?
-    int euclidRef = (diffRY * diffRY) +
-                    (diffGU * diffGU) +
-                    (diffBV * diffBV);
+    // For my use, the sum of absolute differences provides the same results
+    // as the Euclidean distance approach I'd been using; I'd implemented that
+    // incompletely anyway, and it worked well enough, so I have no qualms
+    // using an even simpler, faster technique.
+    int sumPrev = abs(inRY - pltRY) +
+                  abs(inGU - pltGU) +
+                  abs(inBV - pltBV);
 
     int outInt = base;
 
@@ -391,16 +387,12 @@ void CLUTer::paletteGen(PVideoFrame pltSrc, VideoInfo pltVi, IScriptEnvironment*
       pltGU = (pltInt >> 8) & 255;
       pltBV = pltInt & 255;
 
-      diffRY = abs(inRY - pltRY);
-      diffGU = abs(inGU - pltGU);
-      diffBV = abs(inBV - pltBV);
+      int sumCur = abs(inRY - pltRY) +
+                   abs(inGU - pltGU) +
+                   abs(inBV - pltBV);
 
-      int euclidCur = (diffBV * diffBV) +
-                      (diffGU * diffGU) +
-                      (diffRY * diffRY);
-
-      if (euclidCur < euclidRef) {
-        euclidRef = euclidCur;
+      if (sumCur < sumPrev) {
+        sumPrev = sumCur;
         outInt = pltInt;
       }
 
