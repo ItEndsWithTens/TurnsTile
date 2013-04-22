@@ -57,6 +57,8 @@ private:
 
   void paletteGen(PVideoFrame pltSrc, VideoInfo pltVi, IScriptEnvironment* env);
 
+  void fillComponentVectors(std::vector<int>* pltMain);
+
 };
 
 

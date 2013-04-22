@@ -310,11 +310,20 @@ void CLUTer::paletteGen(PVideoFrame pltSrc, VideoInfo pltVi, IScriptEnvironment*
 
   }
   
+  fillComponentVectors(&pltMain);
+
+}
+
+
+
+void CLUTer::fillComponentVectors(std::vector<int>* palette)
+{
+
   // Adding all colors from the input palette to the pltMain vector, then
   // sorting it and stripping out the duplicate values, is frighteningly fast,
   // and handily beats the std::find method I'd used previously.
-  std::sort(pltMain.begin(), pltMain.end());
-  pltMain.erase(std::unique(pltMain.begin(), pltMain.end()), pltMain.end());
+  std::sort(palette->begin(), palette->end());
+  palette->erase(std::unique(palette->begin(), palette->end()), palette->end());
 
   // All unique colors have been read from the input, and the palette's been
   // loaded; now it's time to find the closest match for each possible output.
@@ -326,7 +335,7 @@ void CLUTer::paletteGen(PVideoFrame pltSrc, VideoInfo pltVi, IScriptEnvironment*
         inGU = (i >> 8) & 255,
         inBV = i & 255;
 
-    int base = pltMain[0];
+    int base = (*palette)[0];
 
     int pltRY = (base >> 16) & 255,
         pltGU = (base >> 8) & 255,
@@ -342,7 +351,7 @@ void CLUTer::paletteGen(PVideoFrame pltSrc, VideoInfo pltVi, IScriptEnvironment*
 
     int outInt = base;
 
-    for (vector<int>::iterator j = pltMain.begin(); j != pltMain.end(); ++j) {
+    for (vector<int>::iterator j = palette->begin(); j != palette->end(); ++j) {
       
       int pltInt = *j;
       
