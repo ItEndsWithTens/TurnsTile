@@ -55,7 +55,17 @@ private:
 
   int bytesPerPixel, lumaW, lumaH;
 
-  void paletteGen(PVideoFrame pltSrc, VideoInfo pltVi, IScriptEnvironment* env);
+  void buildPaletteBgr(
+    const unsigned char* pltp, int width, int height, const int PLT_PITCH);
+
+  void buildPaletteYuyv(
+    const unsigned char* pltp, int width, int height, const int PLT_PITCH);
+
+  void buildPalettePlanar(
+    const unsigned char* pltY,
+    const unsigned char* pltU,
+    const unsigned char* pltV,
+    int widthUV, int heightUV, const int PLT_PITCH_Y, const int PLT_PITCH_UV);
 
   void fillComponentVectors(std::vector<int>* pltMain);
 

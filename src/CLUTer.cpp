@@ -50,6 +50,12 @@ GenericVideoFilter(_child)
   PVideoFrame pltSrc = _palette->GetFrame(_pltFrame,env);
   VideoInfo pltVi = _palette->GetVideoInfo();
 
+
+  const unsigned char
+    * pltY = pltSrc->GetReadPtr(PLANAR_Y),
+    * pltU = pltSrc->GetReadPtr(PLANAR_U),
+    * pltV = pltSrc->GetReadPtr(PLANAR_V);
+
   if (pltVi.IsYV12())
     lumaW = 2, lumaH = 2;
   else if (pltVi.IsYUY2())
@@ -57,7 +63,18 @@ GenericVideoFilter(_child)
   else
     lumaW = 1, lumaH = 1;
 
-  paletteGen(pltSrc,pltVi,env);
+
+  if (pltVi.IsPlanar())
+    buildPalettePlanar(
+      pltY, pltU, pltV, pltVi.width / lumaW, pltVi.height / lumaH,
+      pltSrc->GetPitch(PLANAR_Y), pltSrc->GetPitch(PLANAR_U));
+  else
+    if (pltVi.IsYUY2())
+      buildPaletteYuyv(
+        pltY, pltVi.width, pltVi.height, pltSrc->GetPitch(PLANAR_Y));
+    else
+      buildPaletteBgr(
+        pltY, pltVi.width, pltVi.height, pltSrc->GetPitch(PLANAR_Y));
 
 }
 
@@ -222,92 +239,109 @@ PVideoFrame __stdcall CLUTer::GetFramePlanar(int n, IScriptEnvironment* env)
 
 
 
-void CLUTer::paletteGen(PVideoFrame pltSrc, VideoInfo pltVi, IScriptEnvironment* env)
+void CLUTer::buildPaletteBgr(
+  const unsigned char* pltp, int width, int height, const int PLT_PITCH)
 {
-  
-  const unsigned char* pltp = pltSrc->GetReadPtr();
-  const int PLT_PITCH =       pltSrc->GetPitch();
   
   vector<int> pltMain;
 
-  int pltH = pltSrc->GetHeight(),
-      pltW = pltSrc->GetRowSize() / bytesPerPixel;
+  for (int h = 0; h != height; ++h) {
 
-  if (!pltVi.IsPlanar()) {
+    int pltLine = PLT_PITCH * h;
 
-    for (int h = 0; h != pltH; ++h) {
-
-      int pltLine = PLT_PITCH * h;
-
-      for (int w = 0; w != pltW; w += lumaW) {
+    for (int w = 0; w != width; w += lumaW) {
         
-        int wBytes = w * bytesPerPixel;
-        int pltOffset = pltLine + wBytes;
+      int wBytes = w * bytesPerPixel;
+      int pltOffset = pltLine + wBytes;
 
-        int by = *(pltp + pltOffset),
-            gu = *(pltp + pltOffset + 1),
-            ry = *(pltp + pltOffset + 2),
-            av = *(pltp + pltOffset + 3);
+      int b = *(pltp + pltOffset),
+          g = *(pltp + pltOffset + 1),
+          r = *(pltp + pltOffset + 2);
 
-        if (pltVi.IsRGB())
-          pltMain.push_back((ry << 16) | (gu << 8) | by);
-        else
-          pltMain.push_back((by << 16) | (gu << 8) | av),
-          pltMain.push_back((ry << 16) | (gu << 8) | av);
-
-      }
+      pltMain.push_back((r << 16) | (g << 8) | b);
 
     }
 
-  } else {
+  }
 
-    PVideoFrame src = pltSrc;
-    
-    const unsigned char
-      * srcY = src->GetReadPtr(PLANAR_Y),
-      * srcU = src->GetReadPtr(PLANAR_U),
-      * srcV = src->GetReadPtr(PLANAR_V);
-  
-    const int
-      SRC_PITCH_Y = src->GetPitch(PLANAR_Y);
+  fillComponentVectors(&pltMain);
 
-    const int
-      SRC_WIDTH_UV =  src->GetRowSize(PLANAR_U),
-      SRC_HEIGHT_UV = src->GetHeight(PLANAR_U),
-      SRC_PITCH_UV =  src->GetPitch(PLANAR_U);
-    
-    for (int h = 0; h != SRC_HEIGHT_UV; ++h) {
+}
 
-      int srcLineY =  SRC_PITCH_Y * h * lumaH,
-          srcLineUV = SRC_PITCH_UV * h;
+
+
+void CLUTer::buildPaletteYuyv(
+  const unsigned char* pltp, int width, int height, const int PLT_PITCH)
+{
+
+  vector<int> pltMain;
+
+  for (int h = 0; h != height; ++h) {
+
+    int pltLine = PLT_PITCH * h;
+
+    for (int w = 0; w != width; w += lumaW) {
+        
+      int wBytes = w * bytesPerPixel;
+      int pltOffset = pltLine + wBytes;
+
+      int y1 =  *(pltp + pltOffset),
+          u =   *(pltp + pltOffset + 1),
+          y2 =  *(pltp + pltOffset + 2),
+          v =   *(pltp + pltOffset + 3);
+
+      pltMain.push_back((y1 << 16) | (u << 8) | v),
+      pltMain.push_back((y2 << 16) | (u << 8) | v);
+
+    }
+
+  }
+
+  fillComponentVectors(&pltMain);
+
+}
+
+
+
+void CLUTer::buildPalettePlanar(
+  const unsigned char* srcY,
+  const unsigned char* srcU,
+  const unsigned char* srcV,
+  int widthUV, int heightUV, const int PLT_PITCH_Y, const int PLT_PITCH_UV)
+{
+
+  vector<int> pltMain;
+
+  for (int h = 0; h != heightUV; ++h) {
+
+    int srcLineY =  PLT_PITCH_Y * h * lumaH,
+        srcLineUV = PLT_PITCH_UV * h;
     
-      for (int w = 0; w != SRC_WIDTH_UV; ++w) {
+    for (int w = 0; w != widthUV; ++w) {
     
-        int curSampleY =  w * lumaW,
-            curSampleUV = w;
+      int curSampleY =  w * lumaW,
+          curSampleUV = w;
                        
-        int srcOffsetY =  srcLineY + curSampleY,
-            srcOffsetUV = srcLineUV + curSampleUV;
+      int srcOffsetY =  srcLineY + curSampleY,
+          srcOffsetUV = srcLineUV + curSampleUV;
 
-        unsigned char
-          u = *(srcU + srcOffsetUV),
-          v = *(srcV + srcOffsetUV);
+      unsigned char
+        u = *(srcU + srcOffsetUV),
+        v = *(srcV + srcOffsetUV);
 
-        for (int i = 0; i < lumaH; ++i) {
+      for (int i = 0; i < lumaH; ++i) {
 
-          for (int j = 0; j < lumaW; ++j) {
+        for (int j = 0; j < lumaW; ++j) {
 
-            unsigned char y = *(srcY + srcOffsetY + (SRC_PITCH_Y * i) + j);
-            pltMain.push_back((y << 16) | (u << 8) | v);
-
-          }
+          unsigned char y = *(srcY + srcOffsetY + (PLT_PITCH_Y * i) + j);
+          pltMain.push_back((y << 16) | (u << 8) | v);
 
         }
 
       }
-           
-    }
 
+    }
+           
   }
   
   fillComponentVectors(&pltMain);
