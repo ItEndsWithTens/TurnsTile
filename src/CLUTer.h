@@ -53,7 +53,7 @@ private:
 
   std::vector<unsigned char> vecRY, vecGU, vecBV;
 
-  int bytesPerPixel;
+  int bytesPerPixel, lumaW, lumaH;
 
   void paletteGen(PVideoFrame pltSrc, VideoInfo pltVi, IScriptEnvironment* env);
 

@@ -49,6 +49,14 @@ GenericVideoFilter(_child)
 
   PVideoFrame pltSrc = _palette->GetFrame(_pltFrame,env);
   VideoInfo pltVi = _palette->GetVideoInfo();
+
+  if (pltVi.IsYV12())
+    lumaW = 2, lumaH = 2;
+  else if (pltVi.IsYUY2())
+    lumaW = 2, lumaH = 1;
+  else
+    lumaW = 1, lumaH = 1;
+
   paletteGen(pltSrc,pltVi,env);
 
 }
@@ -84,14 +92,12 @@ PVideoFrame __stdcall CLUTer::GetFrameInterleaved(int n, IScriptEnvironment* env
     SRC_PITCH =   src->GetPitch(),
     DST_PITCH =   dst->GetPitch();
 
-  int wStep = vi.IsRGB() ? 1 : 2;
-
   for (int h = 0; h < vi.height; ++h) {
 
     int srcLine = SRC_PITCH * h,
         dstLine = DST_PITCH * h;
     
-    for (int w = 0; w < vi.width; w += wStep) {
+    for (int w = 0; w < vi.width; w += lumaW) {
 
       int wBytes = w * bytesPerPixel;
 
@@ -166,15 +172,15 @@ PVideoFrame __stdcall CLUTer::GetFramePlanar(int n, IScriptEnvironment* env)
 
   for (int h = 0; h != SRC_HEIGHT_UV; ++h) {
 
-    int srcLineY = SRC_PITCH_Y * h * 2,
-        dstLineY = DST_PITCH_Y * h * 2;
+    int srcLineY = SRC_PITCH_Y * h * lumaH,
+        dstLineY = DST_PITCH_Y * h * lumaH;
 
     int srcLineUV = SRC_PITCH_UV * h,
         dstLineUV = DST_PITCH_UV * h;
     
     for (int w = 0; w != SRC_WIDTH_UV; ++w) {
 
-      int curSampleY =  w * 2,
+      int curSampleY =  w * lumaW,
           curSampleUV = w;
 
       int srcOffsetY =  srcLineY + curSampleY,
@@ -233,7 +239,7 @@ void CLUTer::paletteGen(PVideoFrame pltSrc, VideoInfo pltVi, IScriptEnvironment*
 
       int pltLine = PLT_PITCH * h;
 
-      for (int w = 0; w != pltW; w += pltVi.IsRGB() ? 1 : 2) {
+      for (int w = 0; w != pltW; w += lumaW) {
         
         int wBytes = w * bytesPerPixel;
         int pltOffset = pltLine + wBytes;
@@ -272,12 +278,12 @@ void CLUTer::paletteGen(PVideoFrame pltSrc, VideoInfo pltVi, IScriptEnvironment*
     
     for (int h = 0; h != SRC_HEIGHT_UV; ++h) {
 
-      int srcLineY =  SRC_PITCH_Y * h * 2,
+      int srcLineY =  SRC_PITCH_Y * h * lumaH,
           srcLineUV = SRC_PITCH_UV * h;
     
       for (int w = 0; w != SRC_WIDTH_UV; ++w) {
     
-        int curSampleY =  w * 2,
+        int curSampleY =  w * lumaW,
             curSampleUV = w;
                        
         int srcOffsetY =  srcLineY + curSampleY,
@@ -287,19 +293,17 @@ void CLUTer::paletteGen(PVideoFrame pltSrc, VideoInfo pltVi, IScriptEnvironment*
           u = *(srcU + srcOffsetUV),
           v = *(srcV + srcOffsetUV);
 
-        // Assumes progressive palette chroma, for simplicity; the actual
-        // paletting, however, does take interlacing into account.
-        unsigned char                                   // 2x2 luma values
-          y1 = *(srcY + srcOffsetY),                    // Top left
-          y2 = *(srcY + srcOffsetY + 1),                // Top right
-          y3 = *(srcY + srcOffsetY + SRC_PITCH_Y),      // Bottom left
-          y4 = *(srcY + srcOffsetY + SRC_PITCH_Y + 1);  // Bottom right
+        for (int i = 0; i < lumaH; ++i) {
 
-        pltMain.push_back((y1 << 16) | (u << 8) | v),
-        pltMain.push_back((y2 << 16) | (u << 8) | v),
-        pltMain.push_back((y3 << 16) | (u << 8) | v),
-        pltMain.push_back((y4 << 16) | (u << 8) | v);
-              
+          for (int j = 0; j < lumaW; ++j) {
+
+            unsigned char y = *(srcY + srcOffsetY + (SRC_PITCH_Y * i) + j);
+            pltMain.push_back((y << 16) | (u << 8) | v);
+
+          }
+
+        }
+
       }
            
     }
