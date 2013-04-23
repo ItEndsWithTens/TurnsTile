@@ -89,84 +89,10 @@ CLUTer::~CLUTer()
 PVideoFrame __stdcall CLUTer::GetFrame(int n, IScriptEnvironment* env)
 {
 
-  return vi.IsPlanar() ?  GetFramePlanar(n, env) :
-                          GetFrameInterleaved(n, env);
-
-}
-
-
-
-PVideoFrame __stdcall CLUTer::GetFrameInterleaved(int n, IScriptEnvironment* env)
-{
-
   PVideoFrame src = child->GetFrame(n, env);
   PVideoFrame dst = env->NewVideoFrame(vi);
 
-  const unsigned char* srcp = src->GetReadPtr();
-  unsigned char* dstp =       dst->GetWritePtr();
 
-  const int
-    SRC_PITCH =   src->GetPitch(),
-    DST_PITCH =   dst->GetPitch();
-
-  for (int h = 0; h < vi.height; ++h) {
-
-    int srcLine = SRC_PITCH * h,
-        dstLine = DST_PITCH * h;
-    
-    for (int w = 0; w < vi.width; w += lumaW) {
-
-      int wBytes = w * bytesPerPixel;
-
-      int srcOffset = srcLine + wBytes,
-          dstOffset = dstLine + wBytes;
-
-      if (vi.IsRGB()) {
-
-        unsigned char b = *(srcp + srcOffset),
-                      g = *(srcp + srcOffset + 1),
-                      r = *(srcp + srcOffset + 2);
-
-        int sheetDec = ((r << 16) | (g << 8)) | b;
-
-        *(dstp + dstOffset) =      vecBV[sheetDec];
-        *(dstp + dstOffset + 1) =  vecGU[sheetDec];
-        *(dstp + dstOffset + 2) =  vecRY[sheetDec];
-        *(dstp + dstOffset + 3) =  *(srcp + srcOffset + 3);
-
-      } else {
-
-        // To avoid creating colors in the output that aren't in the palette, I
-        // use the same Y value for Y1 and Y2, so I don't need to read Y2.
-        unsigned char y1 =  *(srcp + srcOffset),
-                      u =   *(srcp + srcOffset + 1),
-                      v =   *(srcp + srcOffset + 3);
-
-        int sheetDec = ((y1 << 16) | (u << 8)) | v;
-
-        *(dstp + dstOffset) =     vecRY[sheetDec];
-        *(dstp + dstOffset + 1) = vecGU[sheetDec];
-        *(dstp + dstOffset + 2) = vecRY[sheetDec];
-        *(dstp + dstOffset + 3) = vecBV[sheetDec];
-
-      }
-      
-    }
-
-  }
-
-  return dst;
-
-}
-
-
-
-PVideoFrame __stdcall CLUTer::GetFramePlanar(int n, IScriptEnvironment* env)
-{
-
-  PVideoFrame src = child->GetFrame(n, env);
-  PVideoFrame dst = env->NewVideoFrame(vi);
-  
   const unsigned char
     * srcY = src->GetReadPtr(PLANAR_Y),
     * srcU = src->GetReadPtr(PLANAR_U),
@@ -179,13 +105,115 @@ PVideoFrame __stdcall CLUTer::GetFramePlanar(int n, IScriptEnvironment* env)
 
   const int
     SRC_PITCH_Y = src->GetPitch(PLANAR_Y),
-    DST_PITCH_Y = dst->GetPitch(PLANAR_Y);
+    SRC_PITCH_UV = src->GetPitch(PLANAR_U),
+    DST_PITCH_Y = dst->GetPitch(PLANAR_Y),
+    DST_PITCH_UV = dst->GetPitch(PLANAR_U);
 
-  const int
-    SRC_WIDTH_UV =  src->GetRowSize(PLANAR_U),
-    SRC_HEIGHT_UV = src->GetHeight(PLANAR_U),
-    SRC_PITCH_UV =  src->GetPitch(PLANAR_U),
-    DST_PITCH_UV =  dst->GetPitch(PLANAR_U);
+
+  if (vi.IsPlanar())
+    processFramePlanar(
+      srcY, srcU, srcV,
+      dstY, dstU, dstV,
+      vi.width / lumaW, vi.height / lumaH,
+      SRC_PITCH_Y, SRC_PITCH_UV, DST_PITCH_Y, DST_PITCH_UV);
+  else
+    if (vi.IsYUY2())
+      processFrameYuyv(
+        srcY, dstY, vi.width, vi.height, SRC_PITCH_Y, DST_PITCH_Y);
+    else
+      processFrameBgr(
+        srcY, dstY, vi.width, vi.height, SRC_PITCH_Y, DST_PITCH_Y);
+
+  return dst;
+
+}
+
+
+
+void CLUTer::processFrameBgr(
+  const unsigned char* srcp, unsigned char* dstp,
+  int width, int height,
+  const int SRC_PITCH, const int DST_PITCH)
+{
+
+  for (int h = 0; h < height; ++h) {
+
+    int srcLine = SRC_PITCH * h,
+        dstLine = DST_PITCH * h;
+
+    for (int w = 0; w < width; ++w) {
+
+      int wBytes = w * bytesPerPixel;
+
+      int srcOffset = srcLine + wBytes,
+          dstOffset = dstLine + wBytes;
+
+      unsigned char b = *(srcp + srcOffset),
+                    g = *(srcp + srcOffset + 1),
+                    r = *(srcp + srcOffset + 2);
+
+      int packed = ((r << 16) | (g << 8)) | b;
+
+      *(dstp + dstOffset) = vecBV[packed];
+      *(dstp + dstOffset + 1) = vecGU[packed];
+      *(dstp + dstOffset + 2) = vecRY[packed];
+
+    }
+
+  }
+
+}
+
+
+
+void CLUTer::processFrameYuyv(
+  const unsigned char* srcp, unsigned char* dstp,
+  int width, int height,
+  const int SRC_PITCH, const int DST_PITCH)
+{
+
+  for (int h = 0; h < height; ++h) {
+
+    int srcLine = SRC_PITCH * h,
+        dstLine = DST_PITCH * h;
+
+    for (int w = 0; w < width; w += 2) {
+
+      int wBytes = w * bytesPerPixel;
+
+      int srcOffset = srcLine + wBytes,
+          dstOffset = dstLine + wBytes;
+
+      unsigned char y = *(srcp + srcOffset),
+                    u = *(srcp + srcOffset + 1),
+                    v = *(srcp + srcOffset + 3);
+
+      int packed = ((y << 16) | (u << 8)) | v;
+
+      *(dstp + dstOffset) = vecRY[packed];
+      *(dstp + dstOffset + 1) = vecGU[packed];
+      *(dstp + dstOffset + 2) = vecRY[packed];
+      *(dstp + dstOffset + 3) = vecBV[packed];
+
+    }
+
+  }
+
+}
+
+
+
+void CLUTer::processFramePlanar(
+  const unsigned char* srcY,
+  const unsigned char* srcU,
+  const unsigned char* srcV,
+  unsigned char* dstY,
+  unsigned char* dstU,
+  unsigned char* dstV,
+  const int SRC_WIDTH_UV, const int SRC_HEIGHT_UV,
+  const int SRC_PITCH_Y, const int SRC_PITCH_UV,
+  const int DST_PITCH_Y, const int DST_PITCH_UV)
+{
 
   for (int h = 0; h != SRC_HEIGHT_UV; ++h) {
 
@@ -194,46 +222,41 @@ PVideoFrame __stdcall CLUTer::GetFramePlanar(int n, IScriptEnvironment* env)
 
     int srcLineUV = SRC_PITCH_UV * h,
         dstLineUV = DST_PITCH_UV * h;
-    
+
     for (int w = 0; w != SRC_WIDTH_UV; ++w) {
 
-      int curSampleY =  w * lumaW,
-          curSampleUV = w;
+      int macropixelY = w * lumaW,
+          macropixelUV = w;
 
-      int srcOffsetY =  srcLineY + curSampleY,
-          srcOffsetUV = srcLineUV + curSampleUV;
+      int srcOffsetY = srcLineY + macropixelY,
+          srcOffsetUV = srcLineUV + macropixelUV;
 
-      int dstOffsetY =  dstLineY + curSampleY,
-          dstOffsetUV = dstLineUV + curSampleUV;
-    
+      int dstOffsetY = dstLineY + macropixelY,
+          dstOffsetUV = dstLineUV + macropixelUV;
+
       unsigned char y = *(srcY + srcOffsetY),
                     u = *(srcU + srcOffsetUV),
                     v = *(srcV + srcOffsetUV);
-    
-      int sheetDec = ((y << 16) | (u << 8)) | v;
-    
-      *(dstU + dstOffsetUV) = vecGU[sheetDec];
-      *(dstV + dstOffsetUV) = vecBV[sheetDec];
 
-      // I set each luma component in the 2x2 block to the same value, as
+      int packed = ((y << 16) | (u << 8)) | v;
+
+      *(dstU + dstOffsetUV) = vecGU[packed];
+      *(dstV + dstOffsetUV) = vecBV[packed];
+
+      // I set each luma component in the macropixel to the same value, as
       // otherwise it'd be possible to end up with colors in the output that
       // aren't in the palette. The only solution I can think of would involve
       // a little too much block-by-block calculation for my taste, and
       // wouldn't be worth the effort. CLUTer is, after all, meant to be used
       // with TurnsTile, which will typically involve tiles large enough to
       // hide my little shortcut.
-      unsigned char yOut = vecRY[sheetDec];
-
-      *(dstY + dstOffsetY) =                   yOut;
-      *(dstY + dstOffsetY + 1) =               yOut;
-      *(dstY + dstOffsetY + DST_PITCH_Y) =     yOut;
-      *(dstY + dstOffsetY + DST_PITCH_Y + 1) = yOut;
+      for (int i = 0; i < lumaH; ++i)
+        for (int j = 0; j < lumaW; ++j)
+          *(dstY + dstOffsetY + (DST_PITCH_Y * i) + j) = vecRY[packed];
 
     }
 
   }
-
-  return dst;
 
 }
 

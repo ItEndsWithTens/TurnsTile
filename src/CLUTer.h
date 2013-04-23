@@ -46,14 +46,33 @@ public:
   ~CLUTer();
 
   PVideoFrame __stdcall GetFrame(int n, IScriptEnvironment* env);
-  PVideoFrame __stdcall GetFrameInterleaved(int n, IScriptEnvironment* env);
-  PVideoFrame __stdcall GetFramePlanar(int n, IScriptEnvironment* env);
 
 private:
 
   std::vector<unsigned char> vecRY, vecGU, vecBV;
 
   int bytesPerPixel, lumaW, lumaH;
+
+  void processFrameBgr(
+    const unsigned char* srcp, unsigned char* dstp,
+    int width, int height,
+    const int SRC_PITCH, const int DST_PITCH);
+
+  void processFrameYuyv(
+    const unsigned char* srcp, unsigned char* dstp,
+    int width, int height,
+    const int SRC_PITCH, const int DST_PITCH);
+
+  void processFramePlanar(
+    const unsigned char* srcY,
+    const unsigned char* srcU,
+    const unsigned char* srcV,
+    unsigned char* dstY,
+    unsigned char* dstU,
+    unsigned char* dstV,
+    const int SRC_WIDTH_UV, const int SRC_HEIGHT_UV,
+    const int SRC_PITCH_Y, const int SRC_PITCH_UV,
+    const int DST_PITCH_Y, const int DST_PITCH_UV);
 
   void buildPaletteBgr(
     const unsigned char* pltp, int width, int height, const int PLT_PITCH);
