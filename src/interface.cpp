@@ -324,7 +324,7 @@ extern "C" __declspec(dllexport) const char* __stdcall AvisynthPluginInit2(IScri
 {
 
   env->AddFunction("CLUTer", "cc[paletteframe]i[interlaced]b",
-                                  Create_CLUTer, 0);
+                             Create_CLUTer, 0);
 
   env->AddFunction("TurnsTile", "c+[tileW]i[tileH]i[res]i[mode]i[levels]s"
                                 "[lotile]i[hitile]i[interlaced]b",

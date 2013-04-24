@@ -14,12 +14,12 @@
 //  modify it under the terms of the GNU General Public License
 //  as published by the Free Software Foundation; either version 2
 //  of the License, or (at your option) any later version.
-//  
+//
 //  This program is distributed in the hope that it will be useful,
 //  but WITHOUT ANY WARRANTY; without even the implied warranty of
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //  GNU General Public License for more details.
-//  
+//
 //  You should have received a copy of the GNU General Public License
 //  along with this program; if not, write to the Free Software Foundation,
 //  Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
@@ -51,17 +51,29 @@ private:
 
   std::vector<unsigned char> vecRY, vecGU, vecBV;
 
-  int bytesPerPixel, lumaW, lumaH;
+  int samplesPerPixel, lumaW, lumaH;
+
+  void buildPaletteBgr(
+    const unsigned char* pltp, int width, int height, const int PLT_PITCH);
 
   void processFrameBgr(
     const unsigned char* srcp, unsigned char* dstp,
     int width, int height,
     const int SRC_PITCH, const int DST_PITCH);
 
+  void buildPaletteYuyv(
+    const unsigned char* pltp, int width, int height, const int PLT_PITCH);
+
   void processFrameYuyv(
     const unsigned char* srcp, unsigned char* dstp,
     int width, int height,
     const int SRC_PITCH, const int DST_PITCH);
+
+  void buildPalettePlanar(
+    const unsigned char* pltY,
+    const unsigned char* pltU,
+    const unsigned char* pltV,
+    int widthU, int heightU, const int PLT_PITCH_Y, const int PLT_PITCH_U);
 
   void processFramePlanar(
     const unsigned char* srcY,
@@ -70,21 +82,9 @@ private:
     unsigned char* dstY,
     unsigned char* dstU,
     unsigned char* dstV,
-    const int SRC_WIDTH_UV, const int SRC_HEIGHT_UV,
-    const int SRC_PITCH_Y, const int SRC_PITCH_UV,
-    const int DST_PITCH_Y, const int DST_PITCH_UV);
-
-  void buildPaletteBgr(
-    const unsigned char* pltp, int width, int height, const int PLT_PITCH);
-
-  void buildPaletteYuyv(
-    const unsigned char* pltp, int width, int height, const int PLT_PITCH);
-
-  void buildPalettePlanar(
-    const unsigned char* pltY,
-    const unsigned char* pltU,
-    const unsigned char* pltV,
-    int widthUV, int heightUV, const int PLT_PITCH_Y, const int PLT_PITCH_UV);
+    const int SRC_WIDTH_U, const int SRC_HEIGHT_U,
+    const int SRC_PITCH_Y, const int SRC_PITCH_U,
+    const int DST_PITCH_Y, const int DST_PITCH_U);
 
   void fillComponentVectors(std::vector<int>* pltMain);
 
