@@ -17,7 +17,8 @@ set(TURNSTILE_DESCRIPTION "TurnsTile plugin for Avisynth ${TURNSTILE_AVS_VERSION
 ### Source files ###
 
 set(SRCS
-  src/avisynth.h
+  include/avs/avisynth-258MT-x86.h
+  src/interface.h
   src/TurnsTile.h
   src/CLUTer.h
   src/interface.cpp

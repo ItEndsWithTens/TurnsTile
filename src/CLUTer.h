@@ -26,11 +26,9 @@
 
 
 
-#include <Windows.h>
-
 #include <vector>
 
-#include "avisynth.h"
+#include "interface.h"
 
 
 

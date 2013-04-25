@@ -25,12 +25,11 @@
 #include "CLUTer.h"
 
 #include <cmath>
-#include <Windows.h>
 
 #include <algorithm>
 #include <vector>
 
-#include "avisynth.h"
+#include "interface.h"
 
 
 

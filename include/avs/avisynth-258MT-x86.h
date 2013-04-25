@@ -48,6 +48,15 @@ enum { AVISYNTH_INTERFACE_VERSION = 3 };
 // Win32 API macros, notably the types BYTE, DWORD, ULONG, etc.
 #include <windef.h>
 
+#if (_MSC_VER >= 1400)
+extern "C" LONG __cdecl _InterlockedIncrement(LONG volatile * pn);
+extern "C" LONG __cdecl _InterlockedDecrement(LONG volatile * pn);
+#pragma intrinsic(_InterlockedIncrement)
+#pragma intrinsic(_InterlockedDecrement)
+#define InterlockedIncrement _InterlockedIncrement
+#define InterlockedDecrement _InterlockedDecrement
+#endif
+
 // COM interface macros
 #include <objbase.h>
 
@@ -261,7 +270,7 @@ struct VideoInfo {
 
 	unsigned __int64 temp = numerator | denominator; // Just looking top bit
 	unsigned u = 0;
-	while (temp & 0xffffffff80000000) { // or perhaps > 16777216*2
+	while (temp & 0xffffffff80000000ull) { // or perhaps > 16777216*2
 	  temp = Int64ShrlMod32(temp, 1);
 	  u++;
 	}
@@ -299,12 +308,13 @@ class VideoFrameBuffer {
   const int data_size;
   // sequence_number is incremented every time the buffer is changed, so
   // that stale views can tell they're no longer valid.
-  long sequence_number;
+  volatile long sequence_number;
 
   friend class VideoFrame;
   friend class Cache;
+  friend class CacheMT;
   friend class ScriptEnvironment;
-  long refcount;
+  volatile long refcount;
 
 public:
   VideoFrameBuffer(int size);
@@ -312,7 +322,7 @@ public:
   ~VideoFrameBuffer();
 
   const BYTE* GetReadPtr() const { return data; }
-  BYTE* GetWritePtr() { ++sequence_number; return data; }
+  BYTE* GetWritePtr() { InterlockedIncrement(&sequence_number); return data; }
   int GetDataSize() { return data_size; }
   int GetSequenceNumber() { return sequence_number; }
   int GetRefcount() { return refcount; }
@@ -330,16 +340,17 @@ class AVSValue;
 // is overloaded to recycle class instances.
 
 class VideoFrame {
-  int refcount;
+  volatile long refcount;
   VideoFrameBuffer* const vfb;
   const int offset, pitch, row_size, height, offsetU, offsetV, pitchUV;  // U&V offsets are from top of picture.
 
   friend class PVideoFrame;
-  void AddRef() { InterlockedIncrement((long *)&refcount); }
-  void Release() { if (refcount==1) InterlockedDecrement(&vfb->refcount); InterlockedDecrement((long *)&refcount); }
+  void AddRef() { InterlockedIncrement(&refcount); }
+  void Release() { VideoFrameBuffer* vfb_local = vfb; if (!InterlockedDecrement(&refcount)) InterlockedDecrement(&vfb_local->refcount); }
 
-  friend class ScriptEnvironment;
   friend class Cache;
+  friend class CacheMT;
+  friend class ScriptEnvironment;
 
   VideoFrame(VideoFrameBuffer* _vfb, int _offset, int _pitch, int _row_size, int _height);
   VideoFrame(VideoFrameBuffer* _vfb, int _offset, int _pitch, int _row_size, int _height, int _offsetU, int _offsetV, int _pitchUV);
@@ -350,7 +361,7 @@ public:
   int GetPitch() const { return pitch; }
   int GetPitch(int plane) const { switch (plane) {case PLANAR_U: case PLANAR_V: return pitchUV;} return pitch; }
   int GetRowSize() const { return row_size; }
-  int GetRowSize(int plane) const {
+  __declspec(noinline) int GetRowSize(int plane) const {
     switch (plane) {
     case PLANAR_U: case PLANAR_V: if (pitchUV) return row_size>>1; else return 0;
     case PLANAR_U_ALIGNED: case PLANAR_V_ALIGNED:
@@ -376,6 +387,7 @@ public:
   int GetOffset(int plane) const { switch (plane) {case PLANAR_U: return offsetU;case PLANAR_V: return offsetV;default: return offset;}; }
 
   // in plugins use env->SubFrame()
+  //If you really want to use these remember to increase vfb->refcount before calling and decrement it afterwards.
   VideoFrame* Subframe(int rel_offset, int new_pitch, int new_row_size, int new_height) const;
   VideoFrame* Subframe(int rel_offset, int new_pitch, int new_row_size, int new_height, int rel_offsetU, int rel_offsetV, int pitchUV) const;
 
@@ -404,7 +416,7 @@ public:
     return vfb->data + GetOffset(plane);
   }
 
-  ~VideoFrame() { InterlockedDecrement(&vfb->refcount); }
+  ~VideoFrame() { VideoFrameBuffer* vfb_local = vfb; if (InterlockedDecrement(&refcount) >= 0) InterlockedDecrement(&vfb_local->refcount); }
 };
 
 enum {
@@ -420,9 +432,9 @@ enum {
 class IClip {
   friend class PClip;
   friend class AVSValue;
-  int refcnt;
-  void AddRef() { InterlockedIncrement((long *)&refcnt); }
-  void Release() { InterlockedDecrement((long *)&refcnt); if (!refcnt) delete this; }
+  volatile long refcnt;
+  void AddRef() { InterlockedIncrement(&refcnt); }
+  void Release() { if (!InterlockedDecrement(&refcnt)) delete this; }
 public:
   IClip() : refcnt(0) {}
 
@@ -433,7 +445,7 @@ public:
   virtual void __stdcall GetAudio(void* buf, __int64 start, __int64 count, IScriptEnvironment* env) = 0;  // start and count are in samples
   virtual void __stdcall SetCacheHints(int cachehints,int frame_range) = 0 ;  // We do not pass cache requests upwards, only to the next filter.
   virtual const VideoInfo& __stdcall GetVideoInfo() = 0;
-  virtual __stdcall ~IClip() {}
+  virtual ~IClip() {}
 };
 
 
@@ -683,9 +695,11 @@ enum {
 
 
 
+class IClipLocalStorage;
+
 class IScriptEnvironment {
 public:
-  virtual __stdcall ~IScriptEnvironment() {}
+  virtual ~IScriptEnvironment() {}
 
   virtual /*static*/ long __stdcall GetCPUFlags() = 0;
 
@@ -739,6 +753,14 @@ public:
   virtual bool __stdcall PlanarChromaAlignment(PlanarChromaAlignmentMode key) = 0;
 
   virtual PVideoFrame __stdcall SubframePlanar(PVideoFrame src, int rel_offset, int new_pitch, int new_row_size, int new_height, int rel_offsetU, int rel_offsetV, int new_pitchUV) = 0;
+
+  virtual void __stdcall SetMTMode(int mode,int threads,bool temporary)=0;
+  virtual int __stdcall  GetMTMode(bool return_nthreads)=0;
+
+  virtual IClipLocalStorage* __stdcall AllocClipLocalStorage()=0;
+
+  virtual void __stdcall SaveClipLocalStorage()=0;
+  virtual void __stdcall RestoreClipLocalStorage()=0;
 };
 
 

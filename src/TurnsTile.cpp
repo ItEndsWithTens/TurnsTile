@@ -29,9 +29,7 @@
 
 #include <algorithm>
 
-#include <Windows.h>
-
-#include "avisynth.h"
+#include "interface.h"
 
 
 

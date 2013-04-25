@@ -27,9 +27,8 @@
 
 #include <cmath>
 #include <cstring>
-#include <Windows.h>
 
-#include "avisynth.h"
+#include "interface.h"
 
 
 
