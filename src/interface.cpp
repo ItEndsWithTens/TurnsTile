@@ -68,12 +68,26 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
   else
     lumaH = 1;
 
+
+  // Reading arguments out of order makes me feel icky, but I need this early.
+  bool interlaced = args[8].AsBool(false);
+
+
+  int minTileW = lumaW,
+      minTileH = lumaH;
+  if (interlaced)
+    minTileH *= 2;
+
   // Reduce each default tile dimension to the greatest size, less than or equal
-  // to its starting value, that's both a factor of the corresponding clip and
-  // tilesheet dimensions, and a multiple of the appropriate macropixel axis.
-  for (dTileW; clipW % dTileW > 0 || sheetW % dTileW > 0; dTileW -= lumaW) {
+  // to its starting value, that's a factor of the clip and tilesheet dimension,
+  // and a multiple of the minimum tile size.
+  for (dTileW; clipW % dTileW > 0 ||
+               sheetW % dTileW > 0 ||
+               dTileW % minTileW > 0; --dTileW) {
   }
-  for (dTileH; clipH % dTileH > 0 || sheetH % dTileH > 0; dTileH -= lumaH) {
+  for (dTileH; clipH % dTileH > 0 ||
+               sheetH % dTileH > 0 ||
+               dTileH % minTileH > 0; --dTileH) {
   }
 
   // Try to get square tiles, if possible.
@@ -91,10 +105,6 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
   // I also need to add another pair of checks, and the associated prep work,
   // to prevent showing users a tile size warning before establishing that the
   // clip they're using is even valid. Please excuse the out of place code.
-
-  // Reading arguments out of order makes me feel icky, but I need this early.
-  bool interlaced = args[8].AsBool(false);
-
   if (!vi.IsSameColorspace(vi2))
       env->ThrowError("TurnsTile: clip and tilesheet must share a colorspace!");
 
@@ -104,11 +114,6 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
                               vi.IsYV12() ?   "YV12" :
                               interlaced ?    "" :
                                               "this";
-
-  int minTileW = lumaW,
-      minTileH = lumaH;
-  if (interlaced)
-    minTileH *= 2;
 
   if (interlaced) {
 
