@@ -27,9 +27,15 @@
 
 
 #include <Windows.h>
-// SEt's 32 bit 2.5.8 MT, July 12th, 2009
-// http://forum.doom9.org/showthread.php?t=148117
-#include "../include/avs/avisynth-258MT-x86.h"
+#if defined(TURNSTILE_HOST_AVISYNTH_26)
+  // SEt's 32 bit 2.6.0 MT, March 9th, 2013
+  // http://forum.doom9.org/showthread.php?t=148782
+  #include "../include/avs/avisynth-260MT-x86.h"
+#else
+  // SEt's 32 bit 2.5.8 MT, July 12th, 2009
+  // http://forum.doom9.org/showthread.php?t=148117
+  #include "../include/avs/avisynth-258MT-x86.h"
+#endif
 
 
 

@@ -11,13 +11,24 @@ set(TURNSTILE_VERSION ${TURNSTILE_MAJOR}.${TURNSTILE_MINOR}.${TURNSTILE_PATCH})
 set(TURNSTILE_AUTHOR "Robert Martens")
 set(TURNSTILE_AUTHOR_EMAIL "<robert.martens@gmail.com>")
 set(TURNSTILE_AVS_VERSION "2.5")
-set(TURNSTILE_DESCRIPTION "TurnsTile plugin for Avisynth ${TURNSTILE_AVS_VERSION}")
+
+set(HOSTS "Avisynth 2.5" "Avisynth 2.6")
+list(GET HOSTS 0 HOST_DEFAULT)
+set(TURNSTILE_HOST ${HOST_DEFAULT} CACHE STRING "Host application to target.")
+set_property(CACHE TURNSTILE_HOST PROPERTY STRINGS ${HOSTS})
+set(TURNSTILE_DESCRIPTION "TurnsTile plugin for ${TURNSTILE_HOST}")
 
 
 ### Source files ###
 
+if(${TURNSTILE_HOST} STREQUAL "Avisynth 2.6")
+  set(TURNSTILE_AVS_HDR include/avs/avisynth-260MT-x86.h)
+else()
+  set(TURNSTILE_AVS_HDR include/avs/avisynth-258MT-x86.h)
+endif()
+
 set(SRCS
-  include/avs/avisynth-258MT-x86.h
+  ${TURNSTILE_AVS_HDR}
   src/interface.h
   src/TurnsTile.h
   src/CLUTer.h
@@ -36,7 +47,16 @@ if(MSVC)
   source_group("Resource Files" FILES src/TurnsTile.rc)
 endif()
 
+string(TOUPPER ${TURNSTILE_HOST} TURNSTILE_HOST_DEFINE)
+string(REPLACE "." "" TURNSTILE_HOST_DEFINE ${TURNSTILE_HOST_DEFINE})
+string(REPLACE " " "_" TURNSTILE_HOST_DEFINE ${TURNSTILE_HOST_DEFINE})
+
 add_library(${PROJECT_NAME} SHARED ${SRCS})
+set_target_properties(
+  ${PROJECT_NAME}
+  PROPERTIES
+  COMPILE_DEFINITIONS "TURNSTILE_HOST_${TURNSTILE_HOST_DEFINE}"
+)
 
 
 

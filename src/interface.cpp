@@ -57,6 +57,17 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
 
   int lumaW, lumaH;
 
+#ifdef TURNSTILE_HOST_AVISYNTH_26
+
+  if (vi.IsYUV() && !vi.IsY8())
+    lumaW = 1 << vi.GetPlaneWidthSubsampling(PLANAR_U),
+    lumaH = 1 << vi.GetPlaneHeightSubsampling(PLANAR_U);
+  else
+    lumaW = 1,
+    lumaH = 1;
+
+#else
+
   if (vi.IsYUV())
     lumaW = 2;
   else
@@ -66,6 +77,8 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
     lumaH = 2;
   else
     lumaH = 1;
+
+#endif
 
 
   // Reading arguments out of order makes me feel icky, but I need this early.
@@ -111,6 +124,12 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
   const char* const cspStr =  vi.IsRGB() ?    "RGB" :
                               vi.IsYUY2() ?   "YUY2" :
                               vi.IsYV12() ?   "YV12" :
+#ifdef TURNSTILE_HOST_AVISYNTH_26
+                              vi.IsYV24() ?   "YV24" :
+                              vi.IsYV16() ?   "YV16" :
+                              vi.IsYV411() ?  "YV411" :
+                              vi.IsY8() ?     "Y8" :
+#endif
                               interlaced ?    "" :
                                               "this";
 
@@ -286,7 +305,13 @@ AVSValue __cdecl Create_CLUTer(AVSValue args, void* user_data, IScriptEnvironmen
     const char* const cspStr =  vi.IsRGB() ?  "RGB" :
                                 vi.IsYUY2() ? "YUY2" :
                                 vi.IsYV12() ? "YV12" :
-                                              "";
+#ifdef TURNSTILE_HOST_AVISYNTH_26
+                                vi.IsYV24() ?   "YV24" :
+                                vi.IsYV16() ?   "YV16" :
+                                vi.IsYV411() ?  "YV411" :
+                                vi.IsY8() ?     "Y8" :
+#endif
+                                                "";
 
     int minClipH;
     if (vi.IsYV12())
@@ -319,8 +344,20 @@ AVSValue __cdecl Create_CLUTer(AVSValue args, void* user_data, IScriptEnvironmen
 
 
 
+#ifdef TURNSTILE_HOST_AVISYNTH_26
+
+const AVS_Linkage* AVS_linkage = 0;
+extern "C" __declspec(dllexport) const char* __stdcall AvisynthPluginInit3(IScriptEnvironment* env, const AVS_Linkage* const vectors)
+{
+
+  AVS_linkage = vectors;
+
+#else
+
 extern "C" __declspec(dllexport) const char* __stdcall AvisynthPluginInit2(IScriptEnvironment* env)
 {
+
+#endif
 
   env->AddFunction("CLUTer", "cc[paletteframe]i[interlaced]b",
                              Create_CLUTer, 0);

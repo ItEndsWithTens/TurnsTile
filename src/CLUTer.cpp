@@ -48,12 +48,24 @@ GenericVideoFilter(_child), samplesPerPixel(vi.BytesFromPixels(1))
     * pltU = plt->GetReadPtr(PLANAR_U),
     * pltV = plt->GetReadPtr(PLANAR_V);
 
+#ifdef TURNSTILE_HOST_AVISYNTH_26
+
+  if (vi.IsYUV() && !vi.IsY8())
+    lumaW = 1 << vi.GetPlaneWidthSubsampling(PLANAR_U),
+    lumaH = 1 << vi.GetPlaneHeightSubsampling(PLANAR_U);
+  else
+    lumaW = 1, lumaH = 1;
+
+#else
+
   if (vi.IsYV12())
     lumaW = 2, lumaH = 2;
   else if (vi.IsYUY2())
     lumaW = 2, lumaH = 1;
   else
     lumaW = 1, lumaH = 1;
+
+#endif
 
 
   if (vi.IsPlanar())
@@ -93,11 +105,19 @@ PVideoFrame __stdcall CLUTer::GetFrame(int n, IScriptEnvironment* env)
     * dstU = dst->GetWritePtr(PLANAR_U),
     * dstV = dst->GetWritePtr(PLANAR_V);
 
-  const int
+  int
     SRC_PITCH_Y = src->GetPitch(PLANAR_Y),
     SRC_PITCH_U = src->GetPitch(PLANAR_U),
     DST_PITCH_Y = dst->GetPitch(PLANAR_Y),
     DST_PITCH_U = dst->GetPitch(PLANAR_U);
+
+  // For handling Y8 clips, without another Avisynth 2.6 ifdef. Asking for read
+  // and write pointers to the U and V planes with a Y8 clip gives duplicates of
+  // the Y plane pointers, but GetPitch returns zero, so I need to adjust these.
+  if (SRC_PITCH_U == 0)
+    SRC_PITCH_U = SRC_PITCH_Y;
+  if (DST_PITCH_U == 0)
+    DST_PITCH_U = DST_PITCH_Y;
 
 
   if (vi.IsPlanar())
