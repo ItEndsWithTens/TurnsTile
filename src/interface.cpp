@@ -232,8 +232,10 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
     tileH /= 2;
     if (!clip->GetVideoInfo().IsFieldBased())
       clip = env->Invoke("SeparateFields", clip).AsClip();
-    if (tilesheet && !tilesheet->GetVideoInfo().IsFieldBased())
+    if (tilesheet && !tilesheet->GetVideoInfo().IsFieldBased()) {
       tilesheet = env->Invoke("SeparateFields", tilesheet).AsClip();
+      vi2 = tilesheet->GetVideoInfo();
+    }
 
   }
 

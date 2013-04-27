@@ -386,24 +386,24 @@ void __stdcall TurnsTile::processFramePlanar(
           * shtTileV = shtV + cropLeftU + cropTopU;
 
         fillTile(
-          dstTileY, SRC_PITCH_Y, shtTileY, SHT_PITCH_Y, tileW, tileH, 0);
+          dstTileY, DST_PITCH_Y, shtTileY, SHT_PITCH_Y, tileW, tileH, 0);
         fillTile(
-          dstTileU, SRC_PITCH_U, shtTileU, SHT_PITCH_U, tileW_U, tileH_U, 0);
+          dstTileU, DST_PITCH_U, shtTileU, SHT_PITCH_U, tileW_U, tileH_U, 0);
         fillTile(
-          dstTileV, SRC_PITCH_U, shtTileV, SHT_PITCH_U, tileW_U, tileH_U, 0);
+          dstTileV, DST_PITCH_U, shtTileV, SHT_PITCH_U, tileW_U, tileH_U, 0);
 
       } else {
 
         fillTile(
-          dstTileY, SRC_PITCH_Y, static_cast<unsigned char*>(0), 0,
+          dstTileY, DST_PITCH_Y, static_cast<unsigned char*>(0), 0,
           tileW, tileH,
           static_cast<unsigned char>(lut[*(srcY + tileCtrY)]));
         fillTile(
-          dstTileU, SRC_PITCH_U, static_cast<unsigned char*>(0), 0,
+          dstTileU, DST_PITCH_U, static_cast<unsigned char*>(0), 0,
           tileW_U, tileH_U,
           static_cast<unsigned char>(lut[*(srcU + tileCtrU)]));
         fillTile(
-          dstTileV, SRC_PITCH_U, static_cast<unsigned char*>(0), 0,
+          dstTileV, DST_PITCH_U, static_cast<unsigned char*>(0), 0,
           tileW_U, tileH_U,
           static_cast<unsigned char>(lut[*(srcV + tileCtrU)]));
 
