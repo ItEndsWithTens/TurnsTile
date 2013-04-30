@@ -42,6 +42,7 @@ tileW(_tileW), tileH(_tileH), mode(_mode),
 srcRows(vi.height / tileH), srcCols(vi.width / tileW),
 shtRows(_vi2.height / tileH), shtCols(_vi2.width / tileW),
 bytesPerSample(1), samplesPerPixel(vi.BytesFromPixels(1) / bytesPerSample),
+PLANAR(vi.IsPlanar()), YUYV(vi.IsYUY2()), BGRA(vi.IsRGB32()), BGR(vi.IsRGB24()),
 host(env)
 {
 
@@ -181,7 +182,7 @@ PVideoFrame __stdcall TurnsTile::GetFrame(int n, IScriptEnvironment* env)
 
   }
 
-  if (vi.IsPlanar())
+  if (PLANAR)
     processFramePlanar(
       srcY, srcU, srcV,
       shtY, shtU, shtV,
@@ -246,7 +247,7 @@ void __stdcall TurnsTile::processFramePacked(
         // regardless of input colorspace.
         int tileIdxY = tileIdx / shtCols;
 
-        if (vi.IsRGB())
+        if (BGRA || BGR)
           tileIdxY = shtRows - 1 - tileIdxY;
 
         // Modulo here has the effect of "wrapping around" the horizontal tile
@@ -260,16 +261,16 @@ void __stdcall TurnsTile::processFramePacked(
 
       } else {
 
-        unsigned char
-          by = lut[*(srcp + tileCtr)],
-          gu = lut[*(srcp + tileCtr + 1)],
-          ry = lut[*(srcp + tileCtr + 2)],
-          av = lut[*(srcp + tileCtr + 3)];
+        if (BGRA || YUYV) {
 
-        if (vi.IsRGB32() || vi.IsYUY2()) {
+          unsigned char
+            by = lut[*(srcp + tileCtr)],
+            gu = lut[*(srcp + tileCtr + 1)],
+            ry = lut[*(srcp + tileCtr + 2)],
+            av = lut[*(srcp + tileCtr + 3)];
 
           unsigned int fillVal;
-          if (vi.IsRGB32())
+          if (BGRA)
             fillVal = (av << 24) | (ry << 16) | (gu << 8) | by;
           else
             fillVal = (av << 24) | (by << 16) | (gu << 8) | by;

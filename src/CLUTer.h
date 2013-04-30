@@ -51,18 +51,12 @@ private:
 
   int samplesPerPixel, lumaW, lumaH;
 
-  void buildPaletteBgr(
+  bool PLANAR, YUYV, BGRA, BGR;
+
+  void buildPalettePacked(
     const unsigned char* pltp, int width, int height, const int PLT_PITCH);
 
-  void processFrameBgr(
-    const unsigned char* srcp, unsigned char* dstp,
-    int width, int height,
-    const int SRC_PITCH, const int DST_PITCH);
-
-  void buildPaletteYuyv(
-    const unsigned char* pltp, int width, int height, const int PLT_PITCH);
-
-  void processFrameYuyv(
+  void processFramePacked(
     const unsigned char* srcp, unsigned char* dstp,
     int width, int height,
     const int SRC_PITCH, const int DST_PITCH);

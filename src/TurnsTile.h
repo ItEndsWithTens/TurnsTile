@@ -78,6 +78,8 @@ private:
       bytesPerSample, samplesPerPixel,
       lumaW, lumaH, tileW_U, tileH_U;
 
+  bool PLANAR, YUYV, BGRA, BGR;
+
   IScriptEnvironment* host;
 
   std::vector<int> lut;

@@ -36,7 +36,8 @@
 CLUTer::CLUTer( PClip _child, PClip _palette,
                 int _pltFrame, bool _interlaced,
                 IScriptEnvironment* env) :
-GenericVideoFilter(_child), samplesPerPixel(vi.BytesFromPixels(1))
+GenericVideoFilter(_child), samplesPerPixel(vi.BytesFromPixels(1)),
+PLANAR(vi.IsPlanar()), YUYV(vi.IsYUY2()), BGRA(vi.IsRGB32()), BGR(vi.IsRGB24())
 {
 
   PVideoFrame plt = _palette->GetFrame(_pltFrame,env);
@@ -73,10 +74,7 @@ GenericVideoFilter(_child), samplesPerPixel(vi.BytesFromPixels(1))
       pltY, pltU, pltV, vi.width / lumaW, vi.height / lumaH,
       plt->GetPitch(PLANAR_Y), plt->GetPitch(PLANAR_U));
   else
-    if (vi.IsYUY2())
-      buildPaletteYuyv(pltY, vi.width, vi.height, plt->GetPitch(PLANAR_Y));
-    else
-      buildPaletteBgr(pltY, vi.width, vi.height, plt->GetPitch(PLANAR_Y));
+    buildPalettePacked(pltY, vi.width, vi.height, plt->GetPitch(PLANAR_Y));
 
 }
 
@@ -127,12 +125,8 @@ PVideoFrame __stdcall CLUTer::GetFrame(int n, IScriptEnvironment* env)
       vi.width / lumaW, vi.height / lumaH,
       SRC_PITCH_Y, SRC_PITCH_U, DST_PITCH_Y, DST_PITCH_U);
   else
-    if (vi.IsYUY2())
-      processFrameYuyv(
-        srcY, dstY, vi.width, vi.height, SRC_PITCH_Y, DST_PITCH_Y);
-    else
-      processFrameBgr(
-        srcY, dstY, vi.width, vi.height, SRC_PITCH_Y, DST_PITCH_Y);
+    processFramePacked(
+      srcY, dstY, vi.width, vi.height, SRC_PITCH_Y, DST_PITCH_Y);
 
   return dst;
 
@@ -140,7 +134,7 @@ PVideoFrame __stdcall CLUTer::GetFrame(int n, IScriptEnvironment* env)
 
 
 
-void CLUTer::buildPaletteBgr(
+void CLUTer::buildPalettePacked(
   const unsigned char* pltp,
   const int PLT_WIDTH, const int PLT_HEIGHT,
   const int PLT_PITCH)
@@ -157,82 +151,25 @@ void CLUTer::buildPaletteBgr(
       int sample = w * samplesPerPixel;
       int pltOffset = pltLine + sample;
 
-      int b = *(pltp + pltOffset),
-          g = *(pltp + pltOffset + 1),
-          r = *(pltp + pltOffset + 2);
+      if (YUYV) {    
 
-      palette.push_back((r << 16) | (g << 8) | b);
+        int y1 = *(pltp + pltOffset),
+            u =  *(pltp + pltOffset + 1),
+            y2 = *(pltp + pltOffset + 2),
+            v =  *(pltp + pltOffset + 3);
 
-    }
+        palette.push_back((y1 << 16) | (u << 8) | v),
+        palette.push_back((y2 << 16) | (u << 8) | v);
 
-  }
+      } else {
 
-  fillComponentVectors(&palette);
+        int b = *(pltp + pltOffset),
+            g = *(pltp + pltOffset + 1),
+            r = *(pltp + pltOffset + 2);
 
-}
+        palette.push_back((r << 16) | (g << 8) | b);
 
-
-
-void CLUTer::processFrameBgr(
-  const unsigned char* srcp, unsigned char* dstp,
-  const int SRC_WIDTH, const int SRC_HEIGHT,
-  const int SRC_PITCH, const int DST_PITCH)
-{
-
-  for (int h = 0; h < SRC_HEIGHT; ++h) {
-
-    int srcLine = SRC_PITCH * h,
-        dstLine = DST_PITCH * h;
-
-    for (int w = 0; w < SRC_WIDTH; ++w) {
-
-      int sample = w * samplesPerPixel;
-
-      int srcOffset = srcLine + sample,
-          dstOffset = dstLine + sample;
-
-      unsigned char b = *(srcp + srcOffset),
-                    g = *(srcp + srcOffset + 1),
-                    r = *(srcp + srcOffset + 2);
-
-      int packed = (r << 16) | (g << 8) | b;
-
-      *(dstp + dstOffset) = vecBV[packed];
-      *(dstp + dstOffset + 1) = vecGU[packed];
-      *(dstp + dstOffset + 2) = vecRY[packed];
-
-    }
-
-  }
-
-}
-
-
-
-void CLUTer::buildPaletteYuyv(
-  const unsigned char* pltp,
-  const int PLT_WIDTH, const int PLT_HEIGHT,
-  const int PLT_PITCH)
-{
-
-  std::vector<int> palette;
-
-  for (int h = 0; h != PLT_HEIGHT; ++h) {
-
-    int pltLine = PLT_PITCH * h;
-
-    for (int w = 0; w != PLT_WIDTH; w += lumaW) {
-
-      int sample = w * samplesPerPixel;
-      int pltOffset = pltLine + sample;
-
-      int y1 =  *(pltp + pltOffset),
-          u =   *(pltp + pltOffset + 1),
-          y2 =  *(pltp + pltOffset + 2),
-          v =   *(pltp + pltOffset + 3);
-
-      palette.push_back((y1 << 16) | (u << 8) | v),
-      palette.push_back((y2 << 16) | (u << 8) | v);
+      }
 
     }
 
@@ -244,7 +181,7 @@ void CLUTer::buildPaletteYuyv(
 
 
 
-void CLUTer::processFrameYuyv(
+void CLUTer::processFramePacked(
   const unsigned char* srcp, unsigned char* dstp,
   const int SRC_WIDTH, const int SRC_HEIGHT,
   const int SRC_PITCH, const int DST_PITCH)
@@ -255,23 +192,39 @@ void CLUTer::processFrameYuyv(
     int srcLine = SRC_PITCH * h,
         dstLine = DST_PITCH * h;
 
-    for (int w = 0; w < SRC_WIDTH; w += 2) {
+    for (int w = 0; w < SRC_WIDTH; w += lumaW) {
 
       int sample = w * samplesPerPixel;
 
       int srcOffset = srcLine + sample,
           dstOffset = dstLine + sample;
 
-      unsigned char y = *(srcp + srcOffset),
-                    u = *(srcp + srcOffset + 1),
-                    v = *(srcp + srcOffset + 3);
+      if (YUYV) {
 
-      int packed = (y << 16) | (u << 8) | v;
+        unsigned char y = *(srcp + srcOffset),
+                      u = *(srcp + srcOffset + 1),
+                      v = *(srcp + srcOffset + 3);
 
-      *(dstp + dstOffset) = vecRY[packed];
-      *(dstp + dstOffset + 1) = vecGU[packed];
-      *(dstp + dstOffset + 2) = vecRY[packed];
-      *(dstp + dstOffset + 3) = vecBV[packed];
+        int packed = (y << 16) | (u << 8) | v;
+
+        *(dstp + dstOffset) = vecRY[packed];
+        *(dstp + dstOffset + 1) = vecGU[packed];
+        *(dstp + dstOffset + 2) = vecRY[packed];
+        *(dstp + dstOffset + 3) = vecBV[packed];
+
+      } else {
+
+        unsigned char b = *(srcp + srcOffset),
+                      g = *(srcp + srcOffset + 1),
+                      r = *(srcp + srcOffset + 2);
+
+        int packed = (r << 16) | (g << 8) | b;
+
+        *(dstp + dstOffset) = vecBV[packed];
+        *(dstp + dstOffset + 1) = vecGU[packed];
+        *(dstp + dstOffset + 2) = vecRY[packed];
+
+      }
 
     }
 
