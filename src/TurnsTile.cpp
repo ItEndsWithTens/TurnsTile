@@ -213,7 +213,7 @@ PVideoFrame __stdcall TurnsTile::GetFrame(int n, IScriptEnvironment* env)
 
 
 
-void __stdcall TurnsTile::processFramePacked(
+void TurnsTile::processFramePacked(
   const unsigned char* srcp, const unsigned char* shtp, unsigned char* dstp,
   const int SRC_PITCH, const int SHT_PITCH, const int DST_PITCH)
 {
@@ -325,7 +325,7 @@ void __stdcall TurnsTile::processFramePacked(
 
 
 
-void __stdcall TurnsTile::processFramePlanar(
+void TurnsTile::processFramePlanar(
   const unsigned char* srcY,
   const unsigned char* srcU,
   const unsigned char* srcV,

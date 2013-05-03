@@ -49,11 +49,11 @@ public:
 
   avxsynth::PVideoFrame __stdcall GetFrame(int n, avxsynth::IScriptEnvironment* env);
 
-  void __stdcall processFramePacked(
+  void processFramePacked(
     const unsigned char* srcp, const unsigned char* shtp, unsigned char* dstp,
     const int SRC_PITCH, const int SHT_PITCH, const int DST_PITCH);
 
-  void __stdcall processFramePlanar(
+  void processFramePlanar(
     const unsigned char* srcY,
     const unsigned char* srcU,
     const unsigned char* srcV,
@@ -111,11 +111,11 @@ public:
 
   PVideoFrame __stdcall GetFrame(int n, IScriptEnvironment* env);
 
-  void __stdcall processFramePacked(
+  void processFramePacked(
     const unsigned char* srcp, const unsigned char* shtp, unsigned char* dstp,
     const int SRC_PITCH, const int SHT_PITCH, const int DST_PITCH);
 
-  void __stdcall processFramePlanar(
+  void processFramePlanar(
     const unsigned char* srcY,
     const unsigned char* srcU,
     const unsigned char* srcV,
