@@ -1,5 +1,7 @@
 scratch/
 *.rc
+*.ffindex
+*.kdev*
 
 #################
 ## Eclipse

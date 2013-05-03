@@ -33,6 +33,19 @@
 
 
 
+#if defined(TURNSTILE_HOST_AVXSYNTH)
+
+using avxsynth::AVSValue;
+using avxsynth::IScriptEnvironment;
+using avxsynth::PClip;
+using avxsynth::PLANAR_Y;
+using avxsynth::PLANAR_U;
+using avxsynth::PLANAR_V;
+using avxsynth::PVideoFrame;
+using avxsynth::VideoInfo;
+
+#endif
+
 TurnsTile::TurnsTile( PClip _child, PClip _tilesheet, VideoInfo _vi2,
                       int _tileW, int _tileH, int _res, int _mode,
                       const char* _levels, int _loTile, int _hiTile,

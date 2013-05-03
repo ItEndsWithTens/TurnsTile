@@ -32,6 +32,60 @@
 
 
 
+#if defined(TURNSTILE_HOST_AVXSYNTH)
+
+class CLUTer : public avxsynth::GenericVideoFilter
+{
+
+public:
+
+  CLUTer(  avxsynth::PClip _child, avxsynth::PClip _palette,
+           int _pltFrame, bool _interlaced,
+           avxsynth::IScriptEnvironment* env);
+
+  ~CLUTer();
+
+  avxsynth::PVideoFrame __stdcall GetFrame(int n, avxsynth::IScriptEnvironment* env);
+
+private:
+
+  std::vector<unsigned char> vecRY, vecGU, vecBV;
+
+  int samplesPerPixel, lumaW, lumaH;
+
+  bool PLANAR, YUYV, BGRA, BGR;
+
+  void buildPalettePacked(
+    const unsigned char* pltp, int width, int height, const int PLT_PITCH);
+
+  void processFramePacked(
+    const unsigned char* srcp, unsigned char* dstp,
+    int width, int height,
+    const int SRC_PITCH, const int DST_PITCH);
+
+  void buildPalettePlanar(
+    const unsigned char* pltY,
+    const unsigned char* pltU,
+    const unsigned char* pltV,
+    int widthU, int heightU, const int PLT_PITCH_Y, const int PLT_PITCH_U);
+
+  void processFramePlanar(
+    const unsigned char* srcY,
+    const unsigned char* srcU,
+    const unsigned char* srcV,
+    unsigned char* dstY,
+    unsigned char* dstU,
+    unsigned char* dstV,
+    const int SRC_WIDTH_U, const int SRC_HEIGHT_U,
+    const int SRC_PITCH_Y, const int SRC_PITCH_U,
+    const int DST_PITCH_Y, const int DST_PITCH_U);
+
+  void fillComponentVectors(std::vector<int>* pltMain);
+
+};
+
+#else
+
 class CLUTer : public GenericVideoFilter
 {
 
@@ -81,6 +135,8 @@ private:
   void fillComponentVectors(std::vector<int>* pltMain);
 
 };
+
+#endif
 
 
 

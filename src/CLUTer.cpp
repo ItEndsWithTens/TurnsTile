@@ -33,6 +33,19 @@
 
 
 
+#if defined(TURNSTILE_HOST_AVXSYNTH)
+
+using avxsynth::AVSValue;
+using avxsynth::IScriptEnvironment;
+using avxsynth::PClip;
+using avxsynth::PLANAR_Y;
+using avxsynth::PLANAR_U;
+using avxsynth::PLANAR_V;
+using avxsynth::PVideoFrame;
+using avxsynth::VideoInfo;
+
+#endif
+
 CLUTer::CLUTer( PClip _child, PClip _palette,
                 int _pltFrame, bool _interlaced,
                 IScriptEnvironment* env) :
