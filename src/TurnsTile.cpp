@@ -52,8 +52,8 @@ TurnsTile::TurnsTile( PClip _child, PClip _tilesheet, VideoInfo _vi2,
                       IScriptEnvironment* env) :
 GenericVideoFilter(_child), tilesheet(_tilesheet),
 tileW(_tileW), tileH(_tileH), mode(_mode),
-srcRows(vi.height / tileH), srcCols(vi.width / tileW),
-shtRows(_vi2.height / tileH), shtCols(_vi2.width / tileW),
+srcCols(vi.width / tileW), srcRows(vi.height / tileH),
+shtCols(_vi2.width / tileW), shtRows(_vi2.height / tileH),
 bytesPerSample(1), samplesPerPixel(vi.BytesFromPixels(1) / bytesPerSample),
 PLANAR(vi.IsPlanar()), YUYV(vi.IsYUY2()), BGRA(vi.IsRGB32()), BGR(vi.IsRGB24()),
 host(env)
@@ -86,11 +86,12 @@ host(env)
     idxInMin = 16;
 
   int idxInMax = 255;
-  if (strcmp(_levels, "pc") != 0)
+  if (strcmp(_levels, "pc") != 0) {
     if (mode > lumaW * lumaH)
       idxInMax = 240;
     else
       idxInMax = 235;
+  }
 
   // An easy way to simulate the look of decreased bit depth; treat 'res'
   // as desired number of bits per component, then cut the output range

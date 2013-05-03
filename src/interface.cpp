@@ -106,14 +106,10 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
   // Reduce each default tile dimension to the greatest size, less than or equal
   // to its starting value, that's a factor of the clip and tilesheet dimension,
   // and a multiple of the minimum tile size.
-  for (dTileW; clipW % dTileW > 0 ||
-               sheetW % dTileW > 0 ||
-               dTileW % minTileW > 0; --dTileW) {
-  }
-  for (dTileH; clipH % dTileH > 0 ||
-               sheetH % dTileH > 0 ||
-               dTileH % minTileH > 0; --dTileH) {
-  }
+  while (clipW % dTileW > 0 || sheetW % dTileW > 0 || dTileW % minTileW > 0)
+    --dTileW;
+  while (clipH % dTileH > 0 || sheetH % dTileH > 0 || dTileH % minTileH > 0)
+    --dTileH;
 
   // Try to get square tiles, if possible.
   if (dTileW != dTileH && clipW % dTileH == 0 && sheetW % dTileH == 0)
