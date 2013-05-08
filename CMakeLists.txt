@@ -120,10 +120,28 @@ else()
   set(HOST_PLUGIN_DIR /usr/local/lib/avxsynth)
 endif()
 
-set(
-  TURNSTILE_PLUGINS_DIR ${HOST_PLUGIN_DIR} CACHE FILEPATH
-  "Path to your plugin autoload directory (for more convenient debugging)."
-)
+# If Avisynth isn't installed, the registry entry won't be there, and the
+# HOST_PLUGIN_DIR variable will be set to "/registry", which is no good.
+if(NOT DEFINED HOST_PLUGIN_DIR OR
+   NOT EXISTS "${HOST_PLUGIN_DIR}" OR
+   NOT IS_DIRECTORY "${HOST_PLUGIN_DIR}")
+  set(HOST_PLUGIN_DIR "")
+endif()
+  
+# Checking the validity of manually entered plugin directories makes this whole
+# process a lot more complicated than I thought it would, so for now I simply
+# trust that users know what they're doing when choosing their own path...
+if(NOT DEFINED TURNSTILE_PLUGINS_DIR)
+   set(
+    TURNSTILE_PLUGINS_DIR ${HOST_PLUGIN_DIR} CACHE PATH
+    "Path to your plugin directory (for more convenient debugging). Leave blank to disable ${PROJECT_NAME}-copy target." FORCE
+   )
+endif()
+
+# ...though I still try to protect people (like me) who might use backslashes.
+if(NOT "${TURNSTILE_PLUGINS_DIR}" STREQUAL "")
+  file(TO_CMAKE_PATH ${TURNSTILE_PLUGINS_DIR} TURNSTILE_PLUGINS_DIR)
+endif()
 
 
 
@@ -135,11 +153,13 @@ set(
 # so that every time you build the project, the resulting library will be copied
 # to the plugins directory, even if the plugin is up to date, and even if you're
 # only switching between configurations, making debugging a one key affair.
-add_custom_target(
-  ${PROJECT_NAME}-copy ALL
-  COMMAND ${CMAKE_COMMAND} -E copy
-  $<TARGET_FILE:${PROJECT_NAME}> ${TURNSTILE_PLUGINS_DIR}
-)
+if(NOT "${TURNSTILE_PLUGINS_DIR}" STREQUAL "")
+  add_custom_target(
+    ${PROJECT_NAME}-copy ALL
+    COMMAND ${CMAKE_COMMAND} -E copy
+    $<TARGET_FILE:${PROJECT_NAME}> ${TURNSTILE_PLUGINS_DIR}
+  )
+endif()
 
 
 
