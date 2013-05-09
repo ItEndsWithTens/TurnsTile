@@ -103,29 +103,9 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
   if (interlaced)
     minTileH *= 2;
 
-  // Reduce each default tile dimension to the greatest size, less than or equal
-  // to its starting value, that's a factor of the clip and tilesheet dimension,
-  // and a multiple of the minimum tile size.
-  while (clipW % dTileW > 0 || sheetW % dTileW > 0 || dTileW % minTileW > 0)
-    --dTileW;
-  while (clipH % dTileH > 0 || sheetH % dTileH > 0 || dTileH % minTileH > 0)
-    --dTileH;
-
-  // Try to get square tiles, if possible.
-  if (dTileW != dTileH && clipW % dTileH == 0 && sheetW % dTileH == 0)
-    dTileW = dTileH;
-  if (dTileH != dTileW && clipH % dTileW == 0 && sheetH % dTileW == 0)
-    dTileH = dTileW;
-
-  int tileW = args[1].AsInt(dTileW),
-      tileH = args[2].AsInt(dTileH);
-
-
   // I've saved most of my error handling for later, but I have to check for a
-  // possible divide by zero when calculating tileIdxMax below. Unfortunately,
-  // I also need to add another pair of checks, and the associated prep work,
-  // to prevent showing users a tile size warning before establishing that the
-  // clip they're using is even valid. Please excuse the out of place code.
+  // divide by zero that might crop up when reducing dTileW and dTileH. The
+  // matching colorspace check is here because I feel like it should be first.
   if (!vi.IsSameColorspace(vi2))
       env->ThrowError("TurnsTile: clip and tilesheet must share a colorspace!");
 
@@ -156,6 +136,25 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
 
   }
 
+  // Reduce each default tile dimension to the greatest size, less than or equal
+  // to its starting value, that's a factor of the clip and tilesheet dimension,
+  // and a multiple of the minimum tile size.
+  while (clipW % dTileW > 0 || sheetW % dTileW > 0 || dTileW % minTileW > 0)
+    --dTileW;
+  while (clipH % dTileH > 0 || sheetH % dTileH > 0 || dTileH % minTileH > 0)
+    --dTileH;
+
+  // Try to get square tiles, if possible.
+  if (dTileW != dTileH && clipW % dTileH == 0 && sheetW % dTileH == 0)
+    dTileW = dTileH;
+  if (dTileH != dTileW && clipH % dTileW == 0 && sheetH % dTileW == 0)
+    dTileH = dTileW;
+
+  int tileW = args[1].AsInt(dTileW),
+      tileH = args[2].AsInt(dTileH);
+
+  // Another pair of out of place error checks for another possible divide by
+  // zero, this time when calculating tileIdxMax a few lines down.
   if (tileW < minTileW)
     env->ThrowError(
       "TurnsTile: tilew must be at least %d for %s input!",
