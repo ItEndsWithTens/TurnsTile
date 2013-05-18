@@ -49,7 +49,7 @@ using avxsynth::VideoInfo;
 CLUTer::CLUTer( PClip _child, PClip _palette,
                 int _pltFrame, bool _interlaced,
                 IScriptEnvironment* env) :
-GenericVideoFilter(_child), samplesPerPixel(vi.BytesFromPixels(1)),
+GenericVideoFilter(_child), spp(vi.BytesFromPixels(1)),
 PLANAR(vi.IsPlanar()), YUYV(vi.IsYUY2()), BGRA(vi.IsRGB32()), BGR(vi.IsRGB24())
 {
 
@@ -102,8 +102,9 @@ CLUTer::~CLUTer()
 PVideoFrame __stdcall CLUTer::GetFrame(int n, IScriptEnvironment* env)
 {
 
-  PVideoFrame src = child->GetFrame(n, env);
-  PVideoFrame dst = env->NewVideoFrame(vi);
+  PVideoFrame
+    src = child->GetFrame(n, env),
+    dst = env->NewVideoFrame(vi);
 
 
   const unsigned char
@@ -117,18 +118,18 @@ PVideoFrame __stdcall CLUTer::GetFrame(int n, IScriptEnvironment* env)
     * dstV = dst->GetWritePtr(PLANAR_V);
 
   int
-    SRC_PITCH_Y = src->GetPitch(PLANAR_Y),
-    SRC_PITCH_U = src->GetPitch(PLANAR_U),
-    DST_PITCH_Y = dst->GetPitch(PLANAR_Y),
-    DST_PITCH_U = dst->GetPitch(PLANAR_U);
+    SRC_PITCH_SAMPLES_Y = src->GetPitch(PLANAR_Y),
+    SRC_PITCH_SAMPLES_U = src->GetPitch(PLANAR_U),
+    DST_PITCH_SAMPLES_Y = dst->GetPitch(PLANAR_Y),
+    DST_PITCH_SAMPLES_U = dst->GetPitch(PLANAR_U);
 
   // For handling Y8 clips, without another Avisynth 2.6 ifdef. Asking for read
   // and write pointers to the U and V planes with a Y8 clip gives duplicates of
   // the Y plane pointers, but GetPitch returns zero, so I need to adjust these.
-  if (SRC_PITCH_U == 0)
-    SRC_PITCH_U = SRC_PITCH_Y;
-  if (DST_PITCH_U == 0)
-    DST_PITCH_U = DST_PITCH_Y;
+  if (SRC_PITCH_SAMPLES_U == 0)
+    SRC_PITCH_SAMPLES_U = SRC_PITCH_SAMPLES_Y;
+  if (DST_PITCH_SAMPLES_U == 0)
+    DST_PITCH_SAMPLES_U = DST_PITCH_SAMPLES_Y;
 
 
   if (vi.IsPlanar())
@@ -136,10 +137,12 @@ PVideoFrame __stdcall CLUTer::GetFrame(int n, IScriptEnvironment* env)
       srcY, srcU, srcV,
       dstY, dstU, dstV,
       vi.width / lumaW, vi.height / lumaH,
-      SRC_PITCH_Y, SRC_PITCH_U, DST_PITCH_Y, DST_PITCH_U);
+      SRC_PITCH_SAMPLES_Y, SRC_PITCH_SAMPLES_U,
+      DST_PITCH_SAMPLES_Y, DST_PITCH_SAMPLES_U);
   else
     processFramePacked(
-      srcY, dstY, vi.width, vi.height, SRC_PITCH_Y, DST_PITCH_Y);
+      srcY, dstY, vi.width, vi.height,
+      SRC_PITCH_SAMPLES_Y, DST_PITCH_SAMPLES_Y);
 
   return dst;
 
@@ -150,35 +153,35 @@ PVideoFrame __stdcall CLUTer::GetFrame(int n, IScriptEnvironment* env)
 void CLUTer::buildPalettePacked(
   const unsigned char* pltp,
   const int PLT_WIDTH, const int PLT_HEIGHT,
-  const int PLT_PITCH)
+  const int PLT_PITCH_SAMPLES)
 {
 
   std::vector<int> palette;
 
   for (int h = 0; h != PLT_HEIGHT; ++h) {
 
-    int pltLine = PLT_PITCH * h;
+    int pltLine = PLT_PITCH_SAMPLES * h;
 
     for (int w = 0; w != PLT_WIDTH; w += lumaW) {
 
-      int sample = w * samplesPerPixel;
-      int pltOffset = pltLine + sample;
+      int sample = w * spp;
+      int pltOfs = pltLine + sample;
 
       if (YUYV) {    
 
-        int y1 = *(pltp + pltOffset),
-            u =  *(pltp + pltOffset + 1),
-            y2 = *(pltp + pltOffset + 2),
-            v =  *(pltp + pltOffset + 3);
+        int y1 = *(pltp + pltOfs),
+            u =  *(pltp + pltOfs + 1),
+            y2 = *(pltp + pltOfs + 2),
+            v =  *(pltp + pltOfs + 3);
 
         palette.push_back((y1 << 16) | (u << 8) | v),
         palette.push_back((y2 << 16) | (u << 8) | v);
 
       } else {
 
-        int b = *(pltp + pltOffset),
-            g = *(pltp + pltOffset + 1),
-            r = *(pltp + pltOffset + 2);
+        int b = *(pltp + pltOfs),
+            g = *(pltp + pltOfs + 1),
+            r = *(pltp + pltOfs + 2);
 
         palette.push_back((r << 16) | (g << 8) | b);
 
@@ -197,45 +200,45 @@ void CLUTer::buildPalettePacked(
 void CLUTer::processFramePacked(
   const unsigned char* srcp, unsigned char* dstp,
   const int SRC_WIDTH, const int SRC_HEIGHT,
-  const int SRC_PITCH, const int DST_PITCH)
+  const int SRC_PITCH_SAMPLES, const int DST_PITCH_SAMPLES)
 {
 
   for (int h = 0; h < SRC_HEIGHT; ++h) {
 
-    int srcLine = SRC_PITCH * h,
-        dstLine = DST_PITCH * h;
+    int srcLine = SRC_PITCH_SAMPLES * h,
+        dstLine = DST_PITCH_SAMPLES * h;
 
     for (int w = 0; w < SRC_WIDTH; w += lumaW) {
 
-      int sample = w * samplesPerPixel;
+      int sample = w * spp;
 
-      int srcOffset = srcLine + sample,
-          dstOffset = dstLine + sample;
+      int srcOfs = srcLine + sample,
+          dstOfs = dstLine + sample;
 
       if (YUYV) {
 
-        unsigned char y = *(srcp + srcOffset),
-                      u = *(srcp + srcOffset + 1),
-                      v = *(srcp + srcOffset + 3);
+        unsigned char y = *(srcp + srcOfs),
+                      u = *(srcp + srcOfs + 1),
+                      v = *(srcp + srcOfs + 3);
 
         int packed = (y << 16) | (u << 8) | v;
 
-        *(dstp + dstOffset) = vecRY[packed];
-        *(dstp + dstOffset + 1) = vecGU[packed];
-        *(dstp + dstOffset + 2) = vecRY[packed];
-        *(dstp + dstOffset + 3) = vecBV[packed];
+        *(dstp + dstOfs) = vecYR[packed];
+        *(dstp + dstOfs + 1) = vecUG[packed];
+        *(dstp + dstOfs + 2) = vecYR[packed];
+        *(dstp + dstOfs + 3) = vecVB[packed];
 
       } else {
 
-        unsigned char b = *(srcp + srcOffset),
-                      g = *(srcp + srcOffset + 1),
-                      r = *(srcp + srcOffset + 2);
+        unsigned char b = *(srcp + srcOfs),
+                      g = *(srcp + srcOfs + 1),
+                      r = *(srcp + srcOfs + 2);
 
         int packed = (r << 16) | (g << 8) | b;
 
-        *(dstp + dstOffset) = vecBV[packed];
-        *(dstp + dstOffset + 1) = vecGU[packed];
-        *(dstp + dstOffset + 2) = vecRY[packed];
+        *(dstp + dstOfs) = vecVB[packed];
+        *(dstp + dstOfs + 1) = vecUG[packed];
+        *(dstp + dstOfs + 2) = vecYR[packed];
 
       }
 
@@ -252,33 +255,33 @@ void CLUTer::buildPalettePlanar(
   const unsigned char* srcU,
   const unsigned char* srcV,
   const int PLT_WIDTH_U, const int PLT_HEIGHT_U,
-  const int PLT_PITCH_Y, const int PLT_PITCH_U)
+  const int PLT_PITCH_SAMPLES_Y, const int PLT_PITCH_SAMPLES_U)
 {
 
   std::vector<int> palette;
 
   for (int h = 0; h != PLT_HEIGHT_U; ++h) {
 
-    int srcLineY = PLT_PITCH_Y * h * lumaH,
-        srcLineU = PLT_PITCH_U * h;
+    int srcLineY = PLT_PITCH_SAMPLES_Y * h * lumaH,
+        srcLineU = PLT_PITCH_SAMPLES_U * h;
 
     for (int w = 0; w != PLT_WIDTH_U; ++w) {
 
       int sampleY = w * lumaW,
           sampleU = w;
 
-      int srcOffsetY = srcLineY + sampleY,
-          srcOffsetU = srcLineU + sampleU;
+      int srcOfsY = srcLineY + sampleY,
+          srcOfsU = srcLineU + sampleU;
 
       unsigned char
-        u = *(srcU + srcOffsetU),
-        v = *(srcV + srcOffsetU);
+        u = *(srcU + srcOfsU),
+        v = *(srcV + srcOfsU);
 
       for (int i = 0; i < lumaH; ++i) {
 
         for (int j = 0; j < lumaW; ++j) {
 
-          unsigned char y = *(srcY + srcOffsetY + (PLT_PITCH_Y * i) + j);
+          unsigned char y = *(srcY + srcOfsY + (PLT_PITCH_SAMPLES_Y * i) + j);
           palette.push_back((y << 16) | (u << 8) | v);
 
         }
@@ -303,37 +306,37 @@ void CLUTer::processFramePlanar(
   unsigned char* dstU,
   unsigned char* dstV,
   const int SRC_WIDTH_U, const int SRC_HEIGHT_U,
-  const int SRC_PITCH_Y, const int SRC_PITCH_U,
-  const int DST_PITCH_Y, const int DST_PITCH_U)
+  const int SRC_PITCH_SAMPLES_Y, const int SRC_PITCH_SAMPLES_U,
+  const int DST_PITCH_SAMPLES_Y, const int DST_PITCH_SAMPLES_U)
 {
 
   for (int h = 0; h != SRC_HEIGHT_U; ++h) {
 
-    int srcLineY = SRC_PITCH_Y * h * lumaH,
-        dstLineY = DST_PITCH_Y * h * lumaH;
+    int srcLineY = SRC_PITCH_SAMPLES_Y * h * lumaH,
+        dstLineY = DST_PITCH_SAMPLES_Y * h * lumaH;
 
-    int srcLineU = SRC_PITCH_U * h,
-        dstLineU = DST_PITCH_U * h;
+    int srcLineU = SRC_PITCH_SAMPLES_U * h,
+        dstLineU = DST_PITCH_SAMPLES_U * h;
 
     for (int w = 0; w != SRC_WIDTH_U; ++w) {
 
       int sampleY = w * lumaW,
           sampleU = w;
 
-      int srcOffsetY = srcLineY + sampleY,
-          srcOffsetU = srcLineU + sampleU;
+      int srcOfsY = srcLineY + sampleY,
+          srcOfsU = srcLineU + sampleU;
 
-      int dstOffsetY = dstLineY + sampleY,
-          dstOffsetU = dstLineU + sampleU;
+      int dstOfsY = dstLineY + sampleY,
+          dstOfsU = dstLineU + sampleU;
 
-      unsigned char y = *(srcY + srcOffsetY),
-                    u = *(srcU + srcOffsetU),
-                    v = *(srcV + srcOffsetU);
+      unsigned char y = *(srcY + srcOfsY),
+                    u = *(srcU + srcOfsU),
+                    v = *(srcV + srcOfsU);
 
       int packed = (y << 16) | (u << 8) | v;
 
-      *(dstU + dstOffsetU) = vecGU[packed];
-      *(dstV + dstOffsetU) = vecBV[packed];
+      *(dstU + dstOfsU) = vecUG[packed];
+      *(dstV + dstOfsU) = vecVB[packed];
 
       // I set each luma component in the macropixel to the same value, as
       // otherwise it'd be possible to end up with colors in the output that
@@ -344,7 +347,7 @@ void CLUTer::processFramePlanar(
       // hide my little shortcut.
       for (int i = 0; i < lumaH; ++i)
         for (int j = 0; j < lumaW; ++j)
-          *(dstY + dstOffsetY + (DST_PITCH_Y * i) + j) = vecRY[packed];
+          *(dstY + dstOfsY + (DST_PITCH_SAMPLES_Y * i) + j) = vecYR[packed];
 
     }
 
@@ -369,23 +372,23 @@ void CLUTer::fillComponentVectors(std::vector<int>* plt)
   // I get smarter I'll take working over efficient.
   for (int i = 0; i < 16777216; ++i) {
 
-    int inRY = (i >> 16) & 255,
-        inGU = (i >> 8) & 255,
-        inBV = i & 255;
+    int inYR = (i >> 16) & 255,
+        inUG = (i >> 8) & 255,
+        inVB = i & 255;
 
     int base = (*plt)[0];
 
-    int pltRY = (base >> 16) & 255,
-        pltGU = (base >> 8) & 255,
-        pltBV = base & 255;
+    int pltYR = (base >> 16) & 255,
+        pltUG = (base >> 8) & 255,
+        pltVB = base & 255;
 
     // For my use, the sum of absolute differences provides the same results
     // as the Euclidean distance approach I'd been using; I'd implemented that
     // incompletely anyway, and it worked well enough, so I have no qualms
     // using an even simpler, faster technique.
-    int sumPrev = abs(inRY - pltRY) +
-                  abs(inGU - pltGU) +
-                  abs(inBV - pltBV);
+    int sumPrev = abs(inYR - pltYR) +
+                  abs(inUG - pltUG) +
+                  abs(inVB - pltVB);
 
     int outInt = base;
 
@@ -393,13 +396,13 @@ void CLUTer::fillComponentVectors(std::vector<int>* plt)
 
       int pltInt = *j;
 
-      pltRY = (pltInt >> 16) & 255;
-      pltGU = (pltInt >> 8) & 255;
-      pltBV = pltInt & 255;
+      pltYR = (pltInt >> 16) & 255;
+      pltUG = (pltInt >> 8) & 255;
+      pltVB = pltInt & 255;
 
-      int sumCur = abs(inRY - pltRY) +
-                   abs(inGU - pltGU) +
-                   abs(inBV - pltBV);
+      int sumCur = abs(inYR - pltYR) +
+                   abs(inUG - pltUG) +
+                   abs(inVB - pltVB);
 
       if (sumCur < sumPrev) {
         sumPrev = sumCur;
@@ -408,9 +411,9 @@ void CLUTer::fillComponentVectors(std::vector<int>* plt)
 
     }
 
-    vecRY.push_back((outInt >> 16) & 255);
-    vecGU.push_back((outInt >> 8) & 255);
-    vecBV.push_back(outInt & 255);
+    vecYR.push_back((outInt >> 16) & 255);
+    vecUG.push_back((outInt >> 8) & 255);
+    vecVB.push_back(outInt & 255);
 
   }
 

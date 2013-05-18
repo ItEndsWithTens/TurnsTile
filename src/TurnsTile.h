@@ -32,70 +32,15 @@
 
 
 
-#if defined(TURNSTILE_HOST_AVXSYNTH)
+#ifdef TURNSTILE_HOST_AVXSYNTH
 
-class TurnsTile : public avxsynth::GenericVideoFilter
-{
+  #define GenericVideoFilter avxsynth::GenericVideoFilter
+  #define IScriptEnvironment avxsynth::IScriptEnvironment
+  #define PClip avxsynth::PClip
+  #define PVideoFrame avxsynth::PVideoFrame
+  #define VideoInfo avxsynth::VideoInfo
 
-public:
-
-  TurnsTile(
-    avxsynth::PClip _child, avxsynth::PClip _tilesheet, avxsynth::VideoInfo _vi2,
-    int _tileW, int _tileH, int _res, int _mode,
-    const char* _levels, int _loTile, int _hiTile,
-    avxsynth::IScriptEnvironment* env);
-
-  ~TurnsTile();
-
-  avxsynth::PVideoFrame __stdcall GetFrame(int n, avxsynth::IScriptEnvironment* env);
-
-  void processFramePacked(
-    const unsigned char* srcp, const unsigned char* shtp, unsigned char* dstp,
-    const int SRC_PITCH, const int SHT_PITCH, const int DST_PITCH);
-
-  void processFramePlanar(
-    const unsigned char* srcY,
-    const unsigned char* srcU,
-    const unsigned char* srcV,
-    const unsigned char* shtY,
-    const unsigned char* shtU,
-    const unsigned char* shtV,
-    unsigned char* dstY,
-    unsigned char* dstU,
-    unsigned char* dstV,
-    const int SRC_PITCH_Y, const int SRC_PITCH_U,
-    const int SHT_PITCH_Y, const int SHT_PITCH_U,
-    const int DST_PITCH_Y, const int DST_PITCH_U);
-
-  static int gcf(int a, int b);
-
-  static int mod(int num, int mod, int min, int max, int dir);
-
-private:
-
-  avxsynth::PClip tilesheet;
-
-  int tileW, tileH, mode,
-      srcCols, srcRows,
-      shtCols, shtRows,
-      bytesPerSample, samplesPerPixel,
-      lumaW, lumaH, tileW_U, tileH_U;
-
-  bool PLANAR, YUYV, BGRA, BGR;
-
-  avxsynth::IScriptEnvironment* host;
-
-  std::vector<int> lut;
-
-  template<typename Tsample, typename Tpixel>
-  void fillTile(
-    Tsample* dstp, const int DST_PITCH,
-    const Tsample* srcp, const int SRC_PITCH,
-    const int width, const int height, const Tpixel fillVal) const;
-
-};
-
-#else
+#endif
 
 class TurnsTile : public GenericVideoFilter
 {
@@ -112,8 +57,12 @@ public:
   PVideoFrame __stdcall GetFrame(int n, IScriptEnvironment* env);
 
   void processFramePacked(
-    const unsigned char* srcp, const unsigned char* shtp, unsigned char* dstp,
-    const int SRC_PITCH, const int SHT_PITCH, const int DST_PITCH);
+    const unsigned char* srcp,
+    const unsigned char* shtp,
+    unsigned char* dstp,
+    const int SRC_PITCH_SAMPLES,
+    const int SHT_PITCH_SAMPLES,
+    const int DST_PITCH_SAMPLES);
 
   void processFramePlanar(
     const unsigned char* srcY,
@@ -125,9 +74,9 @@ public:
     unsigned char* dstY,
     unsigned char* dstU,
     unsigned char* dstV,
-    const int SRC_PITCH_Y, const int SRC_PITCH_U,
-    const int SHT_PITCH_Y, const int SHT_PITCH_U,
-    const int DST_PITCH_Y, const int DST_PITCH_U);
+    const int SRC_PITCH_SAMPLES_Y, const int SRC_PITCH_SAMPLES_U,
+    const int SHT_PITCH_SAMPLES_Y, const int SHT_PITCH_SAMPLES_U,
+    const int DST_PITCH_SAMPLES_Y, const int DST_PITCH_SAMPLES_U);
 
   static int gcf(int a, int b);
 
@@ -140,7 +89,7 @@ private:
   int tileW, tileH, mode,
       srcCols, srcRows,
       shtCols, shtRows,
-      bytesPerSample, samplesPerPixel,
+      bytesPerSample, spp,
       lumaW, lumaH, tileW_U, tileH_U;
 
   bool PLANAR, YUYV, BGRA, BGR;
@@ -151,11 +100,19 @@ private:
 
   template<typename Tsample, typename Tpixel>
   void fillTile(
-    Tsample* dstp, const int DST_PITCH,
-    const Tsample* srcp, const int SRC_PITCH,
+    Tsample* dstp, const int DST_PITCH_SAMPLES,
+    const Tsample* srcp, const int SRC_PITCH_SAMPLES,
     const int width, const int height, const Tpixel fillVal) const;
 
 };
+
+#ifdef TURNSTILE_HOST_AVXSYNTH
+
+  #undef GenericVideoFilter
+  #undef IScriptEnvironment
+  #undef PClip
+  #undef PVideoFrame
+  #undef VideoInfo
 
 #endif
 

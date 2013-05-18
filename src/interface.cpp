@@ -45,7 +45,8 @@ using avxsynth::VideoInfo;
 
 #endif
 
-AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnvironment* env)
+AVSValue __cdecl Create_TurnsTile(
+  AVSValue args, void* user_data, IScriptEnvironment* env)
 {
 
   PClip clip = args[0][0].AsClip(),
@@ -282,15 +283,17 @@ AVSValue __cdecl Create_TurnsTile(AVSValue args, void* user_data, IScriptEnviron
                                     hiTile,
                                     env);
 
-  return  interlaced && finalClip->GetVideoInfo().IsFieldBased() ?
-            env->Invoke("Weave", finalClip) :
-          finalClip;
+  if (interlaced && finalClip->GetVideoInfo().IsFieldBased())
+    return env->Invoke("Weave", finalClip);
+  else
+    return finalClip;
 
 }
 
 
 
-AVSValue __cdecl Create_CLUTer(AVSValue args, void* user_data, IScriptEnvironment* env)
+AVSValue __cdecl Create_CLUTer(
+  AVSValue args, void* user_data, IScriptEnvironment* env)
 {
 
   PClip clip = args[0].AsClip(),
@@ -344,9 +347,10 @@ AVSValue __cdecl Create_CLUTer(AVSValue args, void* user_data, IScriptEnvironmen
                                  interlaced,
                                  env);
 
-  return  interlaced && finalClip->GetVideoInfo().IsFieldBased() ?
-            env->Invoke("Weave", finalClip) :
-          finalClip;
+  if (interlaced && finalClip->GetVideoInfo().IsFieldBased())
+    return env->Invoke("Weave", finalClip);
+  else
+    return finalClip;
 
 }
 
@@ -355,14 +359,16 @@ AVSValue __cdecl Create_CLUTer(AVSValue args, void* user_data, IScriptEnvironmen
 #ifdef TURNSTILE_HOST_AVISYNTH_26
 
 const AVS_Linkage* AVS_linkage = 0;
-extern "C" __declspec(dllexport) const char* __stdcall AvisynthPluginInit3(IScriptEnvironment* env, const AVS_Linkage* const vectors)
+extern "C" __declspec(dllexport) const char* __stdcall AvisynthPluginInit3(
+  IScriptEnvironment* env, const AVS_Linkage* const vectors)
 {
 
   AVS_linkage = vectors;
 
 #else
 
-extern "C" __declspec(dllexport) const char* __stdcall AvisynthPluginInit2(IScriptEnvironment* env)
+extern "C" __declspec(dllexport) const char* __stdcall AvisynthPluginInit2(
+  IScriptEnvironment* env)
 {
 
 #endif
