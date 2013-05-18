@@ -90,7 +90,8 @@ private:
       srcCols, srcRows,
       shtCols, shtRows,
       bytesPerSample, spp,
-      lumaW, lumaH, tileW_U, tileH_U;
+      lumaW, lumaH, tileW_U, tileH_U,
+      tileCtrW_Y, tileCtrW_U, tileCtrH_Y, tileCtrH_U;
 
   bool PLANAR, YUYV, BGRA, BGR;
 

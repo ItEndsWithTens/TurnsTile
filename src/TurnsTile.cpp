@@ -81,6 +81,11 @@ host(env)
   tileW_U = tileW / lumaW,
   tileH_U = tileH / lumaH;
 
+  tileCtrW_Y = mod(tileW / 2, lumaW, 0, tileW, -1),
+  tileCtrW_U = mod(tileW_U / 2, lumaW, 0, tileW_U, -1),
+  tileCtrH_Y = mod(tileH / 2, lumaH, 0, tileH, -1),
+  tileCtrH_U = mod(tileH_U / 2, lumaH, 0, tileH_U, -1);
+
   int idxInMin = 0;
   if (strcmp(_levels, "tv") == 0)
     idxInMin = 16;
@@ -235,10 +240,8 @@ void TurnsTile::processFramePacked(
 
       unsigned char* dstTile = dstp + dstRow + curCol;
 
-      int ctrW = mod(tileW / 2, lumaW, 0, tileW, -1) * spp,
-          ctrH = mod(tileH / 2, lumaH, 0, tileH, -1) * SRC_PITCH_SAMPLES;
-
-      int tileCtr = srcRow + curCol + ctrW + ctrH;
+      int tileCtr = srcRow + curCol +
+                    (tileCtrW_Y * spp) + (tileCtrH_Y * SRC_PITCH_SAMPLES);
 
       if (tilesheet) {
 
@@ -367,15 +370,11 @@ void TurnsTile::processFramePlanar(
           * dstTileU = dstU + dstRowU + curColU,
           * dstTileV = dstV + dstRowU + curColU;
 
-      int ctrW_Y = mod(tileW / 2, lumaW, 0, tileW, -1),
-          ctrW_U = mod(tileW_U / 2, lumaW, 0, tileW_U, -1);
-
       int
-        ctrH_Y = mod(tileH / 2, lumaH, 0, tileH, -1) * SRC_PITCH_SAMPLES_Y,
-        ctrH_U = mod(tileH_U / 2, lumaH, 0, tileH_U, -1) * SRC_PITCH_SAMPLES_U;
-
-      int tileCtrY = srcRowY + curColY + ctrW_Y + ctrH_Y,
-          tileCtrU = srcRowU + curColU + ctrW_U + ctrH_U;
+        tileCtrY = srcRowY + curColY +
+                   (tileCtrW_Y * spp) + (tileCtrH_Y * SRC_PITCH_SAMPLES_Y),
+        tileCtrU = srcRowU + curColU +
+                   (tileCtrW_U * spp) + (tileCtrH_U * SRC_PITCH_SAMPLES_U);
 
       if (tilesheet) {
 
