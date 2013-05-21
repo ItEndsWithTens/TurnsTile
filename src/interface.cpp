@@ -66,19 +66,22 @@ AVSValue __cdecl Create_TurnsTile(
       clipH = vi.height,
       sheetW = 0,
       sheetH = 0;
-  if (tilesheet)
-    sheetW = vi2.width, sheetH = vi2.height;
+  if (tilesheet) {
+    sheetW = vi2.width;
+    sheetH = vi2.height;
+  }
 
   int lumaW, lumaH;
 
 #ifdef TURNSTILE_HOST_AVISYNTH_26
 
-  if (vi.IsYUV() && !vi.IsY8())
-    lumaW = 1 << vi.GetPlaneWidthSubsampling(PLANAR_U),
+  if (vi.IsYUV() && !vi.IsY8()) {
+    lumaW = 1 << vi.GetPlaneWidthSubsampling(PLANAR_U);
     lumaH = 1 << vi.GetPlaneHeightSubsampling(PLANAR_U);
-  else
-    lumaW = 1,
+  } else {
+    lumaW = 1;
     lumaH = 1;
+  }
 
 #else
 

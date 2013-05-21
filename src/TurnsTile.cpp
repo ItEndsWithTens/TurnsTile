@@ -61,29 +61,35 @@ host(env)
 
 #ifdef TURNSTILE_HOST_AVISYNTH_26
 
-  if (vi.IsYUV() && !vi.IsY8())
-    lumaW = 1 << vi.GetPlaneWidthSubsampling(PLANAR_U),
+  if (vi.IsYUV() && !vi.IsY8()) {
+    lumaW = 1 << vi.GetPlaneWidthSubsampling(PLANAR_U);
     lumaH = 1 << vi.GetPlaneHeightSubsampling(PLANAR_U);
-  else
-    lumaW = 1, lumaH = 1;
+  } else {
+    lumaW = 1;
+    lumaH = 1;
+  }
 
 #else
 
-  if (vi.IsYV12())
-    lumaW = 2, lumaH = 2;
-  else if (vi.IsYUY2())
-    lumaW = 2, lumaH = 1;
-  else
-    lumaW = 1, lumaH = 1;
+  if (vi.IsYV12()) {
+    lumaW = 2;
+    lumaH = 2;
+  } else if (vi.IsYUY2()) {
+    lumaW = 2;
+    lumaH = 1;
+  } else {
+    lumaW = 1;
+    lumaH = 1;
+  }
 
 #endif
 
-  tileW_U = tileW / lumaW,
+  tileW_U = tileW / lumaW;
   tileH_U = tileH / lumaH;
 
-  tileCtrW_Y = mod(tileW / 2, lumaW, 0, tileW, -1),
-  tileCtrW_U = mod(tileW_U / 2, lumaW, 0, tileW_U, -1),
-  tileCtrH_Y = mod(tileH / 2, lumaH, 0, tileH, -1),
+  tileCtrW_Y = mod(tileW / 2, lumaW, 0, tileW, -1);
+  tileCtrW_U = mod(tileW_U / 2, lumaW, 0, tileW_U, -1);
+  tileCtrH_Y = mod(tileH / 2, lumaH, 0, tileH, -1);
   tileCtrH_U = mod(tileH_U / 2, lumaH, 0, tileH_U, -1);
 
   int idxInMin = 0;
@@ -192,11 +198,11 @@ PVideoFrame __stdcall TurnsTile::GetFrame(int n, IScriptEnvironment* env)
 
     sht = tilesheet->GetFrame(n, env);
 
-    shtY = sht->GetReadPtr(PLANAR_Y),
-    shtU = sht->GetReadPtr(PLANAR_U),
+    shtY = sht->GetReadPtr(PLANAR_Y);
+    shtU = sht->GetReadPtr(PLANAR_U);
     shtV = sht->GetReadPtr(PLANAR_V);
 
-    SHT_PITCH_SAMPLES_Y = sht->GetPitch(PLANAR_Y),
+    SHT_PITCH_SAMPLES_Y = sht->GetPitch(PLANAR_Y);
     SHT_PITCH_SAMPLES_U = sht->GetPitch(PLANAR_U);
 
   }
@@ -255,8 +261,10 @@ void TurnsTile::processFramePacked(
           // The hardcoded three assumes the only packed formats that might come
           // this way are RGB32, RGB24, and YUY2, which is true of Avisynth.
           int sum = 0, count = 0;
-          for (int i = 0; i < 3; i += lumaW, ++count)
+          for (int i = 0; i < 3; i += lumaW) {
             sum += *(srcp + tileCtr + i);
+            ++count;
+          }
           tileIdx = lut[sum / count];
 
         }
@@ -401,8 +409,10 @@ void TurnsTile::processFramePlanar(
 
             int sum = 0, count = 0;
             for (int i = 0; i < lumaH; ++i)
-              for (int j = 0; j < lumaW; ++j, ++count)
+              for (int j = 0; j < lumaW; ++j) {
                 sum += *(srcY + tileCtrY + (SRC_PITCH_SAMPLES_Y * i) + j);
+                ++count;
+              }
             tileIdx = lut[sum / count];
 
           }

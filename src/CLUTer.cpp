@@ -64,20 +64,26 @@ PLANAR(vi.IsPlanar()), YUYV(vi.IsYUY2()), BGRA(vi.IsRGB32()), BGR(vi.IsRGB24())
 
 #ifdef TURNSTILE_HOST_AVISYNTH_26
 
-  if (vi.IsYUV() && !vi.IsY8())
-    lumaW = 1 << vi.GetPlaneWidthSubsampling(PLANAR_U),
+  if (vi.IsYUV() && !vi.IsY8()) {
+    lumaW = 1 << vi.GetPlaneWidthSubsampling(PLANAR_U);
     lumaH = 1 << vi.GetPlaneHeightSubsampling(PLANAR_U);
-  else
-    lumaW = 1, lumaH = 1;
+  } else {
+    lumaW = 1;
+    lumaH = 1;
+  }
 
 #else
 
-  if (vi.IsYV12())
-    lumaW = 2, lumaH = 2;
-  else if (vi.IsYUY2())
-    lumaW = 2, lumaH = 1;
-  else
-    lumaW = 1, lumaH = 1;
+  if (vi.IsYV12()) {
+    lumaW = 2;
+    lumaH = 2;
+  } else if (vi.IsYUY2()) {
+    lumaW = 2;
+    lumaH = 1;
+  } else {
+    lumaW = 1;
+    lumaH = 1;
+  }
 
 #endif
 
@@ -174,7 +180,7 @@ void CLUTer::buildPalettePacked(
             y2 = *(pltp + pltOfs + 2),
             v =  *(pltp + pltOfs + 3);
 
-        palette.push_back((y1 << 16) | (u << 8) | v),
+        palette.push_back((y1 << 16) | (u << 8) | v);
         palette.push_back((y2 << 16) | (u << 8) | v);
 
       } else {
