@@ -69,6 +69,15 @@ host(env)
     lumaH = 1;
   }
 
+  // A zero height tells fillTile to skip doing any work, which speeds up Y8.
+  if (vi.IsY8()) {
+    tileW_U = 0;
+    tileH_U = 0;
+  } else {
+    tileW_U = tileW / lumaW;
+    tileH_U = tileH / lumaH;
+  }
+
 #else
 
   if (vi.IsYV12()) {
@@ -82,10 +91,10 @@ host(env)
     lumaH = 1;
   }
 
-#endif
-
   tileW_U = tileW / lumaW;
   tileH_U = tileH / lumaH;
+
+#endif
 
   tileCtrW_Y = mod(tileW / 2, lumaW, 0, tileW, -1);
   tileCtrW_U = mod(tileW_U / 2, lumaW, 0, tileW_U, -1);

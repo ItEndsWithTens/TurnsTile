@@ -72,6 +72,11 @@ PLANAR(vi.IsPlanar()), YUYV(vi.IsYUY2()), BGRA(vi.IsRGB32()), BGR(vi.IsRGB24())
     lumaH = 1;
   }
 
+  if (vi.IsY8()) {
+    pltU = 0;
+    pltV = 0;
+  }
+
 #else
 
   if (vi.IsYV12()) {
@@ -128,14 +133,13 @@ PVideoFrame __stdcall CLUTer::GetFrame(int n, IScriptEnvironment* env)
     SRC_PITCH_SAMPLES_U = src->GetPitch(PLANAR_U),
     DST_PITCH_SAMPLES_Y = dst->GetPitch(PLANAR_Y),
     DST_PITCH_SAMPLES_U = dst->GetPitch(PLANAR_U);
-
-  // For handling Y8 clips, without another Avisynth 2.6 ifdef. Asking for read
-  // and write pointers to the U and V planes with a Y8 clip gives duplicates of
-  // the Y plane pointers, but GetPitch returns zero, so I need to adjust these.
-  if (SRC_PITCH_SAMPLES_U == 0)
-    SRC_PITCH_SAMPLES_U = SRC_PITCH_SAMPLES_Y;
-  if (DST_PITCH_SAMPLES_U == 0)
-    DST_PITCH_SAMPLES_U = DST_PITCH_SAMPLES_Y;
+  
+  if (vi.IsY8()) {
+    srcU = 0;
+    srcV = 0;
+    dstU = 0;
+    dstV = 0;
+  }
 
 
   if (vi.IsPlanar())
@@ -280,7 +284,12 @@ void CLUTer::buildPalettePlanar(
           srcOfsU = srcLineU + sampleU;
 
       unsigned char
-        u = *(srcU + srcOfsU),
+        u = 0,
+        v = 0;
+
+      if (srcU)
+        u = *(srcU + srcOfsU);
+      if (srcV)
         v = *(srcV + srcOfsU);
 
       for (int i = 0; i < lumaH; ++i) {
@@ -336,13 +345,24 @@ void CLUTer::processFramePlanar(
           dstOfsU = dstLineU + sampleU;
 
       unsigned char y = *(srcY + srcOfsY),
-                    u = *(srcU + srcOfsU),
-                    v = *(srcV + srcOfsU);
+                    u = 0,
+                    v = 0;
+
+      if (srcU)
+        u = *(srcU + srcOfsU);
+      if (srcV)
+        v = *(srcV + srcOfsU);
 
       int packed = (y << 16) | (u << 8) | v;
 
-      *(dstU + dstOfsU) = vecUG[packed];
-      *(dstV + dstOfsU) = vecVB[packed];
+      // TurnsTile can get away with simply zeroing its tileW_U and tileH_U
+      // members for Y8, since its fillTile function skips copying data if the
+      // height is zero. CLUTer can't use such a copy function, so I need these
+      // conditions to only write U and V if the pointers are valid.
+      if (dstU)
+        *(dstU + dstOfsU) = vecUG[packed];
+      if (dstV)
+        *(dstV + dstOfsU) = vecVB[packed];
 
       // I set each luma component in the macropixel to the same value, as
       // otherwise it'd be possible to end up with colors in the output that
