@@ -134,12 +134,16 @@ PVideoFrame __stdcall CLUTer::GetFrame(int n, IScriptEnvironment* env)
     DST_PITCH_SAMPLES_Y = dst->GetPitch(PLANAR_Y),
     DST_PITCH_SAMPLES_U = dst->GetPitch(PLANAR_U);
   
+#ifdef TURNSTILE_HOST_AVISYNTH_26
+  
   if (vi.IsY8()) {
     srcU = 0;
     srcV = 0;
     dstU = 0;
     dstV = 0;
   }
+  
+#endif
 
 
   if (vi.IsPlanar())
