@@ -221,13 +221,13 @@ AVSValue __cdecl Create_TurnsTile(
 
   if (maxTileW % tileW > 0)
     env->ThrowError(
-      "TurnsTile: For %s input, tilew must be a factor of %d!",
-      cspStr, maxTileW);
+      "TurnsTile: For this input, tilew must be a factor of %d!",
+      maxTileW);
 
   if (maxTileH % tileH > 0)
     env->ThrowError(
-      "TurnsTile: For %s%s input, tileh must be a factor of %d!",
-      interlacedStr, cspStr, maxTileH);
+      "TurnsTile: For this input, tileh must be a factor of %d!",
+      maxTileH);
 
 
   int modeMax;
@@ -236,6 +236,12 @@ AVSValue __cdecl Create_TurnsTile(
   else
     modeMax = vi.BytesFromPixels(1);
 
+#ifdef TURNSTILE_HOST_AVISYNTH_26
+  if (vi.IsY8() && mode != 0)
+    env->ThrowError(
+      "TurnsTile: Y8 only allows mode 0!",
+      cspStr, modeMax);
+#endif
   if (mode < 0 || mode > modeMax)
     env->ThrowError(
       "TurnsTile: %s only allows modes 0-%d!",
