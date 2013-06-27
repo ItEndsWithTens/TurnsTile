@@ -1,0 +1,30 @@
+#include <windows.h>
+
+1 VERSIONINFO
+    FILEVERSION     ${TURNSTILE_MAJOR},${TURNSTILE_MINOR},${TURNSTILE_PATCH},0
+    PRODUCTVERSION  ${TURNSTILE_MAJOR},${TURNSTILE_MINOR},${TURNSTILE_PATCH},0
+    FILEFLAGSMASK   0x00000000
+    FILEFLAGS       0x00000000
+    FILEOS          VOS__WINDOWS32
+    FILETYPE        VFT_APP
+    FILESUBTYPE     VFT2_UNKNOWN
+{
+    BLOCK "StringFileInfo"
+    {
+        BLOCK "0409fde9"
+        {
+            VALUE "CompanyName", "${TURNSTILE_AUTHOR} ${TURNSTILE_AUTHOR_EMAIL}"
+            VALUE "FileDescription", "${TURNSTILE_TEST_DESCRIPTION}"
+            VALUE "FileVersion", "${TURNSTILE_VERSION}.0"
+            VALUE "InternalName", "${PROJECT_NAME}-test"
+            VALUE "LegalCopyright", "2013 ${TURNSTILE_AUTHOR}"
+            VALUE "OriginalFilename", "${PROJECT_NAME}-test.exe"
+            VALUE "ProductName", "${PROJECT_NAME}-test"
+            VALUE "ProductVersion", "${TURNSTILE_VERSION}.0"
+        }
+    }
+    BLOCK "VarFileInfo"
+    {
+        VALUE "Translation", 0x0409, 0xFDE9
+    }
+}

@@ -167,6 +167,54 @@ if(NOT "${TURNSTILE_PLUGINS_DIR}" STREQUAL "")
   )
 endif()
 
+option(TURNSTILE_TESTS "Enable testing with Catch framework." TRUE)
+if(TURNSTILE_TESTS)
+
+  set(SRCS_TEST      
+    ${TURNSTILE_HOST_HDR}
+    test/catch/catch.hpp
+    test/avsavx/errors.cpp
+    test/avsavx/main.cpp
+  )
+  
+  set(
+    TURNSTILE_TEST_DESCRIPTION
+    "Test executable for the ${TURNSTILE_DESCRIPTION}"
+  )
+  
+  if(WIN32)
+    configure_file(
+      test/TurnsTile-test.rc.in
+      ${CMAKE_CURRENT_SOURCE_DIR}/test/TurnsTile-test.rc
+    )
+    list(APPEND SRCS_TEST test/TurnsTile-test.rc)
+    if(MSVC)
+      source_group("Resource Files" FILES test/TurnsTile-test.rc)
+    endif()
+  endif()
+  
+  add_executable(${PROJECT_NAME}-test EXCLUDE_FROM_ALL ${SRCS_TEST})
+
+  set_target_properties(
+    ${PROJECT_NAME}-test
+    PROPERTIES
+    COMPILE_DEFINITIONS "TURNSTILE_HOST_${TURNSTILE_HOST_DEFINE}"
+  )
+
+  if(NOT WIN32)
+    find_path(DL_INCLUDE_DIR NAMES dlfcn.h)
+    find_library(DL_LIBRARIES NAMES dl)
+    include_directories(${DL_INCLUDE_DIR})
+    target_link_libraries(${PROJECT_NAME}-test ${DL_LIBRARIES})
+  endif()
+
+  # This ensures the tests are run after every build; I need to target my custom
+  # -copy target instead of the project itself to make sure the latest version
+  # of the plugin is the one being tested.
+  add_custom_command(TARGET ${PROJECT_NAME}-copy COMMAND ${PROJECT_NAME}-test)
+    
+endif()
+
 
 
 ### Packaging options ###
