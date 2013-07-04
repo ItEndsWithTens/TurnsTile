@@ -1,0 +1,1 @@
+TurnsTile: YUY2 tilesheet height must be mod 2 when interlaced=true!

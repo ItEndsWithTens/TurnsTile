@@ -1,0 +1,1 @@
+TurnsTile: RGB24 only allows modes 0-3!
