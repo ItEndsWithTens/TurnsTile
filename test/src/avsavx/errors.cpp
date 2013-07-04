@@ -22,11 +22,13 @@
 
 
 
-#include "../../../src/interface.h"
-
 #include <string>
 
 #include "../../include/catch/catch.hpp"
+
+#include "../../../src/interface.h"
+#include "util_avsavx.h"
+#include "../util_common.h"
 
 
 
@@ -43,173 +45,87 @@ using avxsynth::PClip;
 
 extern IScriptEnvironment* env;
 
+extern bool writeRefData;
+
+extern std::string scriptDir, refDir;
 
 
-TEST_CASE("Errors/Turnstile/ColorspaceMismatch", "") {
 
-  PClip clip = 0, tilesheet = 0;
+TEST_CASE(
+  "TurnsTile - Colorspace mismatch throws expected error",
+  "[errors][turnstile][colorspace][mismatch]")
+{
 
-  try {
+  std::string name = "errors-turnstile-colorspace-mismatch";
 
-    AVSValue args[1] = { "RGB32" };
-    const char* names[1] = { "pixel_type" };
-    clip = env->Invoke("BlankClip", AVSValue(args, 1), names).AsClip();
+  AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
 
-  } catch (AvisynthError& err) {
+  REQUIRE(result.IsString());
 
-    FAIL(err.msg);
+  std::string dataCur = SplitError(result.AsString()),
+              dataRef = refDir + name + ".txt";
 
-  }
-
-  try {
-
-    AVSValue args[1] = { "YV12" };
-    const char* names[1] = { "pixel_type" };
-    tilesheet = env->Invoke("BlankClip", AVSValue(args, 1), names).AsClip();
-
-  } catch (AvisynthError& err) {
-
-    FAIL(err.msg);
-
-  }
-
-  AVSValue out;
-
-  try {
-
-    AVSValue args[2] = { clip, tilesheet };
-    out = env->Invoke("TurnsTile", AVSValue(args, 2)).AsClip();
-
-  } catch (AvisynthError& err) {
-
-    out = err.msg;
-
-  }
-
-  REQUIRE(out.IsString());
-  CHECK(std::string(out.AsString()) ==
-        "TurnsTile: clip and tilesheet must share a colorspace!");
+  CompareData(dataCur, dataRef);
 
 }
 
 
 
-TEST_CASE("Errors/Turnstile/InterlacedHeightMod", "") {
+TEST_CASE(
+  "TurnsTile - Interlaced clip height not mod minimum throws expected error",
+  "[errors][turnstile][interlaced][height][mod]")
+{
 
 #ifdef TURNSTILE_HOST_AVISYNTH_26
 
-  std::string
-    csps[8] = { "RGB32", "RGB24", "YUY2", "YV12",
-                "YV24", "YV16", "YV411", "Y8" },
-    mods[8] = { "2", "2", "2", "4", "2", "2", "2", "2" };
-
-  int heights[8] = { 479, 479, 479, 478, 479, 479, 479, 479 };
+  std::string csps[8] = { "rgb32", "rgb24", "yuy2", "yv12",
+                          "yv24", "yv16", "yv411", "y8" };
 
   int count = 8;
 
 #else
 
-  std::string
-    csps[4] = { "RGB32", "RGB24", "YUY2", "YV12" },
-    mods[4] = { "2", "2", "2", "4" };
-
-  int heights[4] = { 479, 479, 479, 478 };
+  std::string csps[4] = { "rgb32", "rgb24", "yuy2", "yv12" };
 
   int count = 4;
 
 #endif
 
-  SECTION("Clip", "") {
+  SECTION("clip") {
 
     for (int i = 0; i < count; ++i) {
 
-      PClip clip = 0;
+      std::string name = "errors-turnstile-interlaced-height-mod-" + csps[i] +
+                         "_clip";
 
-      try {
+      AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
 
-        AVSValue args[2] = { heights[i], csps[i].c_str() };
-        const char* names[2] = { "height", "pixel_type" };
-        clip = env->Invoke("BlankClip", AVSValue(args, 2), names).AsClip();
+      REQUIRE(result.IsString());
 
-      } catch (AvisynthError& err) {
+      std::string dataCur = SplitError(result.AsString()),
+                  dataRef = refDir + name + ".txt";
 
-        FAIL(err.msg);
-
-      }
-
-      AVSValue out = 0;
-
-      try {
-
-        AVSValue args[2] = { clip, true };
-        const char* names[2] = { 0, "interlaced" };
-        out = env->Invoke("TurnsTile", AVSValue(args, 2), names).AsClip();
-
-      } catch (AvisynthError& err) {
-
-        out = err.msg;
-
-      }
-
-      REQUIRE(out.IsString());
-      CHECK(std::string(out.AsString()) ==
-            "TurnsTile: " + csps[i] + " clip height must be mod " + mods[i] +
-            " when interlaced=true!");
+      CompareData(dataCur, dataRef);
 
     }
 
   }
 
-  SECTION("Tilesheet", "") {
+  SECTION("tilesheet") {
 
     for (int i = 0; i < count; ++i) {
 
-      PClip clip = 0;
+      std::string name = "errors-turnstile-interlaced-height-mod-" + csps[i] +
+                         "_tilesheet";
 
-      try {
+      AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
 
-        AVSValue args[2] = { 480, csps[i].c_str() };
-        const char* names[2] = { "height", "pixel_type" };
-        clip = env->Invoke("BlankClip", AVSValue(args, 2), names).AsClip();
+      REQUIRE(result.IsString());
 
-      } catch (AvisynthError& err) {
+      std::string dataCur = SplitError(result.AsString()),
+                  dataRef = refDir + name + ".txt";
 
-        FAIL(err.msg);
-
-      }
-
-      PClip tilesheet = 0;
-
-      try {
-
-        AVSValue args[2] = { heights[i], csps[i].c_str() };
-        const char* names[2] = { "height", "pixel_type" };
-        tilesheet = env->Invoke("BlankClip", AVSValue(args, 2), names).AsClip();
-
-      } catch (AvisynthError& err) {
-
-        FAIL(err.msg);
-
-      }
-
-      AVSValue out = 0;
-
-      try {
-
-        AVSValue args[3] = { clip, tilesheet, true };
-        const char* names[3] = { 0, 0, "interlaced" };
-        out = env->Invoke("TurnsTile", AVSValue(args, 3), names).AsClip();
-
-      } catch (AvisynthError& err) {
-
-        out = err.msg;
-
-      }
-
-      REQUIRE(out.IsString());
-      CHECK(std::string(out.AsString()) ==
-            "TurnsTile: " + csps[i] + " tilesheet height must be mod " +
-            mods[i] + " when interlaced=true!");
+      CompareData(dataCur, dataRef);
 
     }
 
@@ -219,22 +135,21 @@ TEST_CASE("Errors/Turnstile/InterlacedHeightMod", "") {
 
 
 
-TEST_CASE("Errors/Turnstile/TileWidthMinimum", "") {
+TEST_CASE(
+  "TurnsTile - Tile width less than minimum throws expected error",
+  "[errors][turnstile][tile][width][minimum]")
+{
 
 #ifdef TURNSTILE_HOST_AVISYNTH_26
 
-  std::string
-    csps[8] = { "RGB32", "RGB24", "YUY2", "YV12",
-                "YV24", "YV16", "YV411", "Y8" },
-    minsMsg[8] = { "1", "1", "2", "2", "1", "2", "4", "1" };
+  std::string csps[8] = { "rgb32", "rgb24", "yuy2", "yv12",
+                          "yv24", "yv16", "yv411", "y8" };
 
   int count = 8;
 
 #else
 
-  std::string
-    csps[4] = { "RGB32", "RGB24", "YUY2", "YV12" },
-    minsMsg[4] = { "1", "1", "2", "2" };
+  std::string csps[4] = { "rgb32", "rgb24", "yuy2", "yv12" };
 
   int count = 4;
 
@@ -242,38 +157,16 @@ TEST_CASE("Errors/Turnstile/TileWidthMinimum", "") {
 
   for (int i = 0; i < count; ++i) {
 
-    PClip clip = 0;
+    std::string name = "errors-turnstile-tile-width-minimum-" + csps[i];
 
-    try {
+      AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
 
-      AVSValue args[1] = { csps[i].c_str() };
-      const char* names[1] = { "pixel_type" };
-      clip = env->Invoke("BlankClip", AVSValue(args, 1), names).AsClip();
+      REQUIRE(result.IsString());
 
-    } catch (AvisynthError& err) {
+      std::string dataCur = SplitError(result.AsString()),
+                  dataRef = refDir + name + ".txt";
 
-      FAIL(err.msg);
-
-    }
-
-    AVSValue out = 0;
-
-    try {
-
-      AVSValue args[2] = { clip, 0 };
-      const char* names[2] = { 0, "tilew" };
-      out = env->Invoke("TurnsTile", AVSValue(args, 2), names).AsClip();
-
-    } catch (AvisynthError& err) {
-
-      out = err.msg;
-
-    }
-
-    REQUIRE(out.IsString());
-    CHECK(std::string(out.AsString()) ==
-          "TurnsTile: tilew must be at least " + minsMsg[i] + " for " +
-          csps[i] + " input!");
+      CompareData(dataCur, dataRef);
 
   }
 
@@ -281,24 +174,23 @@ TEST_CASE("Errors/Turnstile/TileWidthMinimum", "") {
 
 
 
-TEST_CASE("Errors/Turnstile/TileHeightMinimum", "") {
+TEST_CASE(
+  "TurnsTile - Tile height less than minimum throws expected error",
+  "[errors][turnstile][tile][height][minimum]")
+{
 
-  SECTION("Progressive", "") {
+  SECTION("progressive") {
 
 #ifdef TURNSTILE_HOST_AVISYNTH_26
 
-    std::string
-      csps[8] = { "RGB32", "RGB24", "YUY2", "YV12",
-                  "YV24", "YV16", "YV411", "Y8" },
-      minsMsg[8] = { "1", "1", "1", "2", "1", "1", "1", "1" };
+    std::string csps[8] = { "rgb32", "rgb24", "yuy2", "yv12",
+                            "yv24", "yv16", "yv411", "y8" };
 
     int count = 8;
 
 #else
 
-    std::string
-      csps[4] = { "RGB32", "RGB24", "YUY2", "YV12" },
-      minsMsg[4] = { "1", "1", "1", "2" };
+    std::string csps[4] = { "rgb32", "rgb24", "yuy2", "yv12" };
 
     int count = 4;
 
@@ -306,59 +198,34 @@ TEST_CASE("Errors/Turnstile/TileHeightMinimum", "") {
 
     for (int i = 0; i < count; ++i) {
 
-      PClip clip = 0;
+      std::string name = "errors-turnstile-tile-height-minimum-" + csps[i] +
+                         "_progressive";
 
-      try {
+      AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
 
-        AVSValue args[1] = { csps[i].c_str() };
-        const char* names[1] = { "pixel_type" };
-        clip = env->Invoke("BlankClip", AVSValue(args, 1), names).AsClip();
+      REQUIRE(result.IsString());
 
-      } catch (AvisynthError& err) {
+      std::string dataCur = SplitError(result.AsString()),
+                  dataRef = refDir + name + ".txt";
 
-        FAIL(err.msg);
-
-      }
-
-      AVSValue out = 0;
-
-      try {
-
-        AVSValue args[2] = { clip, 0 };
-        const char* names[2] = { 0, "tileh" };
-        out = env->Invoke("TurnsTile", AVSValue(args, 2), names).AsClip();
-
-      } catch (AvisynthError& err) {
-
-        out = err.msg;
-
-      }
-
-      REQUIRE(out.IsString());
-      CHECK(std::string(out.AsString()) ==
-            "TurnsTile: tileh must be at least " + minsMsg[i] + " for " +
-            csps[i] + " input!");
+      CompareData(dataCur, dataRef);
 
     }
 
   }
 
-  SECTION("Interlaced", "") {
+  SECTION("interlaced", "") {
 
 #ifdef TURNSTILE_HOST_AVISYNTH_26
 
-    std::string
-      csps[8] = { "RGB32", "RGB24", "YUY2", "YV12",
-                  "YV24", "YV16", "YV411", "Y8" },
-      minsMsg[8] = { "2", "2", "2", "4", "2", "2", "2", "2" };
+    std::string csps[8] = { "rgb32", "rgb24", "yuy2", "yv12",
+                            "yv24", "yv16", "yv411", "y8" };
 
     int count = 8;
 
 #else
 
-    std::string
-      csps[4] = { "RGB32", "RGB24", "YUY2", "YV12" },
-      minsMsg[4] = { "2", "2", "2", "4" };
+    std::string csps[4] = { "rgb32", "rgb24", "yuy2", "yv12" };
 
     int count = 4;
 
@@ -366,38 +233,17 @@ TEST_CASE("Errors/Turnstile/TileHeightMinimum", "") {
 
     for (int i = 0; i < count; ++i) {
 
-      PClip clip = 0;
+      std::string name = "errors-turnstile-tile-height-minimum-" + csps[i] +
+                         "_interlaced";
 
-      try {
+      AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
 
-        AVSValue args[1] = { csps[i].c_str() };
-        const char* names[1] = { "pixel_type" };
-        clip = env->Invoke("BlankClip", AVSValue(args, 1), names).AsClip();
+      REQUIRE(result.IsString());
 
-      } catch (AvisynthError& err) {
+      std::string dataCur = SplitError(result.AsString()),
+                  dataRef = refDir + name + ".txt";
 
-        FAIL(err.msg);
-
-      }
-
-      AVSValue out = 0;
-
-      try {
-
-        AVSValue args[3] = { clip, 0, true };
-        const char* names[3] = { 0, "tileh", "interlaced" };
-        out = env->Invoke("TurnsTile", AVSValue(args, 3), names).AsClip();
-
-      } catch (AvisynthError& err) {
-
-        out = err.msg;
-
-      }
-
-      REQUIRE(out.IsString());
-      CHECK(std::string(out.AsString()) ==
-            "TurnsTile: tileh must be at least " + minsMsg[i] +
-            " for interlaced " + csps[i] + " input!");
+      CompareData(dataCur, dataRef);
 
     }
 
@@ -407,91 +253,38 @@ TEST_CASE("Errors/Turnstile/TileHeightMinimum", "") {
 
 
 
-TEST_CASE("Errors/Turnstile/TileWidthMaximum", "") {
+TEST_CASE(
+  "TurnsTile - Tile width greater than maximum throws expected error",
+  "[errors][turnstile][tile][width][maximum]")
+{
 
-  SECTION("NoTilesheet", "") {
+  SECTION("clip") {
 
-    PClip clip = 0;
+    std::string name = "errors-turnstile-tile-width-maximum_clip";
 
-    try {
+    AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
 
-      AVSValue args[1] = { 640 };
-      const char* names[1] = { "width" };
-      clip = env->Invoke("BlankClip", AVSValue(args, 1), names).AsClip();
+    REQUIRE(result.IsString());
 
-    } catch (AvisynthError& err) {
+    std::string dataCur = SplitError(result.AsString()),
+                dataRef = refDir + name + ".txt";
 
-      FAIL(err.msg);
-
-    }
-
-    AVSValue out = 0;
-
-    try {
-
-      AVSValue args[2] = { clip, 700 };
-      const char* names[2] = { 0, "tilew" };
-      out = env->Invoke("TurnsTile", AVSValue(args, 2), names).AsClip();
-
-    } catch (AvisynthError& err) {
-
-      out = err.msg;
-
-    }
-
-    REQUIRE(out.IsString());
-    CHECK(std::string(out.AsString()) ==
-          "TurnsTile: For this input, tilew must not exceed 640!");
+    CompareData(dataCur, dataRef);
 
   }
 
-  SECTION("Tilesheet", "") {
+  SECTION("tilesheet") {
 
-    PClip clip = 0;
+    std::string name = "errors-turnstile-tile-width-maximum_tilesheet";
 
-    try {
+    AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
 
-      AVSValue args[1] = { 640 };
-      const char* names[1] = { "width" };
-      clip = env->Invoke("BlankClip", AVSValue(args, 1), names).AsClip();
+    REQUIRE(result.IsString());
 
-    } catch (AvisynthError& err) {
+    std::string dataCur = SplitError(result.AsString()),
+                dataRef = refDir + name + ".txt";
 
-      FAIL(err.msg);
-
-    }
-
-    PClip tilesheet = 0;
-
-    try {
-
-      AVSValue args[1] = { 256 };
-      const char* names[1] = { "width" };
-      tilesheet = env->Invoke("BlankClip", AVSValue(args, 1), names).AsClip();
-
-    } catch (AvisynthError& err) {
-
-      FAIL(err.msg);
-
-    }
-
-    AVSValue out = 0;
-
-    try {
-
-      AVSValue args[3] = { clip, tilesheet, 700 };
-      const char* names[3] = { 0, 0, "tilew" };
-      out = env->Invoke("TurnsTile", AVSValue(args, 3), names).AsClip();
-
-    } catch (AvisynthError& err) {
-
-      out = err.msg;
-
-    }
-
-    REQUIRE(out.IsString());
-    CHECK(std::string(out.AsString()) ==
-          "TurnsTile: For this input, tilew must not exceed 128!");
+    CompareData(dataCur, dataRef);
 
   }
 
@@ -499,91 +292,38 @@ TEST_CASE("Errors/Turnstile/TileWidthMaximum", "") {
 
 
 
-TEST_CASE("Errors/Turnstile/TileHeightMaximum", "") {
+TEST_CASE(
+  "TurnsTile - Tile height greater than maximum throws expected error",
+  "[errors][turnstile][tile][height][maximum]")
+{
 
-  SECTION("NoTilesheet", "") {
+  SECTION("clip", "") {
 
-    PClip clip = 0;
+    std::string name = "errors-turnstile-tile-height-maximum_clip";
 
-    try {
+    AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
 
-      AVSValue args[1] = { 480 };
-      const char* names[1] = { "height" };
-      clip = env->Invoke("BlankClip", AVSValue(args, 1), names).AsClip();
+    REQUIRE(result.IsString());
 
-    } catch (AvisynthError& err) {
+    std::string dataCur = SplitError(result.AsString()),
+                dataRef = refDir + name + ".txt";
 
-      FAIL(err.msg);
-
-    }
-
-    AVSValue out = 0;
-
-    try {
-
-      AVSValue args[2] = { clip, 500 };
-      const char* names[2] = { 0, "tileh" };
-      out = env->Invoke("TurnsTile", AVSValue(args, 2), names).AsClip();
-
-    } catch (AvisynthError& err) {
-
-      out = err.msg;
-
-    }
-
-    REQUIRE(out.IsString());
-    CHECK(std::string(out.AsString()) ==
-          "TurnsTile: For this input, tileh must not exceed 480!");
+    CompareData(dataCur, dataRef);
 
   }
 
-  SECTION("Tilesheet", "") {
+  SECTION("tilesheet", "") {
 
-    PClip clip = 0;
+    std::string name = "errors-turnstile-tile-height-maximum_tilesheet";
 
-    try {
+    AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
 
-      AVSValue args[1] = { 480 };
-      const char* names[1] = { "height" };
-      clip = env->Invoke("BlankClip", AVSValue(args, 1), names).AsClip();
+    REQUIRE(result.IsString());
 
-    } catch (AvisynthError& err) {
+    std::string dataCur = SplitError(result.AsString()),
+                dataRef = refDir + name + ".txt";
 
-      FAIL(err.msg);
-
-    }
-
-    PClip tilesheet = 0;
-
-    try {
-
-      AVSValue args[1] = { 256 };
-      const char* names[1] = { "height" };
-      tilesheet = env->Invoke("BlankClip", AVSValue(args, 1), names).AsClip();
-
-    } catch (AvisynthError& err) {
-
-      FAIL(err.msg);
-
-    }
-
-    AVSValue out = 0;
-
-    try {
-
-      AVSValue args[3] = { clip, tilesheet, 500 };
-      const char* names[3] = { 0, 0, "tileh" };
-      out = env->Invoke("TurnsTile", AVSValue(args, 3), names).AsClip();
-
-    } catch (AvisynthError& err) {
-
-      out = err.msg;
-
-    }
-
-    REQUIRE(out.IsString());
-    CHECK(std::string(out.AsString()) ==
-          "TurnsTile: For this input, tileh must not exceed 32!");
+    CompareData(dataCur, dataRef);
 
   }
 
@@ -591,21 +331,20 @@ TEST_CASE("Errors/Turnstile/TileHeightMaximum", "") {
 
 
 
-TEST_CASE("Errors/Turnstile/TileWidthMod", "") {
+TEST_CASE(
+  "TurnsTile - Tile width not mod minimum throws expected error",
+  "[errors][turnstile][tile][width][mod]")
+{
 
 #ifdef TURNSTILE_HOST_AVISYNTH_26
 
-  std::string
-    csps[4] = { "YUY2", "YV12", "YV16", "YV411" },
-    modsMsg[4] = { "2", "2", "2", "4" };
+  std::string csps[4] = { "yuy2", "yv12", "yv16", "yv411" };
 
   int count = 4;
 
 #else
 
-  std::string
-    csps[2] = { "YUY2", "YV12" },
-    modsMsg[2] = { "2", "2" };
+  std::string csps[2] = { "yuy2", "yv12" };
 
   int count = 2;
 
@@ -613,38 +352,16 @@ TEST_CASE("Errors/Turnstile/TileWidthMod", "") {
 
   for (int i = 0; i < count; ++i) {
 
-    PClip clip = 0;
+    std::string name = "errors-turnstile-tile-width-mod-" + csps[i];
 
-    try {
+    AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
 
-      AVSValue args[1] = { csps[i].c_str() };
-      const char* names[1] = { "pixel_type" };
-      clip = env->Invoke("BlankClip", AVSValue(args, 1), names).AsClip();
+    REQUIRE(result.IsString());
 
-    } catch (AvisynthError& err) {
+    std::string dataCur = SplitError(result.AsString()),
+                dataRef = refDir + name + ".txt";
 
-      FAIL(err.msg);
-
-    }
-
-    AVSValue out = 0;
-
-    try {
-
-      AVSValue args[2] = { clip, 5 };
-      const char* names[2] = { 0, "tilew" };
-      out = env->Invoke("TurnsTile", AVSValue(args, 2), names).AsClip();
-
-    } catch (AvisynthError& err) {
-
-      out = err.msg;
-
-    }
-
-    REQUIRE(out.IsString());
-    CHECK(std::string(out.AsString()) ==
-          "TurnsTile: For " + csps[i] +
-          " input, tilew must be a multiple of " + modsMsg[i] + "!");
+    CompareData(dataCur, dataRef);
 
   }
 
@@ -652,60 +369,38 @@ TEST_CASE("Errors/Turnstile/TileWidthMod", "") {
 
 
 
-TEST_CASE("Errors/Turnstile/TileHeightMod", "") {
+TEST_CASE(
+  "TurnsTile - Tile height not mod minimum throws expected error",
+  "[errors][turnstile][tile][height][mod]")
+{
 
-  SECTION("Progressive", "") {
+  SECTION("progressive") {
 
-    PClip clip = 0;
+    std::string name = "errors-turnstile-tile-height-mod_progressive";
 
-    try {
+    AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
 
-      AVSValue args[1] = { "YV12" };
-      const char* names[1] = { "pixel_type" };
-      clip = env->Invoke("BlankClip", AVSValue(args, 1), names).AsClip();
+    REQUIRE(result.IsString());
 
-    } catch (AvisynthError& err) {
+    std::string dataCur = SplitError(result.AsString()),
+                dataRef = refDir + name + ".txt";
 
-      FAIL(err.msg);
-
-    }
-
-    AVSValue out = 0;
-
-    try {
-
-      AVSValue args[2] = { clip, 3 };
-      const char* names[2] = { 0, "tileh" };
-      out = env->Invoke("TurnsTile", AVSValue(args, 2), names).AsClip();
-
-    } catch (AvisynthError& err) {
-
-      out = err.msg;
-
-    }
-
-    REQUIRE(out.IsString());
-    CHECK(std::string(out.AsString()) ==
-          "TurnsTile: For YV12 input, tileh must be a multiple of 2!");
+    CompareData(dataCur, dataRef);
 
   }
 
-  SECTION("Interlaced", "") {
+  SECTION("interlaced") {
 
 #ifdef TURNSTILE_HOST_AVISYNTH_26
 
-    std::string
-      csps[8] = { "RGB32", "RGB24", "YUY2", "YV12",
-                  "YV24", "YV16", "YV411", "Y8" },
-      modsMsg[8] = { "2", "2", "2", "4", "2", "2", "2", "2" };
+    std::string csps[8] = { "rgb32", "rgb24", "yuy2", "yv12",
+                            "yv24", "yv16", "yv411", "y8" };
 
     int count = 8;
 
 #else
 
-    std::string
-      csps[4] = { "RGB32", "RGB24", "YUY2", "YV12" },
-      modsMsg[4] = { "2", "2", "2", "4" };
+    std::string csps[4] = { "rgb32", "rgb24", "yuy2", "yv12" };
 
     int count = 4;
 
@@ -713,38 +408,17 @@ TEST_CASE("Errors/Turnstile/TileHeightMod", "") {
 
     for (int i = 0; i < count; ++i) {
 
-      PClip clip = 0;
+      std::string name = "errors-turnstile-tile-height-mod-" + csps[i] +
+                         "_interlaced";
 
-      try {
+      AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
 
-        AVSValue args[1] = { csps[i].c_str() };
-        const char* names[1] = { "pixel_type" };
-        clip = env->Invoke("BlankClip", AVSValue(args, 1), names).AsClip();
+      REQUIRE(result.IsString());
 
-      } catch (AvisynthError& err) {
+      std::string dataCur = SplitError(result.AsString()),
+                  dataRef = refDir + name + ".txt";
 
-        FAIL(err.msg);
-
-      }
-
-      AVSValue out = 0;
-
-      try {
-
-        AVSValue args[3] = { clip, 5, true };
-        const char* names[3] = { 0, "tileh", "interlaced" };
-        out = env->Invoke("TurnsTile", AVSValue(args, 3), names).AsClip();
-
-      } catch (AvisynthError& err) {
-
-        out = err.msg;
-
-      }
-
-      REQUIRE(out.IsString());
-      CHECK(std::string(out.AsString()) ==
-            "TurnsTile: For interlaced " + csps[i] +
-            " input, tileh must be a multiple of " + modsMsg[i] + "!");
+      CompareData(dataCur, dataRef);
 
     }
 
@@ -754,91 +428,38 @@ TEST_CASE("Errors/Turnstile/TileHeightMod", "") {
 
 
 
-TEST_CASE("Errors/Turnstile/TileWidthFactor", "") {
+TEST_CASE(
+  "TurnsTile - Tile width that's not a factor of maximum throws expected error",
+  "[errors][turnstile][tile][width][factor]")
+{
 
-  SECTION("NoTilesheet", "") {
+  SECTION("clip", "") {
 
-    PClip clip = 0;
+    std::string name = "errors-turnstile-tile-width-factor_clip";
 
-    try {
+    AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
 
-      AVSValue args[1] = { 640 };
-      const char* names[1] = { "width" };
-      clip = env->Invoke("BlankClip", AVSValue(args, 1), names).AsClip();
+    REQUIRE(result.IsString());
 
-    } catch (AvisynthError& err) {
+    std::string dataCur = SplitError(result.AsString()),
+                dataRef = refDir + name + ".txt";
 
-      FAIL(err.msg);
-
-    }
-
-    AVSValue out = 0;
-
-    try {
-
-      AVSValue args[2] = { clip, 17 };
-      const char* names[2] = { 0, "tilew" };
-      out = env->Invoke("TurnsTile", AVSValue(args, 2), names).AsClip();
-
-    } catch (AvisynthError& err) {
-
-      out = err.msg;
-
-    }
-
-    REQUIRE(out.IsString());
-    CHECK(std::string(out.AsString()) ==
-          "TurnsTile: For this input, tilew must be a factor of 640!");
+    CompareData(dataCur, dataRef);
 
   }
 
-  SECTION("Tilesheet", "") {
+  SECTION("tilesheet", "") {
 
-    PClip clip = 0;
+    std::string name = "errors-turnstile-tile-width-factor_tilesheet";
 
-    try {
+    AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
 
-      AVSValue args[1] = { 640 };
-      const char* names[1] = { "width" };
-      clip = env->Invoke("BlankClip", AVSValue(args, 1), names).AsClip();
+    REQUIRE(result.IsString());
 
-    } catch (AvisynthError& err) {
+    std::string dataCur = SplitError(result.AsString()),
+                dataRef = refDir + name + ".txt";
 
-      FAIL(err.msg);
-
-    }
-
-    PClip tilesheet = 0;
-
-    try {
-
-      AVSValue args[1] = { 256 };
-      const char* names[1] = { "width" };
-      tilesheet = env->Invoke("BlankClip", AVSValue(args, 1), names).AsClip();
-
-    } catch (AvisynthError& err) {
-
-      FAIL(err.msg);
-
-    }
-
-    AVSValue out = 0;
-
-    try {
-
-      AVSValue args[3] = { clip, tilesheet, 19 };
-      const char* names[3] = { 0, 0, "tilew" };
-      out = env->Invoke("TurnsTile", AVSValue(args, 3), names).AsClip();
-
-    } catch (AvisynthError& err) {
-
-      out = err.msg;
-
-    }
-
-    REQUIRE(out.IsString());
-    CHECK(std::string(out.AsString()) ==
-          "TurnsTile: For this input, tilew must be a factor of 128!");
+    CompareData(dataCur, dataRef);
 
   }
 
@@ -846,91 +467,38 @@ TEST_CASE("Errors/Turnstile/TileWidthFactor", "") {
 
 
 
-TEST_CASE("Errors/Turnstile/TileHeightFactor", "") {
+TEST_CASE(
+  "TurnsTile - Tile height that's not a factor of maximum throws expected error",
+  "[errors][turnstile][tile][height][factor]")
+{
 
-  SECTION("NoTilesheet", "") {
+  SECTION("clip") {
 
-    PClip clip = 0;
+    std::string name = "errors-turnstile-tile-height-factor_clip";
 
-    try {
+    AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
 
-      AVSValue args[1] = { 480 };
-      const char* names[1] = { "height" };
-      clip = env->Invoke("BlankClip", AVSValue(args, 1), names).AsClip();
+    REQUIRE(result.IsString());
 
-    } catch (AvisynthError& err) {
+    std::string dataCur = SplitError(result.AsString()),
+                dataRef = refDir + name + ".txt";
 
-      FAIL(err.msg);
-
-    }
-
-    AVSValue out = 0;
-
-    try {
-
-      AVSValue args[2] = { clip, 17 };
-      const char* names[2] = { 0, "tileh" };
-      out = env->Invoke("TurnsTile", AVSValue(args, 2), names).AsClip();
-
-    } catch (AvisynthError& err) {
-
-      out = err.msg;
-
-    }
-
-    REQUIRE(out.IsString());
-    CHECK(std::string(out.AsString()) ==
-          "TurnsTile: For this input, tileh must be a factor of 480!");
+    CompareData(dataCur, dataRef);
 
   }
 
-  SECTION("Tilesheet", "") {
+  SECTION("tilesheet", "") {
 
-    PClip clip = 0;
+    std::string name = "errors-turnstile-tile-height-factor_tilesheet";
 
-    try {
+    AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
 
-      AVSValue args[1] = { 480 };
-      const char* names[1] = { "height" };
-      clip = env->Invoke("BlankClip", AVSValue(args, 1), names).AsClip();
+    REQUIRE(result.IsString());
 
-    } catch (AvisynthError& err) {
+    std::string dataCur = SplitError(result.AsString()),
+                dataRef = refDir + name + ".txt";
 
-      FAIL(err.msg);
-
-    }
-
-    PClip tilesheet = 0;
-
-    try {
-
-      AVSValue args[1] = { 256 };
-      const char* names[1] = { "height" };
-      tilesheet = env->Invoke("BlankClip", AVSValue(args, 1), names).AsClip();
-
-    } catch (AvisynthError& err) {
-
-      FAIL(err.msg);
-
-    }
-
-    AVSValue out = 0;
-
-    try {
-
-      AVSValue args[3] = { clip, tilesheet, 17 };
-      const char* names[3] = { 0, 0, "tileh" };
-      out = env->Invoke("TurnsTile", AVSValue(args, 3), names).AsClip();
-
-    } catch (AvisynthError& err) {
-
-      out = err.msg;
-
-    }
-
-    REQUIRE(out.IsString());
-    CHECK(std::string(out.AsString()) ==
-          "TurnsTile: For this input, tileh must be a factor of 32!");
+    CompareData(dataCur, dataRef);
 
   }
 
@@ -938,178 +506,61 @@ TEST_CASE("Errors/Turnstile/TileHeightFactor", "") {
 
 
 
-TEST_CASE("Errors/Turnstile/ModeRange", "") {
+TEST_CASE(
+  "TurnsTile - Invalid mode throws expected error",
+  "[errors][turnstile][mode][range]")
+{
 
 #ifdef TURNSTILE_HOST_AVISYNTH_26
 
-  SECTION("Y8", "") {
+    std::string csps[8] = { "rgb32", "rgb24", "yuy2", "yv12",
+                            "yv24", "yv16", "yv411", "y8" };
 
-    PClip clip = 0;
-
-    try {
-
-      AVSValue args[1] = { "Y8" };
-      const char* names[1] = { "pixel_type" };
-      clip = env->Invoke("BlankClip", AVSValue(args, 1), names).AsClip();
-
-    } catch (AvisynthError& err) {
-
-      FAIL(err.msg);
-
-    }
-
-    SECTION("LessThanMin", "") {
-
-      AVSValue out = 0;
-
-      try {
-
-        AVSValue args[2] = { clip, -1 };
-        const char* names[2] = { 0, "mode" };
-        out = env->Invoke("TurnsTile", AVSValue(args, 2), names).AsClip();
-
-      } catch (AvisynthError& err) {
-
-        out = err.msg;
-
-      }
-
-      REQUIRE(out.IsString());
-      CHECK(std::string(out.AsString()) == "TurnsTile: Y8 only allows mode 0!");
-
-    }
-
-    SECTION("GreaterThanMax", "") {
-
-      AVSValue out = 0;
-
-      try {
-
-        AVSValue args[2] = { clip, 1 };
-        const char* names[2] = { 0, "mode" };
-        out = env->Invoke("TurnsTile", AVSValue(args, 2), names).AsClip();
-
-      } catch (AvisynthError& err) {
-
-        out = err.msg;
-
-      }
-
-      REQUIRE(out.IsString());
-      CHECK(std::string(out.AsString()) == "TurnsTile: Y8 only allows mode 0!");
-
-    }
-
-  }
-
-#endif
-
-  SECTION("NotY8", "") {
-
-#ifdef TURNSTILE_HOST_AVISYNTH_26
-
-    std::string
-      csps[7] = { "RGB32", "RGB24", "YUY2", "YV12",
-                  "YV24", "YV16", "YV411" },
-      modeMaxesMsg[7] = { "4", "3", "4", "6", "3", "4", "6" };
-
-    int count = 7;
+    int count = 8;
 
 #else
 
-    std::string
-      csps[4] = { "RGB32", "RGB24", "YUY2", "YV12" },
-      modeMaxesMsg[4] = { "4", "3", "4", "6" };
+    std::string csps[4] = { "rgb32", "rgb24", "yuy2", "yv12" };
 
     int count = 4;
 
 #endif
 
-    SECTION("LessThanMin", "") {
+  SECTION("lessthanmin") {
 
-      for (int i = 0; i < count; ++i) {
+    for (int i = 0; i < count; ++i) {
 
-        PClip clip = 0;
+      std::string name = "errors-turnstile-mode-range-" + csps[i] +
+                         "_lessthanmin";
 
-        try {
+      AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
 
-          AVSValue args[1] = { csps[i].c_str() };
-          const char* names[1] = { "pixel_type" };
-          clip = env->Invoke("BlankClip", AVSValue(args, 1), names).AsClip();
+      REQUIRE(result.IsString());
 
-        } catch (AvisynthError& err) {
+      std::string dataCur = SplitError(result.AsString()),
+                  dataRef = refDir + name + ".txt";
 
-          FAIL(err.msg);
-
-        }
-
-        AVSValue out = 0;
-
-        try {
-
-          AVSValue args[2] = { clip, -1 };
-          const char* names[2] = { 0, "mode" };
-          out = env->Invoke("TurnsTile", AVSValue(args, 2), names).AsClip();
-
-        } catch (AvisynthError& err) {
-
-          out = err.msg;
-
-        }
-
-        REQUIRE(out.IsString());
-        CHECK(std::string(out.AsString()) ==
-              "TurnsTile: " + csps[i] + " only allows modes 0-" +
-              modeMaxesMsg[i] + "!");
-
-      }
+      CompareData(dataCur, dataRef);
 
     }
 
-    SECTION("GreaterThanMax", "") {
+  }
 
-#ifdef TURNSTILE_HOST_AVISYNTH_26
-      int modeMaxes[7] = { 4, 3, 4, 6, 3, 4, 6 };
-#else
-      int modeMaxes[4] = { 4, 3, 4, 6 };
-#endif
+  SECTION("greaterthanmax") {
 
-      for (int i = 0; i < count; ++i) {
+    for (int i = 0; i < count; ++i) {
 
-        PClip clip = 0;
+      std::string name = "errors-turnstile-mode-range-" + csps[i] +
+                         "_greaterthanmax";
 
-        try {
+      AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
 
-          AVSValue args[1] = { csps[i].c_str() };
-          const char* names[1] = { "pixel_type" };
-          clip = env->Invoke("BlankClip", AVSValue(args, 1), names).AsClip();
+      REQUIRE(result.IsString());
 
-        } catch (AvisynthError& err) {
+      std::string dataCur = SplitError(result.AsString()),
+                  dataRef = refDir + name + ".txt";
 
-          FAIL(err.msg);
-
-        }
-
-        AVSValue out = 0;
-
-        try {
-
-          AVSValue args[2] = { clip, modeMaxes[i] + 1 };
-          const char* names[2] = { 0, "mode" };
-          out = env->Invoke("TurnsTile", AVSValue(args, 2), names).AsClip();
-
-        } catch (AvisynthError& err) {
-
-          out = err.msg;
-
-        }
-
-        REQUIRE(out.IsString());
-        CHECK(std::string(out.AsString()) ==
-              "TurnsTile: " + csps[i] + " only allows modes 0-" +
-              modeMaxesMsg[i] + "!");
-
-      }
+      CompareData(dataCur, dataRef);
 
     }
 
@@ -1119,173 +570,94 @@ TEST_CASE("Errors/Turnstile/ModeRange", "") {
 
 
 
-TEST_CASE("Errors/Turnstile/LevelsString", "") {
+TEST_CASE(
+  "TurnsTile - Invalid levels string throws expected error",
+  "[errors][turnstile][levels]")
+{
 
-  PClip clip = 0;
+  std::string name = "errors-turnstile-levels";
 
-  try {
+  AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
 
-    clip = env->Invoke("BlankClip", 0).AsClip();
+  REQUIRE(result.IsString());
 
-  } catch (AvisynthError& err) {
+  std::string dataCur = SplitError(result.AsString()),
+              dataRef = refDir + name + ".txt";
 
-    FAIL(err.msg);
-
-  }
-
-  AVSValue out;
-
-  try {
-
-    AVSValue args[2] = { clip, "invalid" };
-    const char* names[2] = { 0, "levels" };
-    out = env->Invoke("TurnsTile", AVSValue(args, 2), names).AsClip();
-
-  } catch (AvisynthError& err) {
-
-    out = err.msg;
-
-  }
-
-  REQUIRE(out.IsString());
-  CHECK(  std::string(out.AsString()) ==
-          "TurnsTile: levels must be either \"pc\" or \"tv\"!");
+  CompareData(dataCur, dataRef);
 
 }
 
 
 
-TEST_CASE("Errors/Turnstile/LotileRange", "") {
+TEST_CASE(
+  "TurnsTile - Invalid lotile throws expected error",
+  "[errors][turnstile][lotile][range]")
+{
 
-  SECTION("NoTilesheet", "") {
+  SECTION("clip") {
 
-    PClip clip = 0;
+    SECTION("lessthanmin") {
 
-    try {
+      std::string name = "errors-turnstile-lotile-range_clip_lessthanmin";
 
-      clip = env->Invoke("BlankClip", 0).AsClip();
+      AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
 
-    } catch (AvisynthError& err) {
+      REQUIRE(result.IsString());
 
-      FAIL(err.msg);
+      std::string dataCur = SplitError(result.AsString()),
+                  dataRef = refDir + name + ".txt";
 
-    }
-
-    SECTION("LessThanMin", "") {
-
-      AVSValue out = 0;
-
-      try {
-
-        AVSValue args[2] = { clip, -1 };
-        const char* names[2] = { 0, "lotile" };
-        out = env->Invoke("TurnsTile", AVSValue(args, 2), names).AsClip();
-
-      } catch (AvisynthError& err) {
-
-        out = err.msg;
-
-      }
-
-      REQUIRE(out.IsString());
-      CHECK(std::string(out.AsString()) ==
-            "TurnsTile: Valid lotile range is 0-255!");
+      CompareData(dataCur, dataRef);
 
     }
 
-    SECTION("GreaterThanMax", "") {
+    SECTION("greaterthanmax") {
 
-      AVSValue out = 0;
+      std::string name = "errors-turnstile-lotile-range_clip_greaterthanmax";
 
-      try {
+      AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
 
-        AVSValue args[2] = { clip, 256 };
-        const char* names[2] = { 0, "lotile" };
-        out = env->Invoke("TurnsTile", AVSValue(args, 2), names).AsClip();
+      REQUIRE(result.IsString());
 
-      } catch (AvisynthError& err) {
+      std::string dataCur = SplitError(result.AsString()),
+                  dataRef = refDir + name + ".txt";
 
-        out = err.msg;
-
-      }
-
-      REQUIRE(out.IsString());
-      CHECK(std::string(out.AsString()) ==
-            "TurnsTile: Valid lotile range is 0-255!");
+      CompareData(dataCur, dataRef);
 
     }
 
   }
 
-  SECTION("Tilesheet", "") {
+  SECTION("tilesheet") {
 
-    PClip clip = 0;
+    SECTION("lessthanmin") {
 
-    try {
+      std::string name = "errors-turnstile-lotile-range_tilesheet_lessthanmin";
 
-      clip = env->Invoke("BlankClip", 0).AsClip();
+      AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
 
-    } catch (AvisynthError& err) {
+      REQUIRE(result.IsString());
 
-      FAIL(err.msg);
+      std::string dataCur = SplitError(result.AsString()),
+                  dataRef = refDir + name + ".txt";
 
-    }
-
-    PClip tilesheet = 0;
-
-    try {
-
-      AVSValue args[2] = { 1024, 1024 };
-      const char* names[2] = { "width", "height" };
-      tilesheet = env->Invoke("BlankClip", AVSValue(args, 2), names).AsClip();
-
-    } catch (AvisynthError& err) {
-
-      FAIL(err.msg);
+      CompareData(dataCur, dataRef);
 
     }
 
-    SECTION("LessThanMin", "") {
+    SECTION("greaterthanmax") {
 
-      AVSValue out = 0;
+      std::string name = "errors-turnstile-lotile-range_tilesheet_greaterthanmax";
 
-      try {
+      AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
 
-        AVSValue args[3] = { clip, tilesheet, -1 };
-        const char* names[3] = { 0, 0, "lotile" };
-        out = env->Invoke("TurnsTile", AVSValue(args, 3), names).AsClip();
+      REQUIRE(result.IsString());
 
-      } catch (AvisynthError& err) {
+      std::string dataCur = SplitError(result.AsString()),
+                  dataRef = refDir + name + ".txt";
 
-        out = err.msg;
-
-      }
-
-      REQUIRE(out.IsString());
-      CHECK(std::string(out.AsString()) ==
-            "TurnsTile: Valid lotile range is 0-4095!");
-
-    }
-
-    SECTION("GreaterThanMax", "") {
-
-      AVSValue out = 0;
-
-      try {
-
-        AVSValue args[5] = { clip, tilesheet, 16, 16, 4096 };
-        const char* names[5] = { 0, 0, "tilew", "tileh", "lotile" };
-        out = env->Invoke("TurnsTile", AVSValue(args, 5), names).AsClip();
-
-      } catch (AvisynthError& err) {
-
-        out = err.msg;
-
-      }
-
-      REQUIRE(out.IsString());
-      CHECK(std::string(out.AsString()) ==
-            "TurnsTile: Valid lotile range is 0-4095!");
+      CompareData(dataCur, dataRef);
 
     }
 
@@ -1295,137 +667,74 @@ TEST_CASE("Errors/Turnstile/LotileRange", "") {
 
 
 
-TEST_CASE("Errors/Turnstile/HitileRange", "") {
+TEST_CASE(
+  "TurnsTile - Invalid hitile throws expected error",
+  "[errors][turnstile][hitile][range]")
+{
 
-  SECTION("NoTilesheet", "") {
+  SECTION("clip") {
 
-    PClip clip = 0;
+    SECTION("lessthanmin") {
 
-    try {
+      std::string name = "errors-turnstile-hitile-range_clip_lessthanmin";
 
-      clip = env->Invoke("BlankClip", 0).AsClip();
+      AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
 
-    } catch (AvisynthError& err) {
+      REQUIRE(result.IsString());
 
-      FAIL(err.msg);
+      std::string dataCur = SplitError(result.AsString()),
+                  dataRef = refDir + name + ".txt";
 
-    }
-
-    SECTION("LessThanMin", "") {
-
-      AVSValue out = 0;
-
-      try {
-
-        AVSValue args[2] = { clip, -1 };
-        const char* names[2] = { 0, "hitile" };
-        out = env->Invoke("TurnsTile", AVSValue(args, 2), names).AsClip();
-
-      } catch (AvisynthError& err) {
-
-        out = err.msg;
-
-      }
-
-      REQUIRE(out.IsString());
-      CHECK(std::string(out.AsString()) ==
-            "TurnsTile: Valid hitile range is 0-255!");
+      CompareData(dataCur, dataRef);
 
     }
 
-    SECTION("GreaterThanMax", "") {
+    SECTION("greaterthanmax") {
 
-      AVSValue out = 0;
+      std::string name = "errors-turnstile-hitile-range_clip_greaterthanmax";
 
-      try {
+      AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
 
-        AVSValue args[2] = { clip, 256 };
-        const char* names[2] = { 0, "hitile" };
-        out = env->Invoke("TurnsTile", AVSValue(args, 2), names).AsClip();
+      REQUIRE(result.IsString());
 
-      } catch (AvisynthError& err) {
+      std::string dataCur = SplitError(result.AsString()),
+                  dataRef = refDir + name + ".txt";
 
-        out = err.msg;
-
-      }
-
-      REQUIRE(out.IsString());
-      CHECK(std::string(out.AsString()) ==
-            "TurnsTile: Valid hitile range is 0-255!");
+      CompareData(dataCur, dataRef);
 
     }
 
   }
 
-  SECTION("Tilesheet", "") {
+  SECTION("tilesheet") {
 
-    PClip clip = 0;
+    SECTION("lessthanmin") {
 
-    try {
+      std::string name = "errors-turnstile-hitile-range_tilesheet_lessthanmin";
 
-      clip = env->Invoke("BlankClip", 0).AsClip();
+      AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
 
-    } catch (AvisynthError& err) {
+      REQUIRE(result.IsString());
 
-      FAIL(err.msg);
+      std::string dataCur = SplitError(result.AsString()),
+                  dataRef = refDir + name + ".txt";
 
-    }
-
-    PClip tilesheet = 0;
-
-    try {
-
-      AVSValue args[2] = { 1024, 1024 };
-      const char* names[2] = { "width", "height" };
-      tilesheet = env->Invoke("BlankClip", AVSValue(args, 2), names).AsClip();
-
-    } catch (AvisynthError& err) {
-
-      FAIL(err.msg);
+      CompareData(dataCur, dataRef);
 
     }
 
-    SECTION("LessThanMin", "") {
+    SECTION("greaterthanmax") {
 
-      AVSValue out = 0;
+      std::string name = "errors-turnstile-hitile-range_tilesheet_greaterthanmax";
 
-      try {
+      AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
 
-        AVSValue args[3] = { clip, tilesheet, -1 };
-        const char* names[3] = { 0, 0, "hitile" };
-        out = env->Invoke("TurnsTile", AVSValue(args, 3), names).AsClip();
+      REQUIRE(result.IsString());
 
-      } catch (AvisynthError& err) {
+      std::string dataCur = SplitError(result.AsString()),
+                  dataRef = refDir + name + ".txt";
 
-        out = err.msg;
-
-      }
-
-      REQUIRE(out.IsString());
-      CHECK(std::string(out.AsString()) ==
-            "TurnsTile: Valid hitile range is 0-4095!");
-
-    }
-
-    SECTION("GreaterThanMax", "") {
-
-      AVSValue out = 0;
-
-      try {
-
-        AVSValue args[5] = { clip, tilesheet, 16, 16, 4096 };
-        const char* names[5] = { 0, 0, "tilew", "tileh", "hitile" };
-        out = env->Invoke("TurnsTile", AVSValue(args, 5), names).AsClip();
-
-      } catch (AvisynthError& err) {
-
-        out = err.msg;
-
-      }
-
-      REQUIRE(out.IsString());
-      CHECK(std::string(out.AsString()) ==
-            "TurnsTile: Valid hitile range is 0-4095!");
+      CompareData(dataCur, dataRef);
 
     }
 
@@ -1435,111 +744,61 @@ TEST_CASE("Errors/Turnstile/HitileRange", "") {
 
 
 
-TEST_CASE("Errors/Turnstile/LotileGreaterThanHitile", "") {
+TEST_CASE(
+  "TurnsTile - Lotile greater than hitile throws expected error",
+  "[errors][turnstile][lotile][hitile]")
+{
 
-  PClip clip = 0;
+  std::string name = "errors-turnstile-lotile-hitile";
 
-  try {
+  AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
 
-    clip = env->Invoke("BlankClip", 0).AsClip();
+  REQUIRE(result.IsString());
 
-  } catch (AvisynthError& err) {
+  std::string dataCur = SplitError(result.AsString()),
+              dataRef = refDir + name + ".txt";
 
-    FAIL(err.msg);
-
-  }
-
-  AVSValue out;
-
-  try {
-
-    AVSValue args[3] = { clip, 255, 0};
-    const char* names[3] = { 0, "lotile", "hitile" };
-    out = env->Invoke("TurnsTile", AVSValue(args, 3), names).AsClip();
-
-  } catch (AvisynthError& err) {
-
-    out = err.msg;
-
-  }
-
-  REQUIRE(out.IsString());
-  CHECK(std::string(out.AsString()) ==
-        "TurnsTile: lotile must not be greater than hitile!");
+  CompareData(dataCur, dataRef);
 
 }
 
 
 
-TEST_CASE("Errors/Cluter/ColorspaceMismatch", "") {
+TEST_CASE(
+  "CLUTer - Colorspace mismatch in CLUTer throws expected error",
+  "[errors][cluter][colorspace][mismatch]")
+{
 
-  PClip clip = 0, palette = 0;
+  std::string name = "errors-cluter-colorspace-mismatch";
 
-  try {
+  AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
 
-    AVSValue args[1] = { "RGB32" };
-    const char* names[1] = { "pixel_type" };
-    clip = env->Invoke("BlankClip", AVSValue(args, 1), names).AsClip();
+  REQUIRE(result.IsString());
 
-  } catch (AvisynthError& err) {
+  std::string dataCur = SplitError(result.AsString()),
+              dataRef = refDir + name + ".txt";
 
-    FAIL(err.msg);
-
-  }
-
-  try {
-
-    AVSValue args[1] = { "YV12" };
-    const char* names[1] = { "pixel_type" };
-    palette = env->Invoke("BlankClip", AVSValue(args, 1), names).AsClip();
-
-  } catch (AvisynthError& err) {
-
-    FAIL(err.msg);
-
-  }
-
-  AVSValue out;
-
-  try {
-
-    AVSValue args[2] = { clip, palette };
-    out = env->Invoke("CLUTer", AVSValue(args, 2)).AsClip();
-
-  } catch (AvisynthError& err) {
-
-    out = err.msg;
-
-  }
-
-  REQUIRE(out.IsString());
-  CHECK(std::string(out.AsString()) ==
-        "CLUTer: clip and palette must share a colorspace!");
+  CompareData(dataCur, dataRef);
 
 }
 
 
 
-TEST_CASE("Errors/Cluter/InterlacedHeightMod", "") {
+TEST_CASE(
+  "CLUTer - Interlaced clip height not mod minimum throws expected error",
+  "[errors][cluter][interlaced][height][mod]")
+{
 
 #ifdef TURNSTILE_HOST_AVISYNTH_26
 
-  std::string
-    csps[8] = { "RGB32", "RGB24", "YUY2", "YV12",
-                "YV24", "YV16", "YV411", "Y8" },
-    mods[8] = { "2", "2", "2", "4", "2", "2", "2", "2" };
-
-  int heights[8] = { 479, 479, 479, 478, 479, 479, 479, 479 };
+  std::string csps[8] = { "rgb32", "rgb24", "yuy2", "yv12",
+                          "yv24", "yv16", "yv411", "y8" };
 
   int count = 8;
 
 #else
 
-  std::string
-    csps[4] = { "RGB32", "RGB24", "YUY2", "YV12" },
-    mods[4] = { "2", "2", "2", "4" };
-
-  int heights[4] = { 479, 479, 479, 478 };
+  std::string csps[4] = { "rgb32", "rgb24", "yuy2", "yv12" };
 
   int count = 4;
 
@@ -1547,39 +806,16 @@ TEST_CASE("Errors/Cluter/InterlacedHeightMod", "") {
 
   for (int i = 0; i < count; ++i) {
 
-    PClip clip = 0, palette = 0;
+    std::string name = "errors-cluter-interlaced-height-mod-" + csps[i];
 
-    try {
+    AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
 
-      AVSValue args[2] = { heights[i], csps[i].c_str() };
-      const char* names[2] = { "height", "pixel_type" };
-      clip = env->Invoke("BlankClip", AVSValue(args, 2), names).AsClip();
-      palette = clip;
+    REQUIRE(result.IsString());
 
-    } catch (AvisynthError& err) {
+    std::string dataCur = SplitError(result.AsString()),
+                dataRef = refDir + name + ".txt";
 
-      FAIL(err.msg);
-
-    }
-
-    AVSValue out = 0;
-
-    try {
-
-      AVSValue args[3] = { clip, palette, true };
-      const char* names[3] = { 0, 0, "interlaced" };
-      out = env->Invoke("CLUTer", AVSValue(args, 3), names).AsClip();
-
-    } catch (AvisynthError& err) {
-
-      out = err.msg;
-
-    }
-
-    REQUIRE(out.IsString());
-    CHECK(std::string(out.AsString()) ==
-          "CLUTer: " + csps[i] + " clip height must be mod " + mods[i] +
-          " when interlaced=true!");
+    CompareData(dataCur, dataRef);
 
   }
 

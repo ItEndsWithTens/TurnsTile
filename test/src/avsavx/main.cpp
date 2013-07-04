@@ -22,16 +22,19 @@
 
 
 
-#include "../../../src/interface.h"
-
 #ifdef WIN32
   #include "Windows.h"
 #else
   #include <dlfcn.h>
 #endif
 
+#include <string>
+#include <vector>
+
 #define CATCH_CONFIG_RUNNER
 #include "../../include/catch/catch.hpp"
+
+#include "../../../src/interface.h"
 
 
 
@@ -57,10 +60,50 @@ const AVS_Linkage* AVS_linkage = 0;
 
 IScriptEnvironment* env = 0;
 
+bool writeRefData = false;
+
+std::string testRoot = "./", scriptDir = "", refDir = "";
 
 
-int main(int argc, char* const argv[])
+
+int main(int argc, char* argv[])
 {
+
+  // The Catch test framework will eventually support custom command line
+  // options, but the feature isn't finished or documented yet, so for now I'm
+  // manually parsing argv and setting a global to generate reference data.
+  std::vector<char*> args;
+
+  for (int i = 0; i < argc; ++i) {
+
+    std::string arg = argv[i];
+
+    if (arg == "--writeRefData") {
+
+      writeRefData = true;
+
+    } else if (arg.find("--testRoot") != std::string::npos) {
+
+      testRoot = arg.substr(arg.find('=') + 1, std::string::npos);
+      if (*testRoot.rbegin() != '/' && *testRoot.rbegin() != '\\')
+        testRoot.push_back('/');
+
+    } else {
+
+      args.push_back(argv[i]);
+
+    }
+
+  }
+
+  if (writeRefData == true)
+    argc--;
+  if (testRoot != ".")
+    argc--;
+
+  scriptDir = testRoot + "scripts/avsavx/";
+  refDir = testRoot + "ref/avsavx/";
+
 
   typedef IScriptEnvironment* (__stdcall *CSE)(int);
 
@@ -125,7 +168,7 @@ int main(int argc, char* const argv[])
   }
 
 
-  int ret = Catch::Main(argc, argv);
+  int result = Catch::Session().run(argc, args.data());
 
 
   if (env)
@@ -142,6 +185,6 @@ int main(int argc, char* const argv[])
     dlclose(lib);
 #endif
 
-  return ret;
+  return result;
 
 }

@@ -170,13 +170,18 @@ endif()
 option(TURNSTILE_TESTS "Enable testing with Catch framework." TRUE)
 if(TURNSTILE_TESTS)
 
-  set(SRCS_TEST      
-    ${TURNSTILE_HOST_HDR}
+  set(SRCS_TEST
     test/include/catch/catch.hpp
+
+    ${TURNSTILE_HOST_HDR}
     test/src/avsavx/errors.cpp
     test/src/avsavx/main.cpp
+    test/src/avsavx/util_avsavx.h
+    test/src/avsavx/util_avsavx.cpp
+    test/src/util_common.h
+    test/src/util_common.cpp
   )
-  
+
   set(
     TURNSTILE_TEST_DESCRIPTION
     "Test executable for the ${TURNSTILE_DESCRIPTION}"
@@ -193,7 +198,14 @@ if(TURNSTILE_TESTS)
     endif()
   endif()
   
-  add_executable(${PROJECT_NAME}-test EXCLUDE_FROM_ALL ${SRCS_TEST})
+  add_executable(${PROJECT_NAME}-test ${SRCS_TEST})
+  
+  # This ensures the tests are run after every build; I need to target my custom
+  # -copy target instead of the project itself to make sure the latest version
+  # of the plugin is the one being tested.
+  add_custom_command(TARGET ${PROJECT_NAME}-copy POST_BUILD
+    COMMAND ${PROJECT_NAME}-test --testRoot="${CMAKE_CURRENT_SOURCE_DIR}/test/"
+  )
 
   set_target_properties(
     ${PROJECT_NAME}-test
@@ -208,11 +220,6 @@ if(TURNSTILE_TESTS)
     target_link_libraries(${PROJECT_NAME}-test ${DL_LIBRARIES})
   endif()
 
-  # This ensures the tests are run after every build; I need to target my custom
-  # -copy target instead of the project itself to make sure the latest version
-  # of the plugin is the one being tested.
-  add_custom_command(TARGET ${PROJECT_NAME}-copy COMMAND ${PROJECT_NAME}-test)
-    
 endif()
 
 
