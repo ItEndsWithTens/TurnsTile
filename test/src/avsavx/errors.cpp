@@ -22,11 +22,11 @@
 
 
 
-#include "../../src/interface.h"
+#include "../../../src/interface.h"
 
 #include <string>
 
-#include "../catch/catch.hpp"
+#include "../../include/catch/catch.hpp"
 
 
 

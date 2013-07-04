@@ -172,9 +172,9 @@ if(TURNSTILE_TESTS)
 
   set(SRCS_TEST      
     ${TURNSTILE_HOST_HDR}
-    test/catch/catch.hpp
-    test/avsavx/errors.cpp
-    test/avsavx/main.cpp
+    test/include/catch/catch.hpp
+    test/src/avsavx/errors.cpp
+    test/src/avsavx/main.cpp
   )
   
   set(
@@ -184,12 +184,12 @@ if(TURNSTILE_TESTS)
   
   if(WIN32)
     configure_file(
-      test/TurnsTile-test.rc.in
-      ${CMAKE_CURRENT_SOURCE_DIR}/test/TurnsTile-test.rc
+      test/src/TurnsTile-test.rc.in
+      ${CMAKE_CURRENT_SOURCE_DIR}/test/src/TurnsTile-test.rc
     )
-    list(APPEND SRCS_TEST test/TurnsTile-test.rc)
+    list(APPEND SRCS_TEST test/src/TurnsTile-test.rc)
     if(MSVC)
-      source_group("Resource Files" FILES test/TurnsTile-test.rc)
+      source_group("Resource Files" FILES test/src/TurnsTile-test.rc)
     endif()
   endif()
   

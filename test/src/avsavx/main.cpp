@@ -22,7 +22,7 @@
 
 
 
-#include "../../src/interface.h"
+#include "../../../src/interface.h"
 
 #ifdef WIN32
   #include "Windows.h"
@@ -31,7 +31,7 @@
 #endif
 
 #define CATCH_CONFIG_RUNNER
-#include "../catch/catch.hpp"
+#include "../../include/catch/catch.hpp"
 
 
 
