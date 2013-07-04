@@ -114,7 +114,8 @@ AVSValue __cdecl Create_TurnsTile(
       env->ThrowError("TurnsTile: clip and tilesheet must share a colorspace!");
 
   const char* const interlacedStr = interlaced ? "interlaced " : "";
-  const char* const cspStr =  vi.IsRGB() ?    "RGB" :
+  const char* const cspStr =  vi.IsRGB32() ?  "RGB32" :
+                              vi.IsRGB24() ?  "RGB24" :
                               vi.IsYUY2() ?   "YUY2" :
                               vi.IsYV12() ?   "YV12" :
 #ifdef TURNSTILE_HOST_AVISYNTH_26
@@ -322,9 +323,10 @@ AVSValue __cdecl Create_CLUTer(
 
   if (interlaced) {
 
-    const char* const cspStr =  vi.IsRGB() ?  "RGB" :
-                                vi.IsYUY2() ? "YUY2" :
-                                vi.IsYV12() ? "YV12" :
+    const char* const cspStr =  vi.IsRGB32() ?  "RGB32" :
+                                vi.IsRGB24() ?  "RGB24" :
+                                vi.IsYUY2() ?   "YUY2" :
+                                vi.IsYV12() ?   "YV12" :
 #ifdef TURNSTILE_HOST_AVISYNTH_26
                                 vi.IsYV24() ?   "YV24" :
                                 vi.IsYV16() ?   "YV16" :
