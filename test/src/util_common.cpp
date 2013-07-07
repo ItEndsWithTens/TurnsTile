@@ -96,13 +96,13 @@ void CompareData(std::string dataCur, std::string filename)
   if (writeRefData) {
 
     if (WriteRefData(dataCur, filename) != 0)
-      FAIL("Could not write reference data!");
+      FAIL("Could not write " + filename + "!");
 
   } else {
 
     std::string dataRef = ReadRefData(filename);
     if (dataRef == "")
-      FAIL("Could not read reference data!");
+      FAIL("Could not read " + filename + "!");
     else
       CHECK(dataCur == dataRef);
 
