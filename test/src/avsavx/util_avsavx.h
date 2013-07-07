@@ -43,6 +43,8 @@
 
 AVSValue ImportScriptAvs(std::string script);
 
+void RunTestAvs(std::string name);
+
 
 
 #ifdef TURNSTILE_HOST_AVXSYNTH

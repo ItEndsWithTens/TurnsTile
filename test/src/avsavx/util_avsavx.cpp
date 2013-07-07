@@ -36,12 +36,17 @@
 using avxsynth::AvisynthError;
 using avxsynth::AVSValue;
 using avxsynth::IScriptEnvironment;
+using avxsynth::PVideoFrame;
 
 #endif
 
 
 
 extern IScriptEnvironment* env;
+
+extern bool writeRefData;
+
+extern std::string scriptDir, refDir;
 
 
 
@@ -66,5 +71,28 @@ AVSValue ImportScriptAvs(std::string script)
   }
 
   return dataCur;
+
+}
+
+
+
+void RunTestAvs(std::string name)
+{
+
+  AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
+
+  std::string dataCur;
+
+  if (result.IsString()) {
+
+    dataCur = SplitError(result.AsString());
+
+  } else {
+
+    dataCur = "Test script did not produce string!";
+
+  }
+
+  CompareData(dataCur, refDir + name + ".txt");
 
 }

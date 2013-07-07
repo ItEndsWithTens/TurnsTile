@@ -26,28 +26,7 @@
 
 #include "../../include/catch/catch.hpp"
 
-#include "../../../src/interface.h"
 #include "util_avsavx.h"
-#include "../util_common.h"
-
-
-
-#ifdef TURNSTILE_HOST_AVXSYNTH
-
-using avxsynth::AvisynthError;
-using avxsynth::AVSValue;
-using avxsynth::IScriptEnvironment;
-using avxsynth::PClip;
-
-#endif
-
-
-
-extern IScriptEnvironment* env;
-
-extern bool writeRefData;
-
-extern std::string scriptDir, refDir;
 
 
 
@@ -56,16 +35,7 @@ TEST_CASE(
   "[errors][turnstile][colorspace][mismatch]")
 {
 
-  std::string name = "errors-turnstile-colorspace-mismatch";
-
-  AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
-
-  REQUIRE(result.IsString());
-
-  std::string dataCur = SplitError(result.AsString()),
-              dataRef = refDir + name + ".txt";
-
-  CompareData(dataCur, dataRef);
+  RunTestAvs("errors-turnstile-colorspace-mismatch");
 
 }
 
@@ -91,43 +61,12 @@ TEST_CASE(
 
 #endif
 
-  SECTION("clip") {
+  for (int i = 0; i < count; ++i) {
 
-    for (int i = 0; i < count; ++i) {
-
-      std::string name = "errors-turnstile-interlaced-height-mod-" + csps[i] +
-                         "_clip";
-
-      AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
-
-      REQUIRE(result.IsString());
-
-      std::string dataCur = SplitError(result.AsString()),
-                  dataRef = refDir + name + ".txt";
-
-      CompareData(dataCur, dataRef);
-
-    }
-
-  }
-
-  SECTION("tilesheet") {
-
-    for (int i = 0; i < count; ++i) {
-
-      std::string name = "errors-turnstile-interlaced-height-mod-" + csps[i] +
-                         "_tilesheet";
-
-      AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
-
-      REQUIRE(result.IsString());
-
-      std::string dataCur = SplitError(result.AsString()),
-                  dataRef = refDir + name + ".txt";
-
-      CompareData(dataCur, dataRef);
-
-    }
+    RunTestAvs(
+      "errors-turnstile-interlaced-height-mod-" + csps[i] + "_clip");
+    RunTestAvs(
+      "errors-turnstile-interlaced-height-mod-" + csps[i] + "_tilesheet");
 
   }
 
@@ -155,20 +94,8 @@ TEST_CASE(
 
 #endif
 
-  for (int i = 0; i < count; ++i) {
-
-    std::string name = "errors-turnstile-tile-width-minimum-" + csps[i];
-
-      AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
-
-      REQUIRE(result.IsString());
-
-      std::string dataCur = SplitError(result.AsString()),
-                  dataRef = refDir + name + ".txt";
-
-      CompareData(dataCur, dataRef);
-
-  }
+  for (int i = 0; i < count; ++i)
+    RunTestAvs("errors-turnstile-tile-width-minimum-" + csps[i]);
 
 }
 
@@ -179,8 +106,6 @@ TEST_CASE(
   "[errors][turnstile][tile][height][minimum]")
 {
 
-  SECTION("progressive") {
-
 #ifdef TURNSTILE_HOST_AVISYNTH_26
 
     std::string csps[8] = { "rgb32", "rgb24", "yuy2", "yv12",
@@ -196,56 +121,12 @@ TEST_CASE(
 
 #endif
 
-    for (int i = 0; i < count; ++i) {
+  for (int i = 0; i < count; ++i) {
 
-      std::string name = "errors-turnstile-tile-height-minimum-" + csps[i] +
-                         "_progressive";
-
-      AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
-
-      REQUIRE(result.IsString());
-
-      std::string dataCur = SplitError(result.AsString()),
-                  dataRef = refDir + name + ".txt";
-
-      CompareData(dataCur, dataRef);
-
-    }
-
-  }
-
-  SECTION("interlaced", "") {
-
-#ifdef TURNSTILE_HOST_AVISYNTH_26
-
-    std::string csps[8] = { "rgb32", "rgb24", "yuy2", "yv12",
-                            "yv24", "yv16", "yv411", "y8" };
-
-    int count = 8;
-
-#else
-
-    std::string csps[4] = { "rgb32", "rgb24", "yuy2", "yv12" };
-
-    int count = 4;
-
-#endif
-
-    for (int i = 0; i < count; ++i) {
-
-      std::string name = "errors-turnstile-tile-height-minimum-" + csps[i] +
-                         "_interlaced";
-
-      AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
-
-      REQUIRE(result.IsString());
-
-      std::string dataCur = SplitError(result.AsString()),
-                  dataRef = refDir + name + ".txt";
-
-      CompareData(dataCur, dataRef);
-
-    }
+    RunTestAvs(
+      "errors-turnstile-tile-height-minimum-" + csps[i] + "_progressive");
+    RunTestAvs(
+      "errors-turnstile-tile-height-minimum-" + csps[i] + "_interlaced");
 
   }
 
@@ -258,35 +139,8 @@ TEST_CASE(
   "[errors][turnstile][tile][width][maximum]")
 {
 
-  SECTION("clip") {
-
-    std::string name = "errors-turnstile-tile-width-maximum_clip";
-
-    AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
-
-    REQUIRE(result.IsString());
-
-    std::string dataCur = SplitError(result.AsString()),
-                dataRef = refDir + name + ".txt";
-
-    CompareData(dataCur, dataRef);
-
-  }
-
-  SECTION("tilesheet") {
-
-    std::string name = "errors-turnstile-tile-width-maximum_tilesheet";
-
-    AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
-
-    REQUIRE(result.IsString());
-
-    std::string dataCur = SplitError(result.AsString()),
-                dataRef = refDir + name + ".txt";
-
-    CompareData(dataCur, dataRef);
-
-  }
+  RunTestAvs("errors-turnstile-tile-width-maximum_clip");
+  RunTestAvs("errors-turnstile-tile-width-maximum_tilesheet");
 
 }
 
@@ -297,35 +151,8 @@ TEST_CASE(
   "[errors][turnstile][tile][height][maximum]")
 {
 
-  SECTION("clip", "") {
-
-    std::string name = "errors-turnstile-tile-height-maximum_clip";
-
-    AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
-
-    REQUIRE(result.IsString());
-
-    std::string dataCur = SplitError(result.AsString()),
-                dataRef = refDir + name + ".txt";
-
-    CompareData(dataCur, dataRef);
-
-  }
-
-  SECTION("tilesheet", "") {
-
-    std::string name = "errors-turnstile-tile-height-maximum_tilesheet";
-
-    AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
-
-    REQUIRE(result.IsString());
-
-    std::string dataCur = SplitError(result.AsString()),
-                dataRef = refDir + name + ".txt";
-
-    CompareData(dataCur, dataRef);
-
-  }
+  RunTestAvs("errors-turnstile-tile-height-maximum_clip");
+  RunTestAvs("errors-turnstile-tile-height-maximum_tilesheet");
 
 }
 
@@ -350,20 +177,8 @@ TEST_CASE(
 
 #endif
 
-  for (int i = 0; i < count; ++i) {
-
-    std::string name = "errors-turnstile-tile-width-mod-" + csps[i];
-
-    AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
-
-    REQUIRE(result.IsString());
-
-    std::string dataCur = SplitError(result.AsString()),
-                dataRef = refDir + name + ".txt";
-
-    CompareData(dataCur, dataRef);
-
-  }
+  for (int i = 0; i < count; ++i)
+    RunTestAvs("errors-turnstile-tile-width-mod-" + csps[i]);
 
 }
 
@@ -374,55 +189,26 @@ TEST_CASE(
   "[errors][turnstile][tile][height][mod]")
 {
 
-  SECTION("progressive") {
+  RunTestAvs("errors-turnstile-tile-height-mod_progressive");
 
-    std::string name = "errors-turnstile-tile-height-mod_progressive";
-
-    AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
-
-    REQUIRE(result.IsString());
-
-    std::string dataCur = SplitError(result.AsString()),
-                dataRef = refDir + name + ".txt";
-
-    CompareData(dataCur, dataRef);
-
-  }
-
-  SECTION("interlaced") {
 
 #ifdef TURNSTILE_HOST_AVISYNTH_26
 
-    std::string csps[8] = { "rgb32", "rgb24", "yuy2", "yv12",
-                            "yv24", "yv16", "yv411", "y8" };
+  std::string csps[8] = { "rgb32", "rgb24", "yuy2", "yv12",
+                          "yv24", "yv16", "yv411", "y8" };
 
-    int count = 8;
+  int count = 8;
 
 #else
 
-    std::string csps[4] = { "rgb32", "rgb24", "yuy2", "yv12" };
+  std::string csps[4] = { "rgb32", "rgb24", "yuy2", "yv12" };
 
-    int count = 4;
+  int count = 4;
 
 #endif
 
-    for (int i = 0; i < count; ++i) {
-
-      std::string name = "errors-turnstile-tile-height-mod-" + csps[i] +
-                         "_interlaced";
-
-      AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
-
-      REQUIRE(result.IsString());
-
-      std::string dataCur = SplitError(result.AsString()),
-                  dataRef = refDir + name + ".txt";
-
-      CompareData(dataCur, dataRef);
-
-    }
-
-  }
+  for (int i = 0; i < count; ++i)
+    RunTestAvs("errors-turnstile-tile-height-mod-" + csps[i] + "_interlaced");
 
 }
 
@@ -433,35 +219,8 @@ TEST_CASE(
   "[errors][turnstile][tile][width][factor]")
 {
 
-  SECTION("clip", "") {
-
-    std::string name = "errors-turnstile-tile-width-factor_clip";
-
-    AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
-
-    REQUIRE(result.IsString());
-
-    std::string dataCur = SplitError(result.AsString()),
-                dataRef = refDir + name + ".txt";
-
-    CompareData(dataCur, dataRef);
-
-  }
-
-  SECTION("tilesheet", "") {
-
-    std::string name = "errors-turnstile-tile-width-factor_tilesheet";
-
-    AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
-
-    REQUIRE(result.IsString());
-
-    std::string dataCur = SplitError(result.AsString()),
-                dataRef = refDir + name + ".txt";
-
-    CompareData(dataCur, dataRef);
-
-  }
+  RunTestAvs("errors-turnstile-tile-width-factor_clip");
+  RunTestAvs("errors-turnstile-tile-width-factor_tilesheet");
 
 }
 
@@ -472,35 +231,8 @@ TEST_CASE(
   "[errors][turnstile][tile][height][factor]")
 {
 
-  SECTION("clip") {
-
-    std::string name = "errors-turnstile-tile-height-factor_clip";
-
-    AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
-
-    REQUIRE(result.IsString());
-
-    std::string dataCur = SplitError(result.AsString()),
-                dataRef = refDir + name + ".txt";
-
-    CompareData(dataCur, dataRef);
-
-  }
-
-  SECTION("tilesheet", "") {
-
-    std::string name = "errors-turnstile-tile-height-factor_tilesheet";
-
-    AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
-
-    REQUIRE(result.IsString());
-
-    std::string dataCur = SplitError(result.AsString()),
-                dataRef = refDir + name + ".txt";
-
-    CompareData(dataCur, dataRef);
-
-  }
+  RunTestAvs("errors-turnstile-tile-height-factor_clip");
+  RunTestAvs("errors-turnstile-tile-height-factor_tilesheet");
 
 }
 
@@ -526,43 +258,10 @@ TEST_CASE(
 
 #endif
 
-  SECTION("lessthanmin") {
+  for (int i = 0; i < count; ++i) {
 
-    for (int i = 0; i < count; ++i) {
-
-      std::string name = "errors-turnstile-mode-range-" + csps[i] +
-                         "_lessthanmin";
-
-      AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
-
-      REQUIRE(result.IsString());
-
-      std::string dataCur = SplitError(result.AsString()),
-                  dataRef = refDir + name + ".txt";
-
-      CompareData(dataCur, dataRef);
-
-    }
-
-  }
-
-  SECTION("greaterthanmax") {
-
-    for (int i = 0; i < count; ++i) {
-
-      std::string name = "errors-turnstile-mode-range-" + csps[i] +
-                         "_greaterthanmax";
-
-      AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
-
-      REQUIRE(result.IsString());
-
-      std::string dataCur = SplitError(result.AsString()),
-                  dataRef = refDir + name + ".txt";
-
-      CompareData(dataCur, dataRef);
-
-    }
+    RunTestAvs("errors-turnstile-mode-range-" + csps[i] + "_lessthanmin");
+    RunTestAvs("errors-turnstile-mode-range-" + csps[i] + "_greaterthanmax");
 
   }
 
@@ -575,16 +274,7 @@ TEST_CASE(
   "[errors][turnstile][levels]")
 {
 
-  std::string name = "errors-turnstile-levels";
-
-  AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
-
-  REQUIRE(result.IsString());
-
-  std::string dataCur = SplitError(result.AsString()),
-              dataRef = refDir + name + ".txt";
-
-  CompareData(dataCur, dataRef);
+  RunTestAvs("errors-turnstile-levels");
 
 }
 
@@ -595,73 +285,10 @@ TEST_CASE(
   "[errors][turnstile][lotile][range]")
 {
 
-  SECTION("clip") {
-
-    SECTION("lessthanmin") {
-
-      std::string name = "errors-turnstile-lotile-range_clip_lessthanmin";
-
-      AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
-
-      REQUIRE(result.IsString());
-
-      std::string dataCur = SplitError(result.AsString()),
-                  dataRef = refDir + name + ".txt";
-
-      CompareData(dataCur, dataRef);
-
-    }
-
-    SECTION("greaterthanmax") {
-
-      std::string name = "errors-turnstile-lotile-range_clip_greaterthanmax";
-
-      AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
-
-      REQUIRE(result.IsString());
-
-      std::string dataCur = SplitError(result.AsString()),
-                  dataRef = refDir + name + ".txt";
-
-      CompareData(dataCur, dataRef);
-
-    }
-
-  }
-
-  SECTION("tilesheet") {
-
-    SECTION("lessthanmin") {
-
-      std::string name = "errors-turnstile-lotile-range_tilesheet_lessthanmin";
-
-      AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
-
-      REQUIRE(result.IsString());
-
-      std::string dataCur = SplitError(result.AsString()),
-                  dataRef = refDir + name + ".txt";
-
-      CompareData(dataCur, dataRef);
-
-    }
-
-    SECTION("greaterthanmax") {
-
-      std::string name = "errors-turnstile-lotile-range_tilesheet_greaterthanmax";
-
-      AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
-
-      REQUIRE(result.IsString());
-
-      std::string dataCur = SplitError(result.AsString()),
-                  dataRef = refDir + name + ".txt";
-
-      CompareData(dataCur, dataRef);
-
-    }
-
-  }
+  RunTestAvs("errors-turnstile-lotile-range_clip_lessthanmin");
+  RunTestAvs("errors-turnstile-lotile-range_clip_greaterthanmax");
+  RunTestAvs("errors-turnstile-lotile-range_tilesheet_lessthanmin");
+  RunTestAvs("errors-turnstile-lotile-range_tilesheet_greaterthanmax");
 
 }
 
@@ -672,73 +299,10 @@ TEST_CASE(
   "[errors][turnstile][hitile][range]")
 {
 
-  SECTION("clip") {
-
-    SECTION("lessthanmin") {
-
-      std::string name = "errors-turnstile-hitile-range_clip_lessthanmin";
-
-      AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
-
-      REQUIRE(result.IsString());
-
-      std::string dataCur = SplitError(result.AsString()),
-                  dataRef = refDir + name + ".txt";
-
-      CompareData(dataCur, dataRef);
-
-    }
-
-    SECTION("greaterthanmax") {
-
-      std::string name = "errors-turnstile-hitile-range_clip_greaterthanmax";
-
-      AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
-
-      REQUIRE(result.IsString());
-
-      std::string dataCur = SplitError(result.AsString()),
-                  dataRef = refDir + name + ".txt";
-
-      CompareData(dataCur, dataRef);
-
-    }
-
-  }
-
-  SECTION("tilesheet") {
-
-    SECTION("lessthanmin") {
-
-      std::string name = "errors-turnstile-hitile-range_tilesheet_lessthanmin";
-
-      AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
-
-      REQUIRE(result.IsString());
-
-      std::string dataCur = SplitError(result.AsString()),
-                  dataRef = refDir + name + ".txt";
-
-      CompareData(dataCur, dataRef);
-
-    }
-
-    SECTION("greaterthanmax") {
-
-      std::string name = "errors-turnstile-hitile-range_tilesheet_greaterthanmax";
-
-      AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
-
-      REQUIRE(result.IsString());
-
-      std::string dataCur = SplitError(result.AsString()),
-                  dataRef = refDir + name + ".txt";
-
-      CompareData(dataCur, dataRef);
-
-    }
-
-  }
+  RunTestAvs("errors-turnstile-hitile-range_clip_lessthanmin");
+  RunTestAvs("errors-turnstile-hitile-range_clip_greaterthanmax");
+  RunTestAvs("errors-turnstile-hitile-range_tilesheet_lessthanmin");
+  RunTestAvs("errors-turnstile-hitile-range_tilesheet_greaterthanmax");
 
 }
 
@@ -749,16 +313,7 @@ TEST_CASE(
   "[errors][turnstile][lotile][hitile]")
 {
 
-  std::string name = "errors-turnstile-lotile-hitile";
-
-  AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
-
-  REQUIRE(result.IsString());
-
-  std::string dataCur = SplitError(result.AsString()),
-              dataRef = refDir + name + ".txt";
-
-  CompareData(dataCur, dataRef);
+  RunTestAvs("errors-turnstile-lotile-hitile");
 
 }
 
@@ -769,16 +324,7 @@ TEST_CASE(
   "[errors][cluter][colorspace][mismatch]")
 {
 
-  std::string name = "errors-cluter-colorspace-mismatch";
-
-  AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
-
-  REQUIRE(result.IsString());
-
-  std::string dataCur = SplitError(result.AsString()),
-              dataRef = refDir + name + ".txt";
-
-  CompareData(dataCur, dataRef);
+  RunTestAvs("errors-cluter-colorspace-mismatch");
 
 }
 
@@ -804,19 +350,7 @@ TEST_CASE(
 
 #endif
 
-  for (int i = 0; i < count; ++i) {
-
-    std::string name = "errors-cluter-interlaced-height-mod-" + csps[i];
-
-    AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
-
-    REQUIRE(result.IsString());
-
-    std::string dataCur = SplitError(result.AsString()),
-                dataRef = refDir + name + ".txt";
-
-    CompareData(dataCur, dataRef);
-
-  }
+  for (int i = 0; i < count; ++i)
+    RunTestAvs("errors-cluter-interlaced-height-mod-" + csps[i]);
 
 }
