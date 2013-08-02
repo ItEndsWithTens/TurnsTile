@@ -53,7 +53,7 @@ AVSValue ImportScriptAvs(std::string script)
   try {
 
     AVSValue args[1] = { script.c_str() };
-    dataCur = env->Invoke("Import", AVSValue(args, 1)).AsClip();
+    dataCur = env->Invoke("Import", AVSValue(args, 1));
 
   } catch (IScriptEnvironment::NotFound&) {
 
