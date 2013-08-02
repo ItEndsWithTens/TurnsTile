@@ -87,9 +87,19 @@ void RunTestAvs(std::string name)
 
     dataCur = SplitError(result.AsString());
 
+  } else if (result.IsClip()) {
+
+    PVideoFrame frm = result.AsClip()->GetFrame(0, env);
+    const unsigned char* frmp = frm->GetReadPtr();
+    const int PITCH = frm->GetPitch(),
+              ROW_SIZE = frm->GetRowSize(),
+              HEIGHT = frm->GetHeight();
+
+    dataCur = GetFrameHash(frmp, ROW_SIZE, PITCH, HEIGHT);
+
   } else {
 
-    dataCur = "Test script did not produce string!";
+    dataCur = "Test script did not produce string or clip!";
 
   }
 

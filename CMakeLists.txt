@@ -173,15 +173,21 @@ if(TURNSTILE_TESTS)
   set(SRCS_TEST
     test/include/catch/catch.hpp
 
+    test/include/md5/md5.h
+    test/include/md5/md5.c
+    
     ${TURNSTILE_HOST_HDR}
     test/src/avsavx/errors.cpp
     test/src/avsavx/main.cpp
+    test/src/avsavx/output.cpp
     test/src/avsavx/util_avsavx.h
     test/src/avsavx/util_avsavx.cpp
     test/src/util_common.h
     test/src/util_common.cpp
   )
 
+  set_source_files_properties(test/include/md5/md5.c PROPERTIES LANGUAGE CXX)
+  
   set(
     TURNSTILE_TEST_DESCRIPTION
     "Test executable for the ${TURNSTILE_DESCRIPTION}"

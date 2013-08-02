@@ -1,8 +1,4 @@
-#ifndef TURNSTILE_TEST_SRC_UTIL_COMMON_H_INCLUDED_2B23CA23607A4347BD1946126C3F0A39
-#define TURNSTILE_TEST_SRC_UTIL_COMMON_H_INCLUDED_2B23CA23607A4347BD1946126C3F0A39
-
-
-
+//
 //          TurnsTile 0.3.2 for AviSynth 2.5.x
 //
 //  Provides customizable mosaic and palette effects. Latest release
@@ -28,28 +24,46 @@
 
 #include <string>
 
+#include "../../include/catch/catch.hpp"
 
-
-std::string GetFrameHash(
-  const unsigned char* frmp, const int ROW_SIZE,
-  const int PITCH, const int HEIGHT);
-
-
-
-std::string ReadRefData(std::string filename);
+#include "util_avsavx.h"
 
 
 
-std::string SplitError(std::string err);
+TEST_CASE(
+  "TurnsTile - Tile dimension at multiples of minimum produces expected result",
+  "[output][turnstile][tilew][tileh][multiple][minimum]")
+{
 
+#ifdef TURNSTILE_HOST_AVISYNTH_26
 
+  std::string csps[8] = { "rgb32", "rgb24", "yuy2", "yv12",
+                          "yv24", "yv16", "yv411", "y8" };
 
-int WriteRefData(std::string hash, std::string filename);
+  int count = 8;
 
+#else
 
+  std::string csps[4] = { "rgb32", "rgb24", "yuy2", "yv12" };
 
-void CompareData(std::string data, std::string filename);
+  int count = 4;
 
+#endif
 
+  std::string mults[4] = { "_wodd_hodd", "_wodd_heven",
+                           "_weven_hodd", "_weven_heven" };
 
-#endif // TURNSTILE_TEST_SRC_UTIL_COMMON_H_INCLUDED_2B23CA23607A4347BD1946126C3F0A39
+  for (int i = 0; i < count; ++i) {
+
+    for (int j = 0; j < 4; ++j) {
+
+      RunTestAvs("output-turnstile-tilew-tileh-multiple-minimum_clip_" +
+                  csps[i] + mults[j]);
+      RunTestAvs("output-turnstile-tilew-tileh-multiple-minimum_tilesheet_" +
+                  csps[i] + mults[j]);
+
+    }
+
+  }
+
+}

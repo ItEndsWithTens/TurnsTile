@@ -28,10 +28,38 @@
 #include <sstream>
 
 #include "../include/catch/catch.hpp"
+#include "../include/md5/md5.h"
 
 
 
 extern bool writeRefData;
+
+
+
+std::string GetFrameHash(
+  const unsigned char* frmp, const int ROW_SIZE,
+  const int PITCH, const int HEIGHT)
+{
+
+  md5_state_t state;
+  md5_byte_t digest[16];
+
+  md5_init(&state);
+  for (int i = 0; i < HEIGHT; ++i)
+    md5_append(&state, (md5_byte_t*)(frmp + (PITCH * i)), ROW_SIZE);
+  md5_finish(&state, digest);
+
+  std::string hash;
+
+  for (int i = 0; i < 16; ++i) {
+    const char* lut = "0123456789abcdef";
+    hash.push_back(lut[digest[i] >> 4]);
+    hash.push_back(lut[digest[i] & 15]);
+  }
+
+  return hash;
+
+}
 
 
 
