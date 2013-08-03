@@ -79,7 +79,9 @@ AVSValue ImportScriptAvs(std::string script)
 void RunTestAvs(std::string name)
 {
 
-  AVSValue result = ImportScriptAvs(scriptDir + name + ".avs");
+  std::string script = scriptDir + name + ".avs";
+
+  AVSValue result = ImportScriptAvs(script);
 
   std::string dataCur;
 
@@ -99,7 +101,7 @@ void RunTestAvs(std::string name)
 
   } else {
 
-    dataCur = "Test script did not produce string or clip!";
+    dataCur = "Error evaluating script " + script + "!";
 
   }
 
