@@ -67,3 +67,40 @@ TEST_CASE(
   }
 
 }
+
+
+
+TEST_CASE(
+  "TurnsTile - Simulation of reduced bit depth produces expected results",
+  "[output][turnstile][res]")
+{
+
+#ifdef TURNSTILE_HOST_AVISYNTH_26
+
+  std::string csps[8] = { "rgb32", "rgb24", "yuy2", "yv12",
+                          "yv24", "yv16", "yv411", "y8" };
+
+  int count = 8;
+
+#else
+
+  std::string csps[4] = { "rgb32", "rgb24", "yuy2", "yv12" };
+
+  int count = 4;
+
+#endif
+
+  std::string res[3] = { "_0", "_1", "_8" };
+
+  for (int i = 0; i < count; ++i) {
+
+    for (int j = 0; j < 3; ++j) {
+
+      RunTestAvs("output-turnstile-res_clip_" + csps[i] + res[j]);
+      RunTestAvs("output-turnstile-res_tilesheet_" + csps[i] + res[j]);
+
+    }
+
+  }
+
+}
