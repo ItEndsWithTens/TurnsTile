@@ -104,3 +104,30 @@ TEST_CASE(
   }
 
 }
+
+
+
+TEST_CASE(
+  "TurnsTile - Using TV levels with a tilesheet produces expected results",
+  "[output][turnstile][levels]")
+{
+
+#ifdef TURNSTILE_HOST_AVISYNTH_26
+
+  std::string csps[8] = { "rgb32", "rgb24", "yuy2", "yv12",
+                          "yv24", "yv16", "yv411", "y8" };
+
+  int count = 8;
+
+#else
+
+  std::string csps[4] = { "rgb32", "rgb24", "yuy2", "yv12" };
+
+  int count = 4;
+
+#endif
+
+  for (int i = 0; i < count; ++i)
+    RunTestAvs("output-turnstile-levels_" + csps[i]);
+
+}
