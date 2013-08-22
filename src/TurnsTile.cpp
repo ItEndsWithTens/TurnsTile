@@ -135,20 +135,20 @@ host(env)
 
   if (tilesheet) {
 
-    double idxScaleFactor = static_cast<double> (idxInMax - idxInMin) /
-                            static_cast<double> (_hiTile - _loTile);
+    double factor = static_cast<double>(_hiTile - _loTile) /
+                    static_cast<double>(idxInMax - idxInMin);
 
     for (int in = 0; in < 256; ++in) {
 
       // The proper, generic form of this scaling formula would be:
       //
-      // ((number) /
-      //   ((inMax - inMin) / (outMax - outMin))) +
-      // outMin
+      // (outMax - outMin) * (number - inMin)
+      // ------------------------------------ + outMin
+      //             inMax - inMin
       //
       // Using mod to round the result is a unique requirement of the 'res'
       // feature I've got in TurnsTile, you don't need it if only scaling.
-      int scaled =  static_cast<int>((in / idxScaleFactor) + 0.5) + _loTile;
+      int scaled = static_cast<int>((in - idxInMin) * factor + 0.5) + _loTile;
 
       lut.push_back(mod(scaled, depthMod, _loTile, _hiTile, 0));
 
