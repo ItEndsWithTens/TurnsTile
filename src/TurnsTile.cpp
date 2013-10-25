@@ -55,8 +55,7 @@ tileW(_tileW), tileH(_tileH), mode(_mode),
 srcCols(vi.width / tileW), srcRows(vi.height / tileH),
 shtCols(_vi2.width / tileW), shtRows(_vi2.height / tileH),
 bytesPerSample(1), spp(vi.BytesFromPixels(1) / bytesPerSample),
-PLANAR(vi.IsPlanar()), YUYV(vi.IsYUY2()), BGRA(vi.IsRGB32()), BGR(vi.IsRGB24()),
-host(env)
+PLANAR(vi.IsPlanar()), YUYV(vi.IsYUY2()), BGRA(vi.IsRGB32()), BGR(vi.IsRGB24())
 {
 
 #ifdef TURNSTILE_HOST_AVISYNTH_26
@@ -223,11 +222,13 @@ PVideoFrame __stdcall TurnsTile::GetFrame(int n, IScriptEnvironment* env)
       dstY, dstU, dstV,
       SRC_PITCH_SAMPLES_Y, SRC_PITCH_SAMPLES_U,
       SHT_PITCH_SAMPLES_Y, SHT_PITCH_SAMPLES_U,
-      DST_PITCH_SAMPLES_Y, DST_PITCH_SAMPLES_U);
+      DST_PITCH_SAMPLES_Y, DST_PITCH_SAMPLES_U,
+      env);
   else
     processFramePacked(
       srcY, shtY, dstY,
-      SRC_PITCH_SAMPLES_Y, SHT_PITCH_SAMPLES_Y, DST_PITCH_SAMPLES_Y);
+      SRC_PITCH_SAMPLES_Y, SHT_PITCH_SAMPLES_Y, DST_PITCH_SAMPLES_Y,
+      env);
 
   return dst;
 
@@ -241,7 +242,8 @@ void TurnsTile::processFramePacked(
   unsigned char* dstp,
   const int SRC_PITCH_SAMPLES,
   const int SHT_PITCH_SAMPLES,
-  const int DST_PITCH_SAMPLES)
+  const int DST_PITCH_SAMPLES,
+  IScriptEnvironment* env)
 {
 
   for (int row = 0; row < srcRows; ++row) {
@@ -300,7 +302,7 @@ void TurnsTile::processFramePacked(
         fillTile(
           dstTile, DST_PITCH_SAMPLES,
           shtTile, SHT_PITCH_SAMPLES,
-          tileW, tileH, 0);
+          tileW, tileH, 0, env);
 
       } else {
 
@@ -320,7 +322,7 @@ void TurnsTile::processFramePacked(
 
           fillTile(
             dstTile, DST_PITCH_SAMPLES, static_cast<const unsigned char*>(0), 0,
-            tileW, tileH, fillVal);
+            tileW, tileH, fillVal, env);
 
         } else {
 
@@ -366,7 +368,8 @@ void TurnsTile::processFramePlanar(
   unsigned char* dstV,
   const int SRC_PITCH_SAMPLES_Y, const int SRC_PITCH_SAMPLES_U,
   const int SHT_PITCH_SAMPLES_Y, const int SHT_PITCH_SAMPLES_U,
-  const int DST_PITCH_SAMPLES_Y, const int DST_PITCH_SAMPLES_U)
+  const int DST_PITCH_SAMPLES_Y, const int DST_PITCH_SAMPLES_U,
+  IScriptEnvironment* env)
 {
 
   for (int row = 0; row < srcRows; ++row) {
@@ -441,30 +444,30 @@ void TurnsTile::processFramePlanar(
         fillTile(
           dstTileY, DST_PITCH_SAMPLES_Y,
           shtTileY, SHT_PITCH_SAMPLES_Y,
-          tileW, tileH, 0);
+          tileW, tileH, 0, env);
         fillTile(
           dstTileU, DST_PITCH_SAMPLES_U,
           shtTileU, SHT_PITCH_SAMPLES_U,
-          tileW_U, tileH_U, 0);
+          tileW_U, tileH_U, 0, env);
         fillTile(
           dstTileV, DST_PITCH_SAMPLES_U,
           shtTileV, SHT_PITCH_SAMPLES_U,
-          tileW_U, tileH_U, 0);
+          tileW_U, tileH_U, 0, env);
 
       } else {
 
         fillTile(
           dstTileY, DST_PITCH_SAMPLES_Y, static_cast<unsigned char*>(0), 0,
           tileW, tileH,
-          static_cast<unsigned char>(lut[*(srcY + tileCtrY)]));
+          static_cast<unsigned char>(lut[*(srcY + tileCtrY)]), env);
         fillTile(
           dstTileU, DST_PITCH_SAMPLES_U, static_cast<unsigned char*>(0), 0,
           tileW_U, tileH_U,
-          static_cast<unsigned char>(lut[*(srcU + tileCtrU)]));
+          static_cast<unsigned char>(lut[*(srcU + tileCtrU)]), env);
         fillTile(
           dstTileV, DST_PITCH_SAMPLES_U, static_cast<unsigned char*>(0), 0,
           tileW_U, tileH_U,
-          static_cast<unsigned char>(lut[*(srcV + tileCtrU)]));
+          static_cast<unsigned char>(lut[*(srcV + tileCtrU)]), env);
 
       }
 
@@ -516,7 +519,8 @@ template<typename Tsample, typename Tpixel>
 void TurnsTile::fillTile(
   Tsample* dstp, const int DST_PITCH_SAMPLES,
   const Tsample* srcp, const int SRC_PITCH_SAMPLES,
-  const int width, const int height, const Tpixel fillVal) const
+  const int width, const int height, const Tpixel fillVal,
+  IScriptEnvironment* env) const
 {
 
   int widthSamples = width * spp;
@@ -524,7 +528,7 @@ void TurnsTile::fillTile(
   if (srcp) {
 
     int widthBytes = widthSamples * bytesPerSample;
-    host->BitBlt(
+    env->BitBlt(
       dstp, DST_PITCH_SAMPLES, srcp, SRC_PITCH_SAMPLES, widthBytes, height);
 
   } else {

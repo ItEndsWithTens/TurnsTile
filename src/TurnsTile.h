@@ -62,7 +62,8 @@ public:
     unsigned char* dstp,
     const int SRC_PITCH_SAMPLES,
     const int SHT_PITCH_SAMPLES,
-    const int DST_PITCH_SAMPLES);
+    const int DST_PITCH_SAMPLES,
+    IScriptEnvironment* env);
 
   void processFramePlanar(
     const unsigned char* srcY,
@@ -76,7 +77,8 @@ public:
     unsigned char* dstV,
     const int SRC_PITCH_SAMPLES_Y, const int SRC_PITCH_SAMPLES_U,
     const int SHT_PITCH_SAMPLES_Y, const int SHT_PITCH_SAMPLES_U,
-    const int DST_PITCH_SAMPLES_Y, const int DST_PITCH_SAMPLES_U);
+    const int DST_PITCH_SAMPLES_Y, const int DST_PITCH_SAMPLES_U,
+    IScriptEnvironment* env);
 
   static int gcf(int a, int b);
 
@@ -95,15 +97,14 @@ private:
 
   bool PLANAR, YUYV, BGRA, BGR;
 
-  IScriptEnvironment* host;
-
   std::vector<int> lut;
 
   template<typename Tsample, typename Tpixel>
   void fillTile(
     Tsample* dstp, const int DST_PITCH_SAMPLES,
     const Tsample* srcp, const int SRC_PITCH_SAMPLES,
-    const int width, const int height, const Tpixel fillVal) const;
+    const int width, const int height, const Tpixel fillVal,
+    IScriptEnvironment* env) const;
 
 };
 
