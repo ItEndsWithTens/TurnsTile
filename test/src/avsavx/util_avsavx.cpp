@@ -33,7 +33,6 @@
 
 #ifdef TURNSTILE_HOST_AVXSYNTH
 
-using avxsynth::AvisynthError;
 using avxsynth::AVSValue;
 using avxsynth::IScriptEnvironment;
 using avxsynth::PVideoFrame;
@@ -50,39 +49,42 @@ extern std::string scriptDir, refDir;
 
 
 
-AVSValue ImportScriptAvs(std::string script)
-{
-
-  AVSValue dataCur = "";
-
-  try {
-
-    AVSValue args[1] = { script.c_str() };
-    dataCur = env->Invoke("Import", AVSValue(args, 1));
-
-  } catch (IScriptEnvironment::NotFound&) {
-
-    dataCur = "Could not find Import function!";
-
-  } catch (AvisynthError& err) {
-
-    dataCur = err.msg;
-
-  }
-
-  return dataCur;
-
-}
-
-
-
 void RunTestAvs(std::string name)
 {
 
+  // Using the Avisynth language's try...catch keywords, instead of using C++
+  // exceptions directly, allows me to fix my mistake of catching exceptions
+  // across a DLL boundary. Here, in the case of an error when Importing the
+  // script name passed in to RunTest, Avisynth will throw and catch its own
+  // exception, then return the error message as an AVSValue.
+  //
+  // I implement this script function as a string that's Evaled instead of an
+  // .avs file, in an effort to ensure the function will always exist and always
+  // work properly, which avoids trying to load a script and allowing my
+  // supposedly safer approach to potentially throw an exception itself.
+  std::string runTestScript = "function RunTest(string filename)"
+                              "{"
+
+                              "  try {"
+                        
+                              "    result = Import(filename)"
+
+                              "  } catch (err) {"
+
+                              "    result = err"
+
+                              "  }"
+
+                              "  return result"
+
+                              "}";
+
+  env->Invoke("Eval", AVSValue(runTestScript.c_str()));
+
   std::string script = scriptDir + name + ".avs";
 
-  AVSValue result = ImportScriptAvs(script);
-
+  AVSValue result = env->Invoke("RunTest", AVSValue(script.c_str()));
+  
   std::string dataCur;
 
   if (result.IsString()) {
