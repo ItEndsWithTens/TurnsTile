@@ -129,10 +129,16 @@ void CompareData(std::string dataCur, std::string filename)
   } else {
 
     std::string dataRef = ReadRefData(filename);
-    if (dataRef == "")
+    if (dataRef == "") {
+
       FAIL("Could not read " + filename + "!");
-    else
+
+    } else {
+
+      INFO("Current result differs from that stored in " + filename);
       CHECK(dataCur == dataRef);
+
+    }
 
   }
 
