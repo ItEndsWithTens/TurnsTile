@@ -48,7 +48,7 @@ pixel_type = "YV16"
 tilew = GetMinWidth(pixel_type) * 3
 tileh = GetMinHeight(pixel_type) * 4
 
-clip = MakeClip(tilew * 3, tileh * 3, $FFFFFF, $000000, $555555, pixel_type)
+clip = MakeClip(tilew * 3, tileh * 3, $FF8080, $008080, $558080, pixel_type)
 tilesheet = MakeTilesheet(tilew, tileh, pixel_type)
 
 TurnsTile(clip, tilesheet, tilew=tilew, tileh=tileh)

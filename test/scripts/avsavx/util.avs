@@ -43,11 +43,6 @@ function MakeTileWithDot(int width, int height, int color_dot, int color_bg, \
                          string pixel_type)
 {
 
-  # For reasons explained in a comment in MakeClip, below, I build and return an
-  # RGB24 clip here. I pass in pixel_type nonetheless since I need to determine
-  # the various dimensions of this tile's pieces, and specifying ten parameters
-  # just to call this function is a little unwieldy.
-
   minw = GetMinWidth(pixel_type)
   minh = GetMinHeight(pixel_type)
 
@@ -66,22 +61,28 @@ function MakeTileWithDot(int width, int height, int color_dot, int color_bg, \
            Mod(height / 2.0, minh, -1) : \
          Mod(height / 2.0, minh, 1) - minh
 
+  color_rgb_dot = FindStr(pixel_type, "RGB") > 0 ? color_dot : Undefined()
+  color_yuv_dot = FindStr(pixel_type, "RGB") > 0 ? Undefined() : color_dot
+  color_rgb_bg = FindStr(pixel_type, "RGB") > 0 ? color_bg : Undefined()
+  color_yuv_bg = FindStr(pixel_type, "RGB") > 0 ? Undefined() : color_bg
+
   top = toph < minh ? \
           NOP() : \
-        BlankClip(width=topw, height=toph, color=color_bg, pixel_type="RGB24")
+        BlankClip(width=topw, height=toph, color=color_rgb_bg, \
+                  color_yuv=color_yuv_bg, pixel_type=pixel_type)
 
   ctr_l = ctrw_l < minw ? \
             NOP() : \
-          BlankClip(width=ctrw_l, height=ctrh_l, color=color_bg, \
-                    pixel_type="RGB24")
+          BlankClip(width=ctrw_l, height=ctrh_l, color=color_rgb_bg, \
+                    color_yuv=color_yuv_bg, pixel_type=pixel_type)
 
-  ctr_dot = BlankClip(width=minw, height=minh, color=color_dot, \
-                      pixel_type="RGB24")
+  ctr_dot = BlankClip(width=minw, height=minh, color=color_rgb_dot, \
+                      color_yuv=color_yuv_dot, pixel_type=pixel_type)
 
   ctr_r = ctrw_r < minw ? \
             NOP() : \
-          BlankClip(width=ctrw_r, height=ctrh_r, color=color_bg, \
-                    pixel_type="RGB24")
+          BlankClip(width=ctrw_r, height=ctrh_r, color=color_rgb_bg, \
+                    color_yuv=color_yuv_bg, pixel_type=pixel_type)
 
   ctr = width == minw ? \
           ctr_dot : \
@@ -91,7 +92,8 @@ function MakeTileWithDot(int width, int height, int color_dot, int color_bg, \
 
   bot = both < minh ? \
           NOP() : \
-        BlankClip(width=botw, height=both, color=color_bg, pixel_type="RGB24")
+        BlankClip(width=botw, height=both, color=color_rgb_bg, \
+                  color_yuv=color_yuv_bg, pixel_type=pixel_type)
 
   return toph < minh && both < minh ? \
            ctr : \
@@ -119,25 +121,28 @@ function MakeClip(int width, int height, int color_bg, int color_dot, \
 
   dot = MakeTileWithDot(tilew, tileh, color_dot, color_dot_bg, pixel_type)
 
-  fill = BlankClip(width=width-(tilew*2), height=tileh, color=color_bg, \
-                   pixel_type="RGB24")
+  # Calls to BlankClip can have both color and color_yuv set, as long as the one
+  # opposite the requested pixel_type is undefined. Using this behavior, I'm able
+  # to generate my test clips directly in their target colorspaces, even from a
+  # generic function like this one that might be called from RGB or YUV scripts.
+  color_rgb_dot = FindStr(pixel_type, "RGB") > 0 ? color_dot : Undefined()
+  color_yuv_dot = FindStr(pixel_type, "RGB") > 0 ? Undefined() : color_dot
+  color_rgb_bg = FindStr(pixel_type, "RGB") > 0 ? color_bg : Undefined()
+  color_yuv_bg = FindStr(pixel_type, "RGB") > 0 ? Undefined() : color_bg
+
+  fill = BlankClip(width=width-(tilew*2), height=tileh, color=color_rgb_bg, \
+                   color_yuv=color_yuv_bg, pixel_type=pixel_type)
 
   edge = Eval("StackHorizontal(" + (dot.Width() > 0 ? "dot" : "") + \
                                    (fill.Width() > 0 ? ", fill" : "") + \
                                    (dot.Width() > 0 ? ", dot" : "") + ")")
 
-  ctr = BlankClip(width=width, height=height-(tileh*2), color=color_bg, \
-                  pixel_type="RGB24")
+  ctr = BlankClip(width=width, height=height-(tileh*2), color=color_rgb_bg, \
+                  color_yuv=color_yuv_bg, pixel_type=pixel_type)
 
-  final = Eval("StackVertical(" + (edge.Height() > 0 ? "edge" : "") + \
-                                  (ctr.Height() > 0 ? ", ctr" : "") + \
-                                  (edge.Height() > 0 ? ", edge" : "") + ")")
-                                 
-  # I create the test clip in RGB24 and only later convert it to the desired
-  # colorspace: when specifying a YUV pixel_type in BlankClip, it starts with
-  # RGB24 and converts the clip itself, assuming the Rec601 matrix. I want
-  # PC.601 instead, but BlankClip offers no way to choose that directly.
-  return Eval("final.ConvertTo" + pixel_type + """(matrix="PC.601")""")
+  return Eval("StackVertical(" + (edge.Height() > 0 ? "edge" : "") + \
+                                 (ctr.Height() > 0 ? ", ctr" : "") + \
+                                 (edge.Height() > 0 ? ", edge" : "") + ")")
 
 }
 

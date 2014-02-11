@@ -62,6 +62,6 @@ pixel_type = "RGB32"
 tilew = GetMinWidth(pixel_type) * 3
 tileh = GetMinHeight(pixel_type) * 3
 
-MakeClip(tilew * 3, tileh * 3, $FFFFFF, $000000, $555555, pixel_type)
+MakeClip(tilew * 3, tileh * 3, $FFFFFFFF, $FF000000, $FF555555, pixel_type)
 
 TurnsTile(tilew=tilew, tileh=tileh)

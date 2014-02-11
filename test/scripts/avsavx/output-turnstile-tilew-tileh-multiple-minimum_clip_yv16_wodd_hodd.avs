@@ -68,6 +68,6 @@ pixel_type = "YV16"
 tilew = GetMinWidth(pixel_type) * 3
 tileh = GetMinHeight(pixel_type) * 3
 
-MakeClip(tilew * 3, tileh * 3, $FFFFFF, $000000, $555555, pixel_type)
+MakeClip(tilew * 3, tileh * 3, $FF8080, $008080, $558080, pixel_type)
 
 TurnsTile(tilew=tilew, tileh=tileh)
