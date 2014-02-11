@@ -27,12 +27,21 @@
 
 
 #include <string>
+#include <vector>
 
 
 
-std::string GetFrameHash(
-  const unsigned char* frmp, const int ROW_SIZE,
-  const int PITCH, const int HEIGHT);
+struct plane
+{
+ 
+  const unsigned char* ptr;
+  int row_size, pitch, height;
+
+};
+
+
+
+std::string GetFrameHash(std::vector<plane> planes);
 
 
 

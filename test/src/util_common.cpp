@@ -26,9 +26,12 @@
 #include <ios>
 #include <string>
 #include <sstream>
+#include <vector>
 
 #include "../include/catch/catch.hpp"
 #include "../include/md5/md5.h"
+
+#include "util_common.h"
 
 
 
@@ -36,17 +39,16 @@ extern bool writeRefData;
 
 
 
-std::string GetFrameHash(
-  const unsigned char* frmp, const int ROW_SIZE,
-  const int PITCH, const int HEIGHT)
+std::string GetFrameHash(std::vector<plane> planes)
 {
 
   md5_state_t state;
   md5_byte_t digest[16];
 
   md5_init(&state);
-  for (int i = 0; i < HEIGHT; ++i)
-    md5_append(&state, (md5_byte_t*)(frmp + (PITCH * i)), ROW_SIZE);
+  for (std::vector<plane>::iterator p = planes.begin(); p != planes.end(); ++p)
+    for (int i = 0; i < p->height; ++i)
+      md5_append(&state, (md5_byte_t*)(p->ptr + (p->pitch * i)), p->row_size);
   md5_finish(&state, digest);
 
   std::string hash;

@@ -23,6 +23,7 @@
 
 
 #include <string>
+#include <vector>
 
 #include "../../include/catch/catch.hpp"
 
@@ -94,12 +95,32 @@ void RunTestAvs(std::string name)
   } else if (result.IsClip()) {
 
     PVideoFrame frm = result.AsClip()->GetFrame(0, env);
-    const unsigned char* frmp = frm->GetReadPtr();
-    const int PITCH = frm->GetPitch(),
-              ROW_SIZE = frm->GetRowSize(),
-              HEIGHT = frm->GetHeight();
 
-    dataCur = GetFrameHash(frmp, ROW_SIZE, PITCH, HEIGHT);
+    std::vector<plane> planes;
+    
+    plane y, u, v;
+
+    y.ptr = frm->GetReadPtr(PLANAR_Y);
+    y.pitch = frm->GetPitch(PLANAR_Y);
+    y.row_size = frm->GetRowSize(PLANAR_Y);
+    y.height = frm->GetHeight(PLANAR_Y);
+    planes.push_back(y);
+
+    u.ptr = frm->GetReadPtr(PLANAR_U);
+    u.pitch = frm->GetPitch(PLANAR_U);
+    u.row_size = frm->GetRowSize(PLANAR_U);
+    u.height = frm->GetHeight(PLANAR_U);
+    if (u.ptr)
+      planes.push_back(u);
+
+    v.ptr = frm->GetReadPtr(PLANAR_V);
+    v.pitch = frm->GetPitch(PLANAR_V);
+    v.row_size = frm->GetRowSize(PLANAR_V);
+    v.height = frm->GetHeight(PLANAR_V);
+    if (v.ptr)
+      planes.push_back(v);
+
+    dataCur = GetFrameHash(planes);
 
   } else {
 
