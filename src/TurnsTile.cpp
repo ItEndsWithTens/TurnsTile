@@ -410,7 +410,7 @@ void TurnsTile::processFramePlanar(
 
             // This works assuming the luma samples in a macropixel are treated
             // as being numbered from zero, left to right, top to bottom.
-            int lumaModeOfs = (((mode - 1) / lumaH) * SRC_PITCH_SAMPLES_Y) +
+            int lumaModeOfs = ((mode % lumaH) * SRC_PITCH_SAMPLES_Y) +
                               ((mode - 1) % lumaW);
             tileIdx = lut[*(srcY + tileCtrY + lumaModeOfs)];
 
