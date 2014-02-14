@@ -1,1 +1,1 @@
-TurnsTile: Y8 only allows mode 0!
+TurnsTile: Y8 only allows modes 0-1!
