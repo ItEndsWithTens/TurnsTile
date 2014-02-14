@@ -131,3 +131,37 @@ TEST_CASE(
     RunTestAvs("output-turnstile-levels_" + csps[i]);
 
 }
+
+
+
+TEST_CASE(
+  "TurnsTile - Mode parameter produces expected results",
+  "[output][turnstile][mode]")
+{
+
+#ifdef TURNSTILE_HOST_AVISYNTH_26
+
+  std::string csps[8] = { "rgb32", "rgb24", "yuy2", "yv12",
+                          "yv24", "yv16", "yv411", "y8" },
+              modes[7] = { "_0", "_1", "_2", "_3", "_4", "_5", "_6" };
+
+  int modesPerCsp[8] = { 5, 4, 5, 7, 4, 5, 7, 2 };
+
+  int countCsps = 8;
+
+#else
+
+  std::string csps[4] = { "rgb32", "rgb24", "yuy2", "yv12" },
+              modes[7] = { "_0", "_1", "_2", "_3", "_4", "_5", "_6" };
+
+  int modesPerCsp[4] = { 5, 4, 5, 7 };
+
+  int countCsps = 4;
+
+#endif
+
+  for (int i = 0; i < countCsps; ++i)
+    for (int j = 0; j < modesPerCsp[i]; ++j)
+      RunTestAvs("output-turnstile-mode_" + csps[i] + modes[j]);
+
+}
