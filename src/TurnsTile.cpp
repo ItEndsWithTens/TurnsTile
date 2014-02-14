@@ -97,9 +97,9 @@ host(env)
 #endif
 
   tileCtrW_Y = mod(tileW / 2, lumaW, 0, tileW, -1);
-  tileCtrW_U = mod(tileW_U / 2, lumaW, 0, tileW_U, -1);
+  tileCtrW_U = tileW_U / 2;
   tileCtrH_Y = mod(tileH / 2, lumaH, 0, tileH, -1);
-  tileCtrH_U = mod(tileH_U / 2, lumaH, 0, tileH_U, -1);
+  tileCtrH_U = tileH_U / 2;
 
   int idxInMin = 0;
   if (strcmp(_levels, "tv") == 0)
