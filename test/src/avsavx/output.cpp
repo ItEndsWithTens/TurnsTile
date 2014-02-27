@@ -189,3 +189,15 @@ TEST_CASE(
   RunTestAvs("output-turnstile-interlaced_tilesheet");
 
 }
+
+
+
+TEST_CASE(
+  "CLUTer - Paletteframe parameter produces expected results",
+  "[output][cluter][paletteframe]")
+{
+
+  RunTestAvs("output-cluter-paletteframe_0");
+  RunTestAvs("output-cluter-paletteframe_1");
+
+}
