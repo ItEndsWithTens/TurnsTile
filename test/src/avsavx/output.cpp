@@ -165,3 +165,15 @@ TEST_CASE(
       RunTestAvs("output-turnstile-mode_" + csps[i] + modes[j]);
 
 }
+
+
+
+TEST_CASE(
+  "TurnsTile - Lotile and hitile parameters produce expected results",
+  "[output][turnstile][lotile][hitile]")
+{
+
+  RunTestAvs("output-turnstile-lotile-hitile_clip");
+  RunTestAvs("output-turnstile-lotile-hitile_tilesheet");
+
+}
