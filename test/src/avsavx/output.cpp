@@ -177,3 +177,15 @@ TEST_CASE(
   RunTestAvs("output-turnstile-lotile-hitile_tilesheet");
 
 }
+
+
+
+TEST_CASE(
+  "TurnsTile - Interlaced parameter produces expected results",
+  "[output][turnstile][interlaced]")
+{
+
+  RunTestAvs("output-turnstile-interlaced_clip");
+  RunTestAvs("output-turnstile-interlaced_tilesheet");
+
+}
