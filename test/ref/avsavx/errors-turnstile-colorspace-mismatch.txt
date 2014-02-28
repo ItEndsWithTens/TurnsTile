@@ -1,0 +1,1 @@
+TurnsTile: clip and tilesheet must share a colorspace!

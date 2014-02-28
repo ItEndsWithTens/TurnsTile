@@ -96,9 +96,9 @@ PLANAR(vi.IsPlanar()), YUYV(vi.IsYUY2()), BGRA(vi.IsRGB32()), BGR(vi.IsRGB24())
 #endif
 
   tileCtrW_Y = mod(tileW / 2, lumaW, 0, tileW, -1);
-  tileCtrW_U = mod(tileW_U / 2, lumaW, 0, tileW_U, -1);
+  tileCtrW_U = tileW_U / 2;
   tileCtrH_Y = mod(tileH / 2, lumaH, 0, tileH, -1);
-  tileCtrH_U = mod(tileH_U / 2, lumaH, 0, tileH_U, -1);
+  tileCtrH_U = tileH_U / 2;
 
   int idxInMin = 0;
   if (strcmp(_levels, "tv") == 0)
@@ -134,20 +134,20 @@ PLANAR(vi.IsPlanar()), YUYV(vi.IsYUY2()), BGRA(vi.IsRGB32()), BGR(vi.IsRGB24())
 
   if (tilesheet) {
 
-    double idxScaleFactor = static_cast<double> (idxInMax - idxInMin) /
-                            static_cast<double> (_hiTile - _loTile);
+    double factor = static_cast<double>(_hiTile - _loTile) /
+                    static_cast<double>(idxInMax - idxInMin);
 
     for (int in = 0; in < 256; ++in) {
 
       // The proper, generic form of this scaling formula would be:
       //
-      // ((number) /
-      //   ((inMax - inMin) / (outMax - outMin))) +
-      // outMin
+      // (outMax - outMin) * (number - inMin)
+      // ------------------------------------ + outMin
+      //             inMax - inMin
       //
       // Using mod to round the result is a unique requirement of the 'res'
       // feature I've got in TurnsTile, you don't need it if only scaling.
-      int scaled =  static_cast<int>((in / idxScaleFactor) + 0.5) + _loTile;
+      int scaled = static_cast<int>((in - idxInMin) * factor + 0.5) + _loTile;
 
       lut.push_back(mod(scaled, depthMod, _loTile, _hiTile, 0));
 
@@ -413,7 +413,7 @@ void TurnsTile::processFramePlanar(
 
             // This works assuming the luma samples in a macropixel are treated
             // as being numbered from zero, left to right, top to bottom.
-            int lumaModeOfs = (((mode - 1) / lumaH) * SRC_PITCH_SAMPLES_Y) +
+            int lumaModeOfs = ((mode % lumaH) * SRC_PITCH_SAMPLES_Y) +
                               ((mode - 1) % lumaW);
             tileIdx = lut[*(srcY + tileCtrY + lumaModeOfs)];
 

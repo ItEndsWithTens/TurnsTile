@@ -1,0 +1,1 @@
+TurnsTile: RGB32 only allows modes 0-4!
