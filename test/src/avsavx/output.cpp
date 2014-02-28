@@ -201,3 +201,14 @@ TEST_CASE(
   RunTestAvs("output-cluter-paletteframe_1");
 
 }
+
+
+
+TEST_CASE(
+  "CLUTer - Interlaced parameter produces expected results",
+  "[output][cluter][interlaced]")
+{
+
+  RunTestAvs("output-cluter-interlaced");
+
+}
