@@ -329,6 +329,11 @@ void TurnsTile::processFramePacked(
           // For the time being, I'm giving RGB24 its own slow, manual loop,
           // instead of trying to get fillTile to handle a funny stepping
           // sequence for a three byte pixel written four bytes at a time.
+          unsigned char
+            b = lut[*(srcp + tileCtr + 0)],
+            g = lut[*(srcp + tileCtr + 1)],
+            r = lut[*(srcp + tileCtr + 2)];
+
           for (int h = 0; h < tileH; ++h) {
 
             int dstLine = DST_PITCH_SAMPLES * h;
@@ -337,8 +342,9 @@ void TurnsTile::processFramePacked(
 
               int dstOfs = dstRow + curCol + dstLine + (w * spp);
 
-              for (int i = 0; i < spp; ++i)
-                *(dstp + dstOfs + i) = lut[*(srcp + tileCtr + i)];
+              *(dstp + dstOfs + 0) = b;
+              *(dstp + dstOfs + 1) = g;
+              *(dstp + dstOfs + 2) = r;
 
             }
 
