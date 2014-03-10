@@ -1,4 +1,3 @@
-ImageSource("../clips/hsl.png")
-ConvertToYUY2(matrix="PC.601")
+ImageSource("../clips/hsl-yuy2.ebmp")
 
 TurnsTile(2, 1, res=8)

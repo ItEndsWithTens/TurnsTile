@@ -50,12 +50,12 @@ function MakeDotUnique(string pixel_type)
   # bunch of 1x1 pixels in RGB, stack them, then convert to the final colorspace,
   # but for tiny clips you'd get "Source image too small for this resize method".
   base = BlankClip(width=minw, height=minh, pixel_type=pixel_type)
-  y1 = base.IsYUV() ? BlankClip(base, color_yuv=$FF40C0) : Undefined()
-  y2 = base.IsYUV() ? BlankClip(base, color_yuv=$AA40C0) : Undefined()
-  y3 = base.IsYUV() ? BlankClip(base, color_yuv=$5540C0) : Undefined()
-  y4 = base.IsYUV() ? BlankClip(base, color_yuv=$0040C0) : Undefined()
+  y1 = base.IsYUV() ? BlankClip(base, color_yuv=$FF40C0) : NOP()
+  y2 = base.IsYUV() ? BlankClip(base, color_yuv=$AA40C0) : NOP()
+  y3 = base.IsYUV() ? BlankClip(base, color_yuv=$5540C0) : NOP()
+  y4 = base.IsYUV() ? BlankClip(base, color_yuv=$0040C0) : NOP()
   rgb = base.IsRGB32() ? BlankClip(base, color=$40FFAA55) : \
-        base.IsRGB24() ? BlankClip(base, color=$FFAA55) : Undefined()
+        base.IsRGB24() ? BlankClip(base, color=$FFAA55) : NOP()
   
   macropixel = FindStr(pixel_type, "YV411") > 0 ? \
                  StackHorizontal(y1, y2, y3, y4) : \
@@ -70,7 +70,11 @@ function MakeDotUnique(string pixel_type)
                  y2 : \
                rgb
 
-  return macropixel.PointResize(minw, minh)
+  # Avisynth 2.5 demands a minimum height of 4 for resizing, so instead of simply
+  # returning macropixel.PointResize(minw, minh) I have to take this roundabout
+  # approach to accommodate both host versions.
+  stack = StackVertical(macropixel, macropixel).PointResize(minw, minh*2)
+  return stack.Crop(0, 0, minw, minh)
 
 }
 
@@ -98,30 +102,27 @@ function MakeTileWithDot(int width, int height, val color_dot, int color_bg, \
            Mod(height / 2.0, minh, -1) : \
          Mod(height / 2.0, minh, 1) - minh
 
-  color_rgb_dot = FindStr(pixel_type, "RGB") > 0 ? color_dot : Undefined()
-  color_yuv_dot = FindStr(pixel_type, "RGB") > 0 ? Undefined() : color_dot
-  color_rgb_bg = FindStr(pixel_type, "RGB") > 0 ? color_bg : Undefined()
-  color_yuv_bg = FindStr(pixel_type, "RGB") > 0 ? Undefined() : color_bg
+  color_param = FindStr(pixel_type, "RGB") > 0 ? "color" : "color_yuv"
 
   top = toph < minh ? \
           NOP() : \
-        BlankClip(width=topw, height=toph, color=color_rgb_bg, \
-                  color_yuv=color_yuv_bg, pixel_type=pixel_type)
+        Eval("BlankClip(width=topw, height=toph, " + color_param + \
+             "=color_bg, pixel_type=pixel_type)")
 
   ctr_l = ctrw_l < minw ? \
             NOP() : \
-          BlankClip(width=ctrw_l, height=ctrh_l, color=color_rgb_bg, \
-                    color_yuv=color_yuv_bg, pixel_type=pixel_type)
+          Eval("BlankClip(width=ctrw_l, height=ctrh_l, " + color_param + \
+               "=color_bg, pixel_type=pixel_type)")
 
   ctr_dot = color_dot.IsInt() ? \
-              BlankClip(width=minw, height=minh, color=color_rgb_dot, \
-                        color_yuv=color_yuv_dot, pixel_type=pixel_type) : \
+              Eval("BlankClip(width=minw, height=minh, " + color_param + \
+                   "=color_dot, pixel_type=pixel_type)") : \
             MakeDotUnique(pixel_type)
 
   ctr_r = ctrw_r < minw ? \
             NOP() : \
-          BlankClip(width=ctrw_r, height=ctrh_r, color=color_rgb_bg, \
-                    color_yuv=color_yuv_bg, pixel_type=pixel_type)
+          Eval("BlankClip(width=ctrw_r, height=ctrh_r, " + color_param + \
+               "=color_bg, pixel_type=pixel_type)")
 
   ctr = width == minw ? \
           ctr_dot : \
@@ -131,8 +132,8 @@ function MakeTileWithDot(int width, int height, val color_dot, int color_bg, \
 
   bot = both < minh ? \
           NOP() : \
-        BlankClip(width=botw, height=both, color=color_rgb_bg, \
-                  color_yuv=color_yuv_bg, pixel_type=pixel_type)
+        Eval("BlankClip(width=botw, height=both, " + color_param + \
+             "=color_bg, pixel_type=pixel_type)")
 
   return toph < minh && both < minh ? \
            ctr : \
@@ -161,23 +162,20 @@ function MakeClip(int width, int height, int color_bg, val color_dot, \
   dot = MakeTileWithDot(tilew, tileh, color_dot, color_dot_bg, pixel_type)
 
   # Calls to BlankClip can have both color and color_yuv set, as long as the one
-  # opposite the requested pixel_type is undefined. Using this behavior, I'm able
-  # to generate my test clips directly in their target colorspaces, even from a
-  # generic function like this one that might be called from RGB or YUV scripts.
-  color_rgb_dot = FindStr(pixel_type, "RGB") > 0 ? color_dot : Undefined()
-  color_yuv_dot = FindStr(pixel_type, "RGB") > 0 ? Undefined() : color_dot
-  color_rgb_bg = FindStr(pixel_type, "RGB") > 0 ? color_bg : Undefined()
-  color_yuv_bg = FindStr(pixel_type, "RGB") > 0 ? Undefined() : color_bg
+  # opposite the requested pixel_type is undefined. Unfortunately, the Undefined
+  # function, which is the only way to set a variable to the "undefined" type, is
+  # only available in Avisynth 2.6, so I need to play with Eval instead.
+  color_param = FindStr(pixel_type, "RGB") > 0 ? "color" : "color_yuv"
 
-  fill = BlankClip(width=width-(tilew*2), height=tileh, color=color_rgb_bg, \
-                   color_yuv=color_yuv_bg, pixel_type=pixel_type)
+  fill = Eval("BlankClip(width=width-(tilew*2), height=tileh, " + color_param + \
+              "=color_bg, pixel_type=pixel_type)")
 
   edge = Eval("StackHorizontal(" + (dot.Width() > 0 ? "dot" : "") + \
                                    (fill.Width() > 0 ? ", fill" : "") + \
                                    (dot.Width() > 0 ? ", dot" : "") + ")")
 
-  ctr = BlankClip(width=width, height=height-(tileh*2), color=color_rgb_bg, \
-                  color_yuv=color_yuv_bg, pixel_type=pixel_type)
+  ctr = Eval("BlankClip(width=width, height=height-(tileh*2), " + color_param + \
+             "=color_bg, pixel_type=pixel_type)")  
 
   return Eval("StackVertical(" + (edge.Height() > 0 ? "edge" : "") + \
                                  (ctr.Height() > 0 ? ", ctr" : "") + \

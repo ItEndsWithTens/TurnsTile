@@ -18,7 +18,6 @@
 Import("util.avs")
 
 clip = MakeTileWithDot(16, 16, "unique", $FF8080, "YV12")
-tilesheet = ImageSource("../clips/output-turnstile-levels-tilesheet.png")
-tilesheet = tilesheet.ConvertToYV12(matrix="PC.601")
+tilesheet = ImageSource("../clips/output-turnstile-levels-tilesheet-yv12.ebmp")
 
 TurnsTile(clip, tilesheet, mode=2)

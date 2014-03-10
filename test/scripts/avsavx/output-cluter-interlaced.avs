@@ -30,7 +30,7 @@ palette = StackHorizontal(r, g, b)
 clip_base = BlankClip(width=32, height=32, pixel_type="YV12")
 lower = BlankClip(clip_base, color_yuv=$4C55FF).AssumeFieldBased()
 upper = BlankClip(clip_base, color_yuv=$962B15).AssumeFieldBased()
-clip = Interleave(lower, upper).Weave()
+clip = Interleave(lower, upper).AssumeBFF().Weave()
 
 result = CLUTer(clip, palette, interlaced=true)
 
