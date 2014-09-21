@@ -201,3 +201,23 @@ function MakeTilesheet(int tilew, int tileh, string pixel_type)
   return StackVertical(top, bot)
 
 }
+
+
+
+function TurnsTileTestSource(string filename, string "pixel_type")
+{
+
+  pixel_type = Default(pixel_type, "RGB32")
+
+  # I use my custom source filter to load all EBMP files. It's only necessary in
+  # Linux and OS X, but I also do it in Windows (where otherwise ImageSource
+  # would do the job) to give the code as much of a workout as I can.
+  return FindStr(VersionString().LCase(), "avisynth") > 0 ? \
+           RightStr(filename, 5) == ".ebmp" ? \
+             TurnsTileBmpSource(filename) : \
+           ImageSource(filename) : \
+         RightStr(filename, 5) == ".ebmp" ? \
+           TurnsTileBmpSource(filename) : \
+         FFVideoSource(filename, seekmode=-1, colorspace=pixel_type)
+
+}

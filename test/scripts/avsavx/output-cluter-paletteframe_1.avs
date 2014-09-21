@@ -14,7 +14,9 @@
 
 
 
-clip = ImageSource("../clips/hsl.png")
+Import("util.avs")
+
+clip = TurnsTileTestSource("../clips/hsl.png", "RGB24")
 
 palette_base = BlankClip(width=16, height=16, pixel_type="RGB24")
 

@@ -1,4 +1,6 @@
-ImageSource("../clips/hsl.png")
+Import("util.avs")
+
+TurnsTileTestSource("../clips/hsl.png")
 ConvertToY8(matrix="PC.601")
 
 TurnsTile(1, 1, res=1)

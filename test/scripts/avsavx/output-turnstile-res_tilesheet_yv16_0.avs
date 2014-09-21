@@ -29,7 +29,7 @@ function GetScriptDirectory()
 SetWorkingDir(GetScriptDirectory())
 Import("util.avs")
 
-clip = ImageSource("../clips/hsl.png").ConvertToYV16(matrix="PC.601")
+clip = TurnsTileTestSource("../clips/hsl.png").ConvertToYV16(matrix="PC.601")
 tilesheet = MakeTilesheet(2, 1, "YV16")
 
 TurnsTile(clip, tilesheet, 2, 1, res=0)

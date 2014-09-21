@@ -36,6 +36,9 @@
 
 using avxsynth::AVSValue;
 using avxsynth::IScriptEnvironment;
+using avxsynth::PLANAR_U;
+using avxsynth::PLANAR_V;
+using avxsynth::PLANAR_Y;
 using avxsynth::PVideoFrame;
 
 #endif

@@ -45,9 +45,9 @@ function GetScriptDirectory()
 SetWorkingDir(GetScriptDirectory())
 Import("util.avs")
 
-clip = ImageSource("../clips/output-turnstile-levels-clip.png")
+clip = TurnsTileTestSource("../clips/output-turnstile-levels-clip.png")
 clip = clip.ConvertToY8(matrix="PC.601")
-tilesheet = ImageSource("../clips/output-turnstile-levels-tilesheet.png")
+tilesheet = TurnsTileTestSource("../clips/output-turnstile-levels-tilesheet.png")
 tilesheet = tilesheet.ConvertToY8(matrix="PC.601")
 
 TurnsTile(clip, tilesheet, levels="tv")

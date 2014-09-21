@@ -53,9 +53,11 @@ set(SRCS
   ${TURNSTILE_HOST_HDR}
   src/interface.h
   src/TurnsTile.h
+  src/TurnsTileBmpSource.h
   src/CLUTer.h
   src/interface.cpp
   src/TurnsTile.cpp
+  src/TurnsTileBmpSource.cpp
   src/CLUTer.cpp
 )
 

@@ -18,6 +18,6 @@
 Import("util.avs")
 
 clip = MakeTileWithDot(16, 16, "unique", $FF8080, "YUY2")
-tilesheet = ImageSource("../clips/output-turnstile-levels-tilesheet-yuy2.ebmp")
+tilesheet = TurnsTileTestSource("../clips/output-turnstile-levels-tilesheet-yuy2.ebmp")
 
 TurnsTile(clip, tilesheet, mode=0)

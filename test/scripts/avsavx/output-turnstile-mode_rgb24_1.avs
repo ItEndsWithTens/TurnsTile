@@ -18,7 +18,7 @@
 Import("util.avs")
 
 clip = MakeTileWithDot(16, 16, "unique", $FFFFFF, "RGB24")
-tilesheet = ImageSource("../clips/output-turnstile-levels-tilesheet.png")
+tilesheet = TurnsTileTestSource("../clips/output-turnstile-levels-tilesheet.png")
 tilesheet = tilesheet.ConvertToRGB24()
 
 TurnsTile(clip, tilesheet, mode=1)

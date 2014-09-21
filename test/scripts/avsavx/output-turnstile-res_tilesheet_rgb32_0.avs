@@ -29,7 +29,7 @@ function GetScriptDirectory()
 SetWorkingDir(GetScriptDirectory())
 Import("util.avs")
 
-clip = ImageSource("../clips/hsl.png").ConvertToRGB32()
+clip = TurnsTileTestSource("../clips/hsl.png").ConvertToRGB32()
 tilesheet = MakeTilesheet(1, 1, "RGB32")
 
 TurnsTile(clip, tilesheet, 1, 1, res=0)

@@ -45,7 +45,7 @@ function GetScriptDirectory()
 SetWorkingDir(GetScriptDirectory())
 Import("util.avs")
 
-clip = ImageSource("../clips/output-turnstile-levels-clip-yuy2.ebmp")
-tilesheet = ImageSource("../clips/output-turnstile-levels-tilesheet-yuy2.ebmp")
+clip = TurnsTileTestSource("../clips/output-turnstile-levels-clip-yuy2.ebmp")
+tilesheet = TurnsTileTestSource("../clips/output-turnstile-levels-tilesheet-yuy2.ebmp")
 
 TurnsTile(clip, tilesheet, levels="tv")

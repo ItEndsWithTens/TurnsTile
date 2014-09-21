@@ -24,6 +24,7 @@
 
 #include "CLUTer.h"
 #include "TurnsTile.h"
+#include "TurnsTileBmpSource.h"
 
 #include <cmath>
 #include <cstring>
@@ -395,6 +396,9 @@ extern "C" __declspec(dllexport) const char* __stdcall AvisynthPluginInit2(
   env->AddFunction("TurnsTile", "c+[tileW]i[tileH]i[res]i[mode]i[levels]s"
                                 "[lotile]i[hitile]i[interlaced]b",
                                 Create_TurnsTile, 0);
+
+  env->AddFunction("TurnsTileBMPSource", "s[pixel_type]s",
+                                         Create_TurnsTileBmpSource, 0);
 
   return "`TurnsTile' - Mosaic and palette effects";
 

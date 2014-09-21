@@ -37,7 +37,7 @@ c = BlankClip(width=16, height=16, pixel_type="RGB24", color=$C0C0C0)
 d = BlankClip(width=16, height=16, pixel_type="RGB24", color=$FFFFFF)
 clip = StackHorizontal(a, b, c, d)
 
-tilesheet = ImageSource("../clips/output-turnstile-levels-tilesheet.png")
+tilesheet = TurnsTileTestSource("../clips/output-turnstile-levels-tilesheet.png")
 tilesheet = tilesheet.ConvertToRGB24()
 
 TurnsTile(clip, tilesheet, lotile=64, hitile=192)
