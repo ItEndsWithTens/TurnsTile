@@ -1,1 +1,1 @@
-CLUTer: RGB24 clip height must be mod 2 when interlaced=true!
+CLUTer: RGB32 clip height must be mod 2 when interlaced=true!

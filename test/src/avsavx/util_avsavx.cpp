@@ -22,10 +22,10 @@
 
 
 
+#include "util_avsavx.h"
+
 #include <string>
 #include <vector>
-
-#include "../../include/catch/catch.hpp"
 
 #include "../../../src/interface.h"
 #include "../util_common.h"
@@ -66,7 +66,7 @@ void RunTestAvs(std::string name)
   // .avs file, in an effort to ensure the function will always exist and always
   // work properly, which avoids trying to load a script and allowing my
   // supposedly safer approach to potentially throw an exception itself.
-  std::string runTestScript = "function RunTest(string filename)"
+  std::string runTestScript = "function TurnsTileRunTest(string filename)"
                               "{"
 
                               "  try {"
@@ -87,7 +87,7 @@ void RunTestAvs(std::string name)
 
   std::string script = scriptDir + name + ".avs";
 
-  AVSValue result = env->Invoke("RunTest", AVSValue(script.c_str()));
+  AVSValue result = env->Invoke("TurnsTileRunTest", AVSValue(script.c_str()));
   
   std::string dataCur;
 
