@@ -1,3 +1,6 @@
+Import("util.avs")
+InitializeTurnsTileTestEnvironment()
+
 clip = BlankClip(height=479, pixel_type="RGB32")
 palette = BlankClip(height=479, pixel_type="RGB32")
 

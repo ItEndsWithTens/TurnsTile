@@ -28,6 +28,7 @@ function GetScriptDirectory()
 
 SetWorkingDir(GetScriptDirectory())
 Import("util.avs")
+InitializeTurnsTileTestEnvironment()
 
 clip = TurnsTileTestSource("../clips/hsl.png").ConvertToRGB24()
 tilesheet = MakeTilesheet(1, 1, "RGB24")

@@ -44,6 +44,7 @@ function GetScriptDirectory()
 
 SetWorkingDir(GetScriptDirectory())
 Import("util.avs")
+InitializeTurnsTileTestEnvironment()
 
 clip = TurnsTileTestSource("../clips/output-turnstile-levels-clip-yuy2.ebmp")
 tilesheet = TurnsTileTestSource("../clips/output-turnstile-levels-tilesheet-yuy2.ebmp")

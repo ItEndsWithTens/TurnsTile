@@ -35,20 +35,10 @@ TEST_CASE(
   "[output][turnstile][tilew][tileh][multiple][minimum]")
 {
 
-#ifdef TURNSTILE_HOST_AVISYNTH_26
-
   std::string csps[8] = { "rgb32", "rgb24", "yuy2", "yv12",
                           "yv24", "yv16", "yv411", "y8" };
 
   int count = 8;
-
-#else
-
-  std::string csps[4] = { "rgb32", "rgb24", "yuy2", "yv12" };
-
-  int count = 4;
-
-#endif
 
   std::string mults[4] = { "_wodd_hodd", "_wodd_heven",
                            "_weven_hodd", "_weven_heven" };
@@ -75,20 +65,10 @@ TEST_CASE(
   "[output][turnstile][res]")
 {
 
-#ifdef TURNSTILE_HOST_AVISYNTH_26
-
   std::string csps[8] = { "rgb32", "rgb24", "yuy2", "yv12",
                           "yv24", "yv16", "yv411", "y8" };
 
   int count = 8;
-
-#else
-
-  std::string csps[4] = { "rgb32", "rgb24", "yuy2", "yv12" };
-
-  int count = 4;
-
-#endif
 
   std::string res[3] = { "_0", "_1", "_8" };
 
@@ -112,20 +92,10 @@ TEST_CASE(
   "[output][turnstile][levels]")
 {
 
-#ifdef TURNSTILE_HOST_AVISYNTH_26
-
   std::string csps[8] = { "rgb32", "rgb24", "yuy2", "yv12",
                           "yv24", "yv16", "yv411", "y8" };
 
   int count = 8;
-
-#else
-
-  std::string csps[4] = { "rgb32", "rgb24", "yuy2", "yv12" };
-
-  int count = 4;
-
-#endif
 
   for (int i = 0; i < count; ++i)
     RunTestAvs("output-turnstile-levels_" + csps[i]);
@@ -139,8 +109,6 @@ TEST_CASE(
   "[output][turnstile][mode]")
 {
 
-#ifdef TURNSTILE_HOST_AVISYNTH_26
-
   std::string csps[8] = { "rgb32", "rgb24", "yuy2", "yv12",
                           "yv24", "yv16", "yv411", "y8" },
               modes[7] = { "_0", "_1", "_2", "_3", "_4", "_5", "_6" };
@@ -148,17 +116,6 @@ TEST_CASE(
   int modesPerCsp[8] = { 5, 4, 5, 7, 4, 5, 7, 2 };
 
   int countCsps = 8;
-
-#else
-
-  std::string csps[4] = { "rgb32", "rgb24", "yuy2", "yv12" },
-              modes[7] = { "_0", "_1", "_2", "_3", "_4", "_5", "_6" };
-
-  int modesPerCsp[4] = { 5, 4, 5, 7 };
-
-  int countCsps = 4;
-
-#endif
 
   for (int i = 0; i < countCsps; ++i)
     for (int j = 0; j < modesPerCsp[i]; ++j)

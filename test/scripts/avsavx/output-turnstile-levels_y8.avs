@@ -44,6 +44,7 @@ function GetScriptDirectory()
 
 SetWorkingDir(GetScriptDirectory())
 Import("util.avs")
+InitializeTurnsTileTestEnvironment()
 
 clip = TurnsTileTestSource("../clips/output-turnstile-levels-clip.png")
 clip = clip.ConvertToY8(matrix="PC.601")

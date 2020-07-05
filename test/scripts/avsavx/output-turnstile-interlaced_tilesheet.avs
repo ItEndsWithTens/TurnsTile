@@ -22,6 +22,7 @@
 
 
 Import("util.avs")
+InitializeTurnsTileTestEnvironment()
 
 a = BlankClip(width=320, color=$000000).SeparateFields().SelectEven()
 b = BlankClip(width=320, color=$FFFFFF).SeparateFields().SelectOdd()

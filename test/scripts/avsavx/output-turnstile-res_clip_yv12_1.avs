@@ -1,4 +1,5 @@
 Import("util.avs")
+InitializeTurnsTileTestEnvironment()
 
 TurnsTileTestSource("../clips/hsl-yv12.ebmp")
 

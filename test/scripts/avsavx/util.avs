@@ -1,3 +1,9 @@
+# For any common setup; saves having to modify every test file over and over.
+function InitializeTurnsTileTestEnvironment()
+{
+  LoadPlugin("../../../artifacts/build/lib/TurnsTile.dll")
+}
+
 function Mod(float num, int mod, int dir)
 {
 

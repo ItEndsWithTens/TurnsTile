@@ -28,6 +28,7 @@ function GetScriptDirectory()
 
 SetWorkingDir(GetScriptDirectory())
 Import("util.avs")
+InitializeTurnsTileTestEnvironment()
 
 clip = TurnsTileTestSource("../clips/hsl.png").ConvertToYV411(matrix="PC.601")
 tilesheet = MakeTilesheet(4, 1, "YV411")

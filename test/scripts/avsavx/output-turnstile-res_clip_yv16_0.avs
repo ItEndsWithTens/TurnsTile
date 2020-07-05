@@ -1,4 +1,5 @@
 Import("util.avs")
+InitializeTurnsTileTestEnvironment()
 
 TurnsTileTestSource("../clips/hsl.png")
 ConvertToYV16(matrix="PC.601")

@@ -32,18 +32,6 @@
 
 
 
-#ifdef TURNSTILE_HOST_AVXSYNTH
-
-  #define __int64 avxsynth::__int64
-  #define AVSValue avxsynth::AVSValue
-  #define GenericVideoFilter avxsynth::GenericVideoFilter
-  #define IClip avxsynth::IClip
-  #define IScriptEnvironment avxsynth::IScriptEnvironment
-  #define PVideoFrame avxsynth::PVideoFrame
-  #define VideoInfo avxsynth::VideoInfo
-
-#endif
-
 class TurnsTileBmpSource : public IClip
 {
 
@@ -58,11 +46,7 @@ public:
   PVideoFrame __stdcall GetFrame(int n, IScriptEnvironment* env) { return frm; }
   bool __stdcall GetParity(int n) { return false; }
   const VideoInfo& __stdcall GetVideoInfo() { return vi; }
-#ifdef TURNSTILE_HOST_AVISYNTH_26
   int __stdcall SetCacheHints(int cachehints, int frame_range) { return 0; }
-#else
-  void __stdcall SetCacheHints(int cachehints, int frame_range) {}
-#endif
 
 private:
 
@@ -75,17 +59,5 @@ private:
 
 AVSValue __cdecl Create_TurnsTileBmpSource(
   AVSValue args, void* user_data, IScriptEnvironment* env);
-
-#ifdef TURNSTILE_HOST_AVXSYNTH
-
-  #undef __int64
-  #undef AVSValue
-  #undef GenericVideoFilter
-  #undef IClip
-  #undef IScriptEnvironment
-  #undef PVideoFrame
-  #undef VideoInfo
-
-#endif
 
 #endif // TURNSTILE_SRC_TURNSTILEBMPSOURCE_H_INCLUDED_ED833916B6E847FA902728966474B382

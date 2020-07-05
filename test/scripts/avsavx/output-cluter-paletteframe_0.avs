@@ -15,6 +15,7 @@
 
 
 Import("util.avs")
+InitializeTurnsTileTestEnvironment()
 
 clip = TurnsTileTestSource("../clips/hsl.png", "RGB24")
 

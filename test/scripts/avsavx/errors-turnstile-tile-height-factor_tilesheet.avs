@@ -1,3 +1,6 @@
+Import("util.avs")
+InitializeTurnsTileTestEnvironment()
+
 clip = BlankClip(height=480)
 tilesheet = BlankClip(height=256)
 

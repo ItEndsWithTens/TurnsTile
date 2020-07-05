@@ -22,11 +22,7 @@
 
 
 
-#ifdef WIN32
-  #include "Windows.h"
-#else
-  #include <dlfcn.h>
-#endif
+#include "Windows.h"
 
 #include <string>
 #include <vector>
@@ -38,23 +34,7 @@
 
 
 
-#ifdef TURNSTILE_HOST_AVXSYNTH
-
-using avxsynth::AVISYNTH_INTERFACE_VERSION;
-using avxsynth::AvisynthError;
-using avxsynth::AVSValue;
-using avxsynth::IScriptEnvironment;
-using avxsynth::PClip;
-
-#endif
-
-
-
-#ifdef TURNSTILE_HOST_AVISYNTH_26
-
 const AVS_Linkage* AVS_linkage = 0;
-
-#endif
 
 
 
@@ -107,29 +87,15 @@ int main(int argc, char* argv[])
 
   typedef IScriptEnvironment* (__stdcall *CSE)(int);
 
-#if defined(WIN32)
   const char* libname = "avisynth";
-#elif defined(__APPLE__)
-  const char* libname = "libavxsynth.dylib";
-#else
-  const char* libname = "libavxsynth.so";
-#endif
 
-#ifdef WIN32
   HMODULE lib = LoadLibrary(libname);
-#else
-  void* lib = dlopen(libname, RTLD_LAZY);
-#endif
   if(!lib) {
     std::cerr << "Couldn't load Avisynth!" << std::endl;
     return -1;
   }
 
-#ifdef WIN32
   CSE makeEnv = (CSE)GetProcAddress(lib, "CreateScriptEnvironment");
-#else
-  CSE makeEnv = (CSE)dlsym(lib, "CreateScriptEnvironment");
-#endif
   if(!makeEnv) {
     std::cerr << "Couldn't find CreateScriptEnvironment function!" << std::endl;
     return -1;
@@ -141,9 +107,7 @@ int main(int argc, char* argv[])
     return -1;
   }
 
-#ifdef TURNSTILE_HOST_AVISYNTH_26
   AVS_linkage = env->GetAVSLinkage();
-#endif
 
   try {
 
@@ -152,38 +116,19 @@ int main(int argc, char* argv[])
 
   } catch (AvisynthError& err) {
 
-    std::cout << err.msg << std::endl;
+    std::cerr << err.msg << std::endl;
     return -1;
 
   }
-
-  if(!env->FunctionExists("TurnsTile")) {
-    std::cerr << "Couldn't find TurnsTile function!" << std::endl;
-    return -1;
-  }
-
-  if(!env->FunctionExists("CLUTer")) {
-    std::cerr << "Couldn't find CLUTer function!" << std::endl;
-    return -1;
-  }
-
 
   int result = Catch::Session().run(argc, args.data());
 
 
   if (env)
-#if AVISYNTH_INTERFACE_VERSION >= 5
     env->DeleteScriptEnvironment();
-#else
-    delete env;
-#endif
 
   if (lib)
-#ifdef WIN32
     FreeLibrary(lib);
-#else
-    dlclose(lib);
-#endif
 
   return result;
 

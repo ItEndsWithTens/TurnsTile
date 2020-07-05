@@ -16,6 +16,7 @@
 
 
 Import("util.avs")
+InitializeTurnsTileTestEnvironment()
 
 clip = MakeTileWithDot(16, 16, "unique", $FF8080, "YV411")
 tilesheet = TurnsTileTestSource("../clips/output-turnstile-levels-tilesheet.png")

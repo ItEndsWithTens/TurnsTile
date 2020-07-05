@@ -26,26 +26,8 @@
 
 
 
-#if defined(TURNSTILE_HOST_AVXSYNTH)
-  // Avxsynth, ae45271710
-  // https://github.com/avxsynth/avxsynth/blob/ae452717100592fa463b0ec90bc5b88c142f5254/include/avxplugin.h
-  #include "../include/avx/avxplugin.h"
-#else
-  #include <Windows.h>
-  #if defined(TURNSTILE_HOST_AVISYNTH_26)
-    // SEt's 32 bit 2.6.0 MT, March 9th, 2013
-    // http://forum.doom9.org/showthread.php?t=148782
-    #include "../include/avs/avisynth-260MT-x86.h"
-  #elif defined(TURNSTILE_HOST_AVISYNTH_25_X64)
-    // JoshyD's avisynth64, r5
-    // https://code.google.com/p/avisynth64/source/browse/trunk/src/core/avisynth.h?&r=5
-    #include "../include/avs/avisynth-258MT-x64.h"
-  #else
-    // SEt's 32 bit 2.5.8 MT, July 12th, 2009
-    // http://forum.doom9.org/showthread.php?t=148117
-    #include "../include/avs/avisynth-258MT-x86.h"
-  #endif
-#endif
+#include <Windows.h>
+#include "avisynth.h"
 
 
 

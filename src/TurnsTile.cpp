@@ -58,8 +58,6 @@ bytesPerSample(1), spp(vi.BytesFromPixels(1) / bytesPerSample),
 PLANAR(vi.IsPlanar()), YUYV(vi.IsYUY2()), BGRA(vi.IsRGB32()), BGR(vi.IsRGB24())
 {
 
-#ifdef TURNSTILE_HOST_AVISYNTH_26
-
   if (vi.IsYUV() && !vi.IsY8()) {
     lumaW = 1 << vi.GetPlaneWidthSubsampling(PLANAR_U);
     lumaH = 1 << vi.GetPlaneHeightSubsampling(PLANAR_U);
@@ -76,24 +74,6 @@ PLANAR(vi.IsPlanar()), YUYV(vi.IsYUY2()), BGRA(vi.IsRGB32()), BGR(vi.IsRGB24())
     tileW_U = tileW / lumaW;
     tileH_U = tileH / lumaH;
   }
-
-#else
-
-  if (vi.IsYV12()) {
-    lumaW = 2;
-    lumaH = 2;
-  } else if (vi.IsYUY2()) {
-    lumaW = 2;
-    lumaH = 1;
-  } else {
-    lumaW = 1;
-    lumaH = 1;
-  }
-
-  tileW_U = tileW / lumaW;
-  tileH_U = tileH / lumaH;
-
-#endif
 
   tileCtrW_Y = mod(tileW / 2, lumaW, 0, tileW, -1);
   tileCtrW_U = tileW_U / 2;

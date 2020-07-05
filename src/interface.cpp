@@ -74,8 +74,6 @@ AVSValue __cdecl Create_TurnsTile(
 
   int lumaW, lumaH;
 
-#ifdef TURNSTILE_HOST_AVISYNTH_26
-
   if (vi.IsYUV() && !vi.IsY8()) {
     lumaW = 1 << vi.GetPlaneWidthSubsampling(PLANAR_U);
     lumaH = 1 << vi.GetPlaneHeightSubsampling(PLANAR_U);
@@ -83,20 +81,6 @@ AVSValue __cdecl Create_TurnsTile(
     lumaW = 1;
     lumaH = 1;
   }
-
-#else
-
-  if (vi.IsYUV())
-    lumaW = 2;
-  else
-    lumaW = 1;
-
-  if (vi.IsYV12())
-    lumaH = 2;
-  else
-    lumaH = 1;
-
-#endif
 
 
   // Reading arguments out of order makes me feel icky, but I need this early.
@@ -119,12 +103,10 @@ AVSValue __cdecl Create_TurnsTile(
                               vi.IsRGB24() ?  "RGB24" :
                               vi.IsYUY2() ?   "YUY2" :
                               vi.IsYV12() ?   "YV12" :
-#ifdef TURNSTILE_HOST_AVISYNTH_26
                               vi.IsYV24() ?   "YV24" :
                               vi.IsYV16() ?   "YV16" :
                               vi.IsYV411() ?  "YV411" :
                               vi.IsY8() ?     "Y8" :
-#endif
                               interlaced ?    "" :
                                               "this";
 
@@ -233,10 +215,8 @@ AVSValue __cdecl Create_TurnsTile(
 
 
   int countChroma = 2;
-#ifdef TURNSTILE_HOST_AVISYNTH_26
   if (vi.IsY8())
     countChroma = 0;
-#endif
 
   int modeMax;
   if (vi.IsYUV())
@@ -248,11 +228,8 @@ AVSValue __cdecl Create_TurnsTile(
     env->ThrowError(
       "TurnsTile: %s only allows modes 0-%d!",
       cspStr, modeMax);
-
-#ifdef TURNSTILE_HOST_AVISYNTH_26
   if ((vi.IsYV24() || vi.IsY8()) && mode == 0)
     mode = 1;
-#endif
 
 
   if (strcmp(levels, "pc") != 0 && strcmp(levels, "tv") != 0)
@@ -333,12 +310,10 @@ AVSValue __cdecl Create_CLUTer(
                                 vi.IsRGB24() ?  "RGB24" :
                                 vi.IsYUY2() ?   "YUY2" :
                                 vi.IsYV12() ?   "YV12" :
-#ifdef TURNSTILE_HOST_AVISYNTH_26
                                 vi.IsYV24() ?   "YV24" :
                                 vi.IsYV16() ?   "YV16" :
                                 vi.IsYV411() ?  "YV411" :
                                 vi.IsY8() ?     "Y8" :
-#endif
                                                 "";
 
     int minClipH;
@@ -373,22 +348,12 @@ AVSValue __cdecl Create_CLUTer(
 
 
 
-#ifdef TURNSTILE_HOST_AVISYNTH_26
-
 const AVS_Linkage* AVS_linkage = 0;
 extern "C" __declspec(dllexport) const char* __stdcall AvisynthPluginInit3(
   IScriptEnvironment* env, const AVS_Linkage* const vectors)
 {
 
   AVS_linkage = vectors;
-
-#else
-
-extern "C" __declspec(dllexport) const char* __stdcall AvisynthPluginInit2(
-  IScriptEnvironment* env)
-{
-
-#endif
 
   env->AddFunction("CLUTer", "cc[paletteframe]i[interlaced]b",
                              Create_CLUTer, 0);

@@ -46,20 +46,10 @@ TEST_CASE(
   "[errors][turnstile][interlaced][height][mod]")
 {
 
-#ifdef TURNSTILE_HOST_AVISYNTH_26
-
   std::string csps[8] = { "rgb32", "rgb24", "yuy2", "yv12",
                           "yv24", "yv16", "yv411", "y8" };
 
   int count = 8;
-
-#else
-
-  std::string csps[4] = { "rgb32", "rgb24", "yuy2", "yv12" };
-
-  int count = 4;
-
-#endif
 
   for (int i = 0; i < count; ++i) {
 
@@ -79,20 +69,10 @@ TEST_CASE(
   "[errors][turnstile][tile][width][minimum]")
 {
 
-#ifdef TURNSTILE_HOST_AVISYNTH_26
-
   std::string csps[8] = { "rgb32", "rgb24", "yuy2", "yv12",
                           "yv24", "yv16", "yv411", "y8" };
 
   int count = 8;
-
-#else
-
-  std::string csps[4] = { "rgb32", "rgb24", "yuy2", "yv12" };
-
-  int count = 4;
-
-#endif
 
   for (int i = 0; i < count; ++i)
     RunTestAvs("errors-turnstile-tile-width-minimum-" + csps[i]);
@@ -106,20 +86,10 @@ TEST_CASE(
   "[errors][turnstile][tile][height][minimum]")
 {
 
-#ifdef TURNSTILE_HOST_AVISYNTH_26
-
     std::string csps[8] = { "rgb32", "rgb24", "yuy2", "yv12",
                             "yv24", "yv16", "yv411", "y8" };
 
     int count = 8;
-
-#else
-
-    std::string csps[4] = { "rgb32", "rgb24", "yuy2", "yv12" };
-
-    int count = 4;
-
-#endif
 
   for (int i = 0; i < count; ++i) {
 
@@ -163,19 +133,9 @@ TEST_CASE(
   "[errors][turnstile][tile][width][mod]")
 {
 
-#ifdef TURNSTILE_HOST_AVISYNTH_26
-
   std::string csps[4] = { "yuy2", "yv12", "yv16", "yv411" };
 
   int count = 4;
-
-#else
-
-  std::string csps[2] = { "yuy2", "yv12" };
-
-  int count = 2;
-
-#endif
 
   for (int i = 0; i < count; ++i)
     RunTestAvs("errors-turnstile-tile-width-mod-" + csps[i]);
@@ -191,21 +151,10 @@ TEST_CASE(
 
   RunTestAvs("errors-turnstile-tile-height-mod_progressive");
 
-
-#ifdef TURNSTILE_HOST_AVISYNTH_26
-
   std::string csps[8] = { "rgb32", "rgb24", "yuy2", "yv12",
                           "yv24", "yv16", "yv411", "y8" };
 
   int count = 8;
-
-#else
-
-  std::string csps[4] = { "rgb32", "rgb24", "yuy2", "yv12" };
-
-  int count = 4;
-
-#endif
 
   for (int i = 0; i < count; ++i)
     RunTestAvs("errors-turnstile-tile-height-mod-" + csps[i] + "_interlaced");
@@ -243,20 +192,10 @@ TEST_CASE(
   "[errors][turnstile][mode][range]")
 {
 
-#ifdef TURNSTILE_HOST_AVISYNTH_26
-
     std::string csps[8] = { "rgb32", "rgb24", "yuy2", "yv12",
                             "yv24", "yv16", "yv411", "y8" };
 
     int count = 8;
-
-#else
-
-    std::string csps[4] = { "rgb32", "rgb24", "yuy2", "yv12" };
-
-    int count = 4;
-
-#endif
 
   for (int i = 0; i < count; ++i) {
 
@@ -335,20 +274,10 @@ TEST_CASE(
   "[errors][cluter][interlaced][height][mod]")
 {
 
-#ifdef TURNSTILE_HOST_AVISYNTH_26
-
   std::string csps[8] = { "rgb32", "rgb24", "yuy2", "yv12",
                           "yv24", "yv16", "yv411", "y8" };
 
   int count = 8;
-
-#else
-
-  std::string csps[4] = { "rgb32", "rgb24", "yuy2", "yv12" };
-
-  int count = 4;
-
-#endif
 
   for (int i = 0; i < count; ++i)
     RunTestAvs("errors-cluter-interlaced-height-mod-" + csps[i]);

@@ -62,8 +62,6 @@ PLANAR(vi.IsPlanar()), YUYV(vi.IsYUY2()), BGRA(vi.IsRGB32()), BGR(vi.IsRGB24())
     * pltU = plt->GetReadPtr(PLANAR_U),
     * pltV = plt->GetReadPtr(PLANAR_V);
 
-#ifdef TURNSTILE_HOST_AVISYNTH_26
-
   if (vi.IsYUV() && !vi.IsY8()) {
     lumaW = 1 << vi.GetPlaneWidthSubsampling(PLANAR_U);
     lumaH = 1 << vi.GetPlaneHeightSubsampling(PLANAR_U);
@@ -76,21 +74,6 @@ PLANAR(vi.IsPlanar()), YUYV(vi.IsYUY2()), BGRA(vi.IsRGB32()), BGR(vi.IsRGB24())
     pltU = 0;
     pltV = 0;
   }
-
-#else
-
-  if (vi.IsYV12()) {
-    lumaW = 2;
-    lumaH = 2;
-  } else if (vi.IsYUY2()) {
-    lumaW = 2;
-    lumaH = 1;
-  } else {
-    lumaW = 1;
-    lumaH = 1;
-  }
-
-#endif
 
 
   if (vi.IsPlanar())
@@ -134,16 +117,12 @@ PVideoFrame __stdcall CLUTer::GetFrame(int n, IScriptEnvironment* env)
     DST_PITCH_SAMPLES_Y = dst->GetPitch(PLANAR_Y),
     DST_PITCH_SAMPLES_U = dst->GetPitch(PLANAR_U);
   
-#ifdef TURNSTILE_HOST_AVISYNTH_26
-  
   if (vi.IsY8()) {
     srcU = 0;
     srcV = 0;
     dstU = 0;
     dstV = 0;
   }
-  
-#endif
 
 
   if (vi.IsPlanar())

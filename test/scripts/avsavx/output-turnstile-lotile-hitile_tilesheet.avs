@@ -30,6 +30,7 @@
 
 
 Import("util.avs")
+InitializeTurnsTileTestEnvironment()
 
 a = BlankClip(width=16, height=16, pixel_type="RGB24", color=$000000)
 b = BlankClip(width=16, height=16, pixel_type="RGB24", color=$404040)

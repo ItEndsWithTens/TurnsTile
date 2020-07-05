@@ -28,6 +28,7 @@ function GetScriptDirectory()
 
 SetWorkingDir(GetScriptDirectory())
 Import("util.avs")
+InitializeTurnsTileTestEnvironment()
 
 clip = TurnsTileTestSource("../clips/hsl-yv12.ebmp")
 tilesheet = MakeTilesheet(2, 2, "YV12")

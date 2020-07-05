@@ -32,16 +32,6 @@
 
 
 
-#ifdef TURNSTILE_HOST_AVXSYNTH
-
-  #define GenericVideoFilter avxsynth::GenericVideoFilter
-  #define IScriptEnvironment avxsynth::IScriptEnvironment
-  #define PClip avxsynth::PClip
-  #define PVideoFrame avxsynth::PVideoFrame
-  #define VideoInfo avxsynth::VideoInfo
-
-#endif
-
 class TurnsTile : public GenericVideoFilter
 {
 
