@@ -86,10 +86,10 @@ TEST_CASE(
   "[errors][turnstile][tile][height][minimum]")
 {
 
-    std::string csps[8] = { "rgb32", "rgb24", "yuy2", "yv12",
-                            "yv24", "yv16", "yv411", "y8" };
+  std::string csps[8] = { "rgb32", "rgb24", "yuy2", "yv12",
+                          "yv24", "yv16", "yv411", "y8" };
 
-    int count = 8;
+  int count = 8;
 
   for (int i = 0; i < count; ++i) {
 
@@ -192,10 +192,10 @@ TEST_CASE(
   "[errors][turnstile][mode][range]")
 {
 
-    std::string csps[8] = { "rgb32", "rgb24", "yuy2", "yv12",
-                            "yv24", "yv16", "yv411", "y8" };
+  std::string csps[8] = { "rgb32", "rgb24", "yuy2", "yv12",
+                          "yv24", "yv16", "yv411", "y8" };
 
-    int count = 8;
+  int count = 8;
 
   for (int i = 0; i < count; ++i) {
 

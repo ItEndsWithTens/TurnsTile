@@ -33,7 +33,7 @@
 
 struct plane
 {
- 
+
   const unsigned char* ptr;
   int row_size, pitch, height;
 

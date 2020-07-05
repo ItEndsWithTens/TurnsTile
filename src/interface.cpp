@@ -33,19 +33,6 @@
 
 
 
-#if defined(TURNSTILE_HOST_AVXSYNTH)
-
-using avxsynth::AVSValue;
-using avxsynth::IScriptEnvironment;
-using avxsynth::PClip;
-using avxsynth::PLANAR_Y;
-using avxsynth::PLANAR_U;
-using avxsynth::PLANAR_V;
-using avxsynth::PVideoFrame;
-using avxsynth::VideoInfo;
-
-#endif
-
 AVSValue __cdecl Create_TurnsTile(
   AVSValue args, void* user_data, IScriptEnvironment* env)
 {

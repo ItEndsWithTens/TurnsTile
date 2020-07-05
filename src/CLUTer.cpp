@@ -33,24 +33,11 @@
 
 
 
-#if defined(TURNSTILE_HOST_AVXSYNTH)
-
-using avxsynth::AVSValue;
-using avxsynth::IScriptEnvironment;
-using avxsynth::PClip;
-using avxsynth::PLANAR_Y;
-using avxsynth::PLANAR_U;
-using avxsynth::PLANAR_V;
-using avxsynth::PVideoFrame;
-using avxsynth::VideoInfo;
-
-#endif
-
 CLUTer::CLUTer( PClip _child, PClip _palette,
                 int _pltFrame, bool _interlaced,
                 IScriptEnvironment* env) :
-GenericVideoFilter(_child), spp(vi.BytesFromPixels(1)),
-PLANAR(vi.IsPlanar()), YUYV(vi.IsYUY2()), BGRA(vi.IsRGB32()), BGR(vi.IsRGB24())
+  GenericVideoFilter(_child), spp(vi.BytesFromPixels(1)),
+  PLANAR(vi.IsPlanar()), YUYV(vi.IsYUY2()), BGRA(vi.IsRGB32()), BGR(vi.IsRGB24())
 {
 
   PVideoFrame plt = _palette->GetFrame(_pltFrame,env);
@@ -116,7 +103,7 @@ PVideoFrame __stdcall CLUTer::GetFrame(int n, IScriptEnvironment* env)
     SRC_PITCH_SAMPLES_U = src->GetPitch(PLANAR_U),
     DST_PITCH_SAMPLES_Y = dst->GetPitch(PLANAR_Y),
     DST_PITCH_SAMPLES_U = dst->GetPitch(PLANAR_U);
-  
+
   if (vi.IsY8()) {
     srcU = 0;
     srcV = 0;
@@ -160,7 +147,7 @@ void CLUTer::buildPalettePacked(
       int sample = w * spp;
       int pltOfs = pltLine + sample;
 
-      if (YUYV) {    
+      if (YUYV) {
 
         int y1 = *(pltp + pltOfs),
             u =  *(pltp + pltOfs + 1),

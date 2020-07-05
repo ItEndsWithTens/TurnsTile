@@ -98,16 +98,6 @@ private:
 
 };
 
-#ifdef TURNSTILE_HOST_AVXSYNTH
-
-  #undef GenericVideoFilter
-  #undef IScriptEnvironment
-  #undef PClip
-  #undef PVideoFrame
-  #undef VideoInfo
-
-#endif
-
 
 
 #endif // TURNSTILE_SRC_TURNSTILE_H_INCLUDED_DA2EDA521391488FA92FD92FD875E27E

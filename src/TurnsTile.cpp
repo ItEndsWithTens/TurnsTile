@@ -33,29 +33,16 @@
 
 
 
-#if defined(TURNSTILE_HOST_AVXSYNTH)
-
-using avxsynth::AVSValue;
-using avxsynth::IScriptEnvironment;
-using avxsynth::PClip;
-using avxsynth::PLANAR_Y;
-using avxsynth::PLANAR_U;
-using avxsynth::PLANAR_V;
-using avxsynth::PVideoFrame;
-using avxsynth::VideoInfo;
-
-#endif
-
 TurnsTile::TurnsTile( PClip _child, PClip _tilesheet, VideoInfo _vi2,
                       int _tileW, int _tileH, int _res, int _mode,
                       const char* _levels, int _loTile, int _hiTile,
                       IScriptEnvironment* env) :
-GenericVideoFilter(_child), tilesheet(_tilesheet),
-tileW(_tileW), tileH(_tileH), mode(_mode),
-srcCols(vi.width / tileW), srcRows(vi.height / tileH),
-shtCols(_vi2.width / tileW), shtRows(_vi2.height / tileH),
-bytesPerSample(1), spp(vi.BytesFromPixels(1) / bytesPerSample),
-PLANAR(vi.IsPlanar()), YUYV(vi.IsYUY2()), BGRA(vi.IsRGB32()), BGR(vi.IsRGB24())
+  GenericVideoFilter(_child), tilesheet(_tilesheet),
+  tileW(_tileW), tileH(_tileH), mode(_mode),
+  srcCols(vi.width / tileW), srcRows(vi.height / tileH),
+  shtCols(_vi2.width / tileW), shtRows(_vi2.height / tileH),
+  bytesPerSample(1), spp(vi.BytesFromPixels(1) / bytesPerSample),
+  PLANAR(vi.IsPlanar()), YUYV(vi.IsYUY2()), BGRA(vi.IsRGB32()), BGR(vi.IsRGB24())
 {
 
   if (vi.IsYUV() && !vi.IsY8()) {

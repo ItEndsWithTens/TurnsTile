@@ -32,19 +32,6 @@
 
 
 
-#ifdef TURNSTILE_HOST_AVXSYNTH
-
-using avxsynth::AVSValue;
-using avxsynth::IScriptEnvironment;
-using avxsynth::PLANAR_U;
-using avxsynth::PLANAR_V;
-using avxsynth::PLANAR_Y;
-using avxsynth::PVideoFrame;
-
-#endif
-
-
-
 extern IScriptEnvironment* env;
 
 extern bool writeRefData;
@@ -70,7 +57,7 @@ void RunTestAvs(std::string name)
                               "{"
 
                               "  try {"
-                        
+
                               "    result = Import(filename)"
 
                               "  } catch (err) {"
@@ -88,7 +75,7 @@ void RunTestAvs(std::string name)
   std::string script = scriptDir + name + ".avs";
 
   AVSValue result = env->Invoke("TurnsTileRunTest", AVSValue(script.c_str()));
-  
+
   std::string dataCur;
 
   if (result.IsString()) {
@@ -100,7 +87,7 @@ void RunTestAvs(std::string name)
     PVideoFrame frm = result.AsClip()->GetFrame(0, env);
 
     std::vector<plane> planes;
-    
+
     plane y, u, v;
 
     y.ptr = frm->GetReadPtr(PLANAR_Y);

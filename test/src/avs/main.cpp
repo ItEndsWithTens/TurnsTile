@@ -90,19 +90,19 @@ int main(int argc, char* argv[])
   const char* libname = "avisynth";
 
   HMODULE lib = LoadLibrary(libname);
-  if(!lib) {
+  if (!lib) {
     std::cerr << "Couldn't load Avisynth!" << std::endl;
     return -1;
   }
 
   CSE makeEnv = (CSE)GetProcAddress(lib, "CreateScriptEnvironment");
-  if(!makeEnv) {
+  if (!makeEnv) {
     std::cerr << "Couldn't find CreateScriptEnvironment function!" << std::endl;
     return -1;
   }
 
   env = makeEnv(AVISYNTH_INTERFACE_VERSION);
-  if(!env) {
+  if (!env) {
     std::cerr << "Couldn't create script environment!" << std::endl;
     return -1;
   }

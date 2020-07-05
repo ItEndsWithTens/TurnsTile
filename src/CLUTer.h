@@ -32,24 +32,14 @@
 
 
 
-#ifdef TURNSTILE_HOST_AVXSYNTH
-
-  #define GenericVideoFilter avxsynth::GenericVideoFilter
-  #define IScriptEnvironment avxsynth::IScriptEnvironment
-  #define PClip avxsynth::PClip
-  #define PVideoFrame avxsynth::PVideoFrame
-  #define VideoInfo avxsynth::VideoInfo
-
-#endif
-
 class CLUTer : public GenericVideoFilter
 {
 
 public:
 
-  CLUTer(  PClip _child, PClip _palette,
-           int _pltFrame, bool _interlaced,
-           IScriptEnvironment* env);
+  CLUTer(PClip _child, PClip _palette,
+         int _pltFrame, bool _interlaced,
+         IScriptEnvironment* env);
 
   ~CLUTer();
 
@@ -94,16 +84,6 @@ private:
   void fillComponentVectors(std::vector<int>* pltMain);
 
 };
-
-#ifdef TURNSTILE_HOST_AVXSYNTH
-
-  #undef GenericVideoFilter
-  #undef IScriptEnvironment
-  #undef PClip
-  #undef PVideoFrame
-  #undef VideoInfo
-
-#endif
 
 
 

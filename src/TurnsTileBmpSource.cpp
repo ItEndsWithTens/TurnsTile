@@ -22,20 +22,6 @@
 
 
 
-// I added this custom source filter to allow reading my reference EBMP files in
-// Avxsynth, which at the moment doesn't have any suitable sources. FFMS2 is all
-// that's available, and it doesn't support the format. Research didn't reveal
-// any other file type that allowed storage of a frame in its native colorspace,
-// so this seemed like the least bad option.
-//
-// Ugly as it may be to have made this filter part of the plugin itself, instead
-// of putting the code somewhere in the test executable, I wanted to stick to my
-// goal of allowing all test scripts to stand alone. With TurnsTileBmpSource as
-// part of the test runner, the scripts wouldn't load if accessed from another
-// program, for example VirtualDub or AvsPmod.
-
-
-
 #include "TurnsTileBmpSource.h"
 
 #include <cmath>
@@ -44,22 +30,6 @@
 #include <vector>
 
 #include "interface.h"
-
-
-
-#ifdef TURNSTILE_HOST_AVXSYNTH
-
-#define IScriptEnvironment avxsynth::IScriptEnvironment
-#define VideoInfo avxsynth::VideoInfo
-#define SAMPLE_INT16 avxsynth::SAMPLE_INT16
-#define PVideoFrame avxsynth::PVideoFrame
-#define __int64 avxsynth::__int64
-#define AVSValue avxsynth::AVSValue
-#define PLANAR_Y avxsynth::PLANAR_Y
-#define PLANAR_U avxsynth::PLANAR_U
-#define PLANAR_V avxsynth::PLANAR_V
-
-#endif
 
 
 
@@ -129,7 +99,7 @@ std::string OpenFile(std::string& filename, std::vector<unsigned char>& buf)
 TurnsTileBmpSource::TurnsTileBmpSource(
   std::string filename, std::string pixel_type, IScriptEnvironment* env)
 {
-  
+
   std::vector<unsigned char> buf;
 
   std::string err = OpenFile(filename, buf);
@@ -203,7 +173,7 @@ TurnsTileBmpSource::TurnsTileBmpSource(
       buf, ofsData,
       dstY, dstU, dstV,
       PITCH_Y, HEIGHT_Y, ROW_SIZE_Y,
-      PITCH_U, HEIGHT_U, ROW_SIZE_U);  
+      PITCH_U, HEIGHT_U, ROW_SIZE_U);
 
 }
 
