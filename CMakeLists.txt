@@ -1,6 +1,7 @@
 ### Basic info ###
 
-cmake_minimum_required(VERSION 3.17.0 FATAL_ERROR)
+# A built-in abstraction to set MSVC runtime linking flags was added in 3.15.
+cmake_minimum_required(VERSION 3.15.0 FATAL_ERROR)
 
 # For simplicity of testing, spit everything out into the same directories,
 # thus allowing only one set of binaries (the current build) to exist at once.
@@ -27,6 +28,27 @@ endif()
 set(TURNSTILE_HOST "AviSynth+ ${TURNSTILE_ARCH}")
 
 set(TURNSTILE_DESCRIPTION "TurnsTile plugin for ${TURNSTILE_HOST}")
+
+
+
+### CMake options ###
+if(MSVC)
+
+  # Dynamic linking is better from a security point of view, but static linking
+  # is somewhat more convenient. The option is here should one feel the urge.
+  option(
+    TURNSTILE_STATIC_CRT "Link statically with the C Run-Time libraries." FALSE
+  )
+
+  # First-class support for static linking was introduced in CMake 3.15; the
+  # variable set here applies to all subsequently defined targets.
+  if(TURNSTILE_STATIC_CRT)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+  else()
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+  endif()
+
+endif()
 
 
 
@@ -92,37 +114,6 @@ set_target_properties(
   PROPERTIES
   COMPILE_DEFINITIONS "TURNSTILE_HOST_${TURNSTILE_HOST_DEFINE}"
 )
-
-
-
-### CMake options ###
-if(MSVC)
-
-  # Dynamic linking is better from a security point of view, but static linking
-  # is somewhat more convenient. The option is here should one feel the urge.
-  option(
-    TURNSTILE_STATIC_CRT "Link statically with the C Run-Time libraries." FALSE
-  )
-
-  if(TURNSTILE_STATIC_CRT)
-
-    foreach(flag_var
-      CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
-      CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
-      string(REPLACE "/MD" "/MT" ${flag_var} "${${flag_var}}")
-    endforeach()
-
-  else()
-
-    foreach(flag_var
-      CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
-      CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
-      string(REPLACE "/MT" "/MD" ${flag_var} "${${flag_var}}")
-    endforeach()
-
-  endif()
-
-endif()
 
 
 
