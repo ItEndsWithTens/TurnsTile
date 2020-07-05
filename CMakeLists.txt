@@ -138,11 +138,11 @@ if(TURNSTILE_TESTS)
     test/include/md5/md5.c
 
     ${TURNSTILE_HOST_HDR}
-    test/src/avsavx/errors.cpp
-    test/src/avsavx/main.cpp
-    test/src/avsavx/output.cpp
-    test/src/avsavx/util_avsavx.h
-    test/src/avsavx/util_avsavx.cpp
+    test/src/avs/errors.cpp
+    test/src/avs/main.cpp
+    test/src/avs/output.cpp
+    test/src/avs/util_avs.h
+    test/src/avs/util_avs.cpp
     test/src/util_common.h
     test/src/util_common.cpp
   )

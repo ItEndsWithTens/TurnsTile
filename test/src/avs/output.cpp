@@ -26,7 +26,7 @@
 
 #include "../../include/catch/catch.hpp"
 
-#include "util_avsavx.h"
+#include "util_avs.h"
 
 
 

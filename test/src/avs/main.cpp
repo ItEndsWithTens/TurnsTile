@@ -81,8 +81,8 @@ int main(int argc, char* argv[])
   if (testRoot != ".")
     argc--;
 
-  scriptDir = testRoot + "scripts/avsavx/";
-  refDir = testRoot + "ref/avsavx/";
+  scriptDir = testRoot + "scripts/avs/";
+  refDir = testRoot + "ref/avs/";
 
 
   typedef IScriptEnvironment* (__stdcall *CSE)(int);
