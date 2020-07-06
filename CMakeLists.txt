@@ -60,11 +60,26 @@ get_filename_component(
     [HKEY_CURRENT_USER\\SOFTWARE\\AviSynth;plugindir+] ABSOLUTE
 )
 
-# ...otherwise, use the local machine's folder.
+# ...otherwise, use the local machine's folder...
 if(${HOST_PLUGIN_DIR} STREQUAL "/registry")
   get_filename_component(
       HOST_PLUGIN_DIR
       [HKEY_LOCAL_MACHINE\\SOFTWARE\\AviSynth;plugindir+] ABSOLUTE
+  )
+endif()
+
+# ...but fall back to the 2.5 directories if all else fails.
+if(${HOST_PLUGIN_DIR} STREQUAL "/registry")
+  get_filename_component(
+      HOST_PLUGIN_DIR
+      [HKEY_CURRENT_USER\\SOFTWARE\\AviSynth;plugindir2_5] ABSOLUTE
+  )
+endif()
+
+if(${HOST_PLUGIN_DIR} STREQUAL "/registry")
+  get_filename_component(
+      HOST_PLUGIN_DIR
+      [HKEY_LOCAL_MACHINE\\SOFTWARE\\AviSynth;plugindir2_5] ABSOLUTE
   )
 endif()
 
