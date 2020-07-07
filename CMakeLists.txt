@@ -52,7 +52,7 @@ endif()
 
 
 
-### Find Avisynth ###
+### Find Avisynth header ###
 
 # Check current user's plugins directory first, if it exists...
 get_filename_component(
@@ -83,13 +83,34 @@ if(${HOST_PLUGIN_DIR} STREQUAL "/registry")
   )
 endif()
 
+set(AVISYNTHPLUS_HDR_DOCSTRING "The copy of avisynth.h ${PROJECT_NAME} should compile with.")
+
+# If the header location is undefined, create a baseline to start with.
+if(NOT DEFINED AVISYNTHPLUS_HDR)
+  set(AVISYNTHPLUS_HDR "" CACHE FILEPATH ${AVISYNTHPLUS_HDR_DOCSTRING})
+endif()
+
+# If the header option is blank, it's either the baseline empty string or a
+# user's choice to clear a previously set value, so set a sensible default,
+# cleaning up directory traversal dots and symlinks in the process.
+if(AVISYNTHPLUS_HDR STREQUAL "")
+  get_filename_component(AVISYNTHPLUS_HDR_REALPATH ${HOST_PLUGIN_DIR}/../FilterSDK/include/avisynth.h REALPATH BASE_DIR)
+else()
+  get_filename_component(AVISYNTHPLUS_HDR_REALPATH ${AVISYNTHPLUS_HDR} REALPATH BASE_DIR)
+endif()
+
+# Now that the path has been cleaned up, overwrite any existing header path with
+# a friendlier version. One of the rare occasions where FORCE is appropriate.
+set(AVISYNTHPLUS_HDR ${AVISYNTHPLUS_HDR_REALPATH} CACHE FILEPATH ${AVISYNTHPLUS_HDR_DOCSTRING} FORCE)
+
+# Grabbing the directory component of a "realpath" means no cleanup necessary.
+get_filename_component(AVISYNTHPLUS_INCLUDE_DIR ${AVISYNTHPLUS_HDR} DIRECTORY)
+
+include_directories(${AVISYNTHPLUS_INCLUDE_DIR})
+
 
 
 ### Check Avisynth version ###
-
-set(AVISYNTHPLUS_INCLUDE_DIR ${HOST_PLUGIN_DIR}/../FilterSDK/include)
-
-include_directories(${AVISYNTHPLUS_INCLUDE_DIR})
 
 include(CheckCXXSymbolExists)
 set(CMAKE_REQUIRED_INCLUDES ${AVISYNTHPLUS_INCLUDE_DIR})
