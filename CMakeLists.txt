@@ -114,14 +114,17 @@ include_directories(${AVISYNTHPLUS_INCLUDE_DIR})
 
 include(CheckCXXSymbolExists)
 set(CMAKE_REQUIRED_INCLUDES ${AVISYNTHPLUS_INCLUDE_DIR})
-check_cxx_symbol_exists(__AVISYNTH_8_H__ avisynth.h AVISYNTH_PLUS_FOUND)
+unset(AVISYNTHPLUS_FOUND CACHE)
+check_cxx_symbol_exists(__AVISYNTH_8_H__ avisynth.h AVISYNTHPLUS_FOUND)
 
-if(NOT AVISYNTH_PLUS_FOUND)
+if(NOT AVISYNTHPLUS_FOUND)
   # The space before \ is necessary to prevent getting extra line breaks, for
   # some reason beyond the veil of human understanding.
   message(FATAL_ERROR " \
-Avisynth+ header not found!\n \
-\tOnce built, this plugin will run in Avisynth 2.6 without issue, but\n \
+Suitable Avisynth header not found!\n \
+\tThis plugin needs the header for Avisynth+ (plugin interface >= version 8).\n \
+\n \
+\tOnce built, ${PROJECT_NAME} will run in Avisynth 2.6 without issue, but\n \
 \tit needs the plus version of the header to successfully compile.")
 endif()
 
