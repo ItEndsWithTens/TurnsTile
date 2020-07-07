@@ -1,6 +1,24 @@
 # For any common setup; saves having to modify every test file over and over.
 function InitializeTurnsTileTestEnvironment()
 {
+  try
+  {
+    # In case the host in question actually is Avisynth+, as is ideal, load the
+    # formerly internal functions it breaks out into separate plugins. There is
+    # an AddAutoloadDir function, but it only works before the first unknown
+    # function is looked up, and in any event is only available in +, whereas
+    # this test suite should technically work in 2.6 as well.
+    LoadPlugin("../../../artifacts/build/lib/ConvertStacked.dll")
+    LoadPlugin("../../../artifacts/build/lib/DirectShowSource.dll")
+    LoadPlugin("../../../artifacts/build/lib/ImageSeq.dll")
+    LoadPlugin("../../../artifacts/build/lib/Shibatch.dll")
+    LoadPlugin("../../../artifacts/build/lib/TimeStretch.dll")
+    LoadPlugin("../../../artifacts/build/lib/VDubFilter.dll")
+  }
+  catch(err_msg)
+  {
+  }
+
   LoadPlugin("../../../artifacts/build/lib/TurnsTile.dll")
 }
 
@@ -47,10 +65,10 @@ function GetMinHeight(string pixel_type)
 
 function MakeDotUnique(string pixel_type)
 {
-  
+
   minw = GetMinWidth(pixel_type)
   minh = GetMinHeight(pixel_type)
-  
+
   # I need to generate each pixel as a block, stack them, then PointResize the
   # whole thing down later. The alternative for YUV formats is to generate a
   # bunch of 1x1 pixels in RGB, stack them, then convert to the final colorspace,
@@ -62,7 +80,7 @@ function MakeDotUnique(string pixel_type)
   y4 = base.IsYUV() ? BlankClip(base, color_yuv=$0040C0) : NOP()
   rgb = base.IsRGB32() ? BlankClip(base, color=$40FFAA55) : \
         base.IsRGB24() ? BlankClip(base, color=$FFAA55) : NOP()
-  
+
   macropixel = FindStr(pixel_type, "YV411") > 0 ? \
                  StackHorizontal(y1, y2, y3, y4) : \
                FindStr(pixel_type, "YV12") > 0 ? \
@@ -100,7 +118,7 @@ function MakeTileWithDot(int width, int height, val color_dot, int color_bg, \
 
   ctrw_l = Mod(width / 2.0, minw, -1)
   ctrw_r = Mod(width / 2.0, minw, 1) - minw
-  ctrh_l = minh  
+  ctrh_l = minh
   ctrh_r = minh
 
   botw = width
@@ -181,7 +199,7 @@ function MakeClip(int width, int height, int color_bg, val color_dot, \
                                    (dot.Width() > 0 ? ", dot" : "") + ")")
 
   ctr = Eval("BlankClip(width=width, height=height-(tileh*2), " + color_param + \
-             "=color_bg, pixel_type=pixel_type)")  
+             "=color_bg, pixel_type=pixel_type)")
 
   return Eval("StackVertical(" + (edge.Height() > 0 ? "edge" : "") + \
                                  (ctr.Height() > 0 ? ", ctr" : "") + \
