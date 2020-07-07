@@ -25,7 +25,7 @@ if(CMAKE_GENERATOR_PLATFORM STREQUAL "" OR
 elseif(CMAKE_GENERATOR_PLATFORM STREQUAL "Win32")
   set(TURNSTILE_ARCH "x86")
 endif()
-set(TURNSTILE_HOST "AviSynth+ ${TURNSTILE_ARCH}")
+set(TURNSTILE_HOST "Avisynth+ ${TURNSTILE_ARCH}")
 
 set(TURNSTILE_DESCRIPTION "TurnsTile plugin for ${TURNSTILE_HOST}")
 
@@ -52,7 +52,7 @@ endif()
 
 
 
-### Find AviSynth ###
+### Find Avisynth ###
 
 # Check current user's plugins directory first, if it exists...
 get_filename_component(
@@ -85,16 +85,31 @@ endif()
 
 
 
-### Source files ###
+### Check Avisynth version ###
 
 set(AVISYNTHPLUS_INCLUDE_DIR ${HOST_PLUGIN_DIR}/../FilterSDK/include)
 
 include_directories(${AVISYNTHPLUS_INCLUDE_DIR})
 
-# Add the AviSynth+ header to the project for easy reference.
-set(SRCS
-  ${AVISYNTHPLUS_INCLUDE_DIR}/avisynth.h
-)
+include(CheckCXXSymbolExists)
+set(CMAKE_REQUIRED_INCLUDES ${AVISYNTHPLUS_INCLUDE_DIR})
+check_cxx_symbol_exists(__AVISYNTH_8_H__ avisynth.h AVISYNTH_PLUS_FOUND)
+
+if(NOT AVISYNTH_PLUS_FOUND)
+  # The space before \ is necessary to prevent getting extra line breaks, for
+  # some reason beyond the veil of human understanding.
+  message(FATAL_ERROR " \
+Avisynth+ header not found!\n \
+\tOnce built, this plugin will run in Avisynth 2.6 without issue, but\n \
+\tit needs the plus version of the header to successfully compile.")
+endif()
+
+
+
+### Source files ###
+
+# Add the Avisynth+ header to the project for easy reference.
+set(SRCS ${AVISYNTHPLUS_INCLUDE_DIR}/avisynth.h)
 
 list(APPEND SRCS
   src/interface.h
@@ -107,10 +122,7 @@ list(APPEND SRCS
   src/CLUTer.cpp
 )
 
-
-configure_file(
-    src/TurnsTile.rc.in ${CMAKE_SOURCE_DIR}/src/TurnsTile.rc
-)
+configure_file(src/TurnsTile.rc.in ${CMAKE_SOURCE_DIR}/src/TurnsTile.rc)
 list(APPEND SRCS src/TurnsTile.rc)
 if(MSVC)
   # CMake handles the Source and Header Files filters automatically, but not

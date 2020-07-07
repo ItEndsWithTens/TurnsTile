@@ -84,7 +84,6 @@ int main(int argc, char* argv[])
   scriptDir = testRoot + "scripts/avs/";
   refDir = testRoot + "ref/avs/";
 
-
   typedef IScriptEnvironment* (__stdcall *CSE)(int);
 
   const char* libname = "avisynth";
@@ -102,6 +101,9 @@ int main(int argc, char* argv[])
   }
 
   env = makeEnv(AVISYNTH_INTERFACE_VERSION);
+  if (!env) {
+    env = makeEnv(AVISYNTH_CLASSIC_INTERFACE_VERSION);
+  }
   if (!env) {
     std::cerr << "Couldn't create script environment!" << std::endl;
     return -1;
@@ -122,7 +124,6 @@ int main(int argc, char* argv[])
   }
 
   int result = Catch::Session().run(argc, args.data());
-
 
   if (env)
     env->DeleteScriptEnvironment();
