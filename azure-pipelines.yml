@@ -1,0 +1,131 @@
+trigger:
+- master
+- feature/*
+
+pool:
+  vmImage: 'windows-latest'
+
+variables:
+  AVSPLUS_VERSION: 3.6.1
+  AVSPLUS_FILESONLY_NAME: AviSynthPlus_3.6.1_20200619-filesonly
+  AVSPLUS_CACHE_FOLDER: $(Pipeline.Workspace)/.avsplus
+
+steps:
+- task: Cache@2
+  inputs:
+    key: 'avsplus | "$(AVSPLUS_VERSION)" | "$(Agent.OS)"'
+    path: $(AVSPLUS_CACHE_FOLDER)
+    cacheHitVar: AVSPLUS_CACHE_RESTORED
+
+- task: PowerShell@2
+  displayName: "Download AviSynth+ source archive"
+  condition: ne(variables.AVSPLUS_CACHE_RESTORED, 'true')
+  inputs:
+    targetType: 'inline'
+    script: |
+      New-Item -Path $(AVSPLUS_CACHE_FOLDER) -ItemType directory
+
+      $PreviousProgressPreference = $ProgressPreference
+
+      $ProgressPreference = "SilentlyContinue"
+
+      Invoke-WebRequest -Uri https://github.com/AviSynth/AviSynthPlus/archive/v$(AVSPLUS_VERSION).zip -OutFile $(AVSPLUS_CACHE_FOLDER)\v$(AVSPLUS_VERSION).zip
+
+      $ProgressPreference = $PreviousProgressPreference
+
+- task: PowerShell@2
+  displayName: "Download AviSynth+ binary archive"
+  condition: ne(variables.AVSPLUS_CACHE_RESTORED, 'true')
+  inputs:
+    targetType: 'inline'
+    script: |
+      $PreviousProgressPreference = $ProgressPreference
+
+      $ProgressPreference = "SilentlyContinue"
+
+      Invoke-WebRequest -Uri https://github.com/AviSynth/AviSynthPlus/releases/download/v$(AVSPLUS_VERSION)/$(AVSPLUS_FILESONLY_NAME).7z -OutFile $(AVSPLUS_CACHE_FOLDER)\$(AVSPLUS_FILESONLY_NAME).7z
+
+      $ProgressPreference = $PreviousProgressPreference
+
+- task: ExtractFiles@1
+  condition: ne(variables.AVSPLUS_CACHE_RESTORED, 'true')
+  displayName: "Extract AviSynth+ source"
+  inputs:
+    archiveFilePatterns: '$(AVSPLUS_CACHE_FOLDER)/*.zip'
+    destinationFolder: '$(AVSPLUS_CACHE_FOLDER)'
+    cleanDestinationFolder: false
+
+- task: ExtractFiles@1
+  condition: ne(variables.AVSPLUS_CACHE_RESTORED, 'true')
+  displayName: "Extract AviSynth+ binaries"
+  inputs:
+    archiveFilePatterns: '$(AVSPLUS_CACHE_FOLDER)/*.7z'
+    destinationFolder: '$(AVSPLUS_CACHE_FOLDER)'
+    cleanDestinationFolder: false
+
+- task: DeleteFiles@1
+  displayName: "Remove downloaded archives"
+  condition: ne(variables.AVSPLUS_CACHE_RESTORED, 'true')
+  inputs:
+    SourceFolder: '$(AVSPLUS_CACHE_FOLDER)'
+    Contents: |
+      v$(AVSPLUS_VERSION).zip
+      $(AVSPLUS_FILESONLY_NAME).7z
+
+- task: CopyFiles@2
+  displayName: "Copy Avs headers into position"
+  inputs:
+    SourceFolder: '$(AVSPLUS_CACHE_FOLDER)/AviSynthPlus-$(AVSPLUS_VERSION)/avs_core/include'
+    Contents: '**'
+    TargetFolder: '$(Build.SourcesDirectory)/include/avs_plus/include'
+
+- task: CMake@1
+  displayName: "Configure/generate x86"
+  inputs:
+    workingDirectory: '$(Build.SourcesDirectory)/build'
+    cmakeArgs: '.. -G "Visual Studio 16 2019" -A "Win32" -DAVISYNTHPLUS_HDR="$(Build.SourcesDirectory)/include/avs_plus/include/avisynth.h"'
+
+- task: CMake@1
+  displayName: "Build x86"
+  inputs:
+    workingDirectory: '$(Build.SourcesDirectory)/build'
+    cmakeArgs: '--build . --config Release'
+
+- task: CopyFiles@2
+  displayName: "Prepare x86 Avisynth DLL"
+  inputs:
+    SourceFolder: '$(AVSPLUS_CACHE_FOLDER)/$(AVSPLUS_FILESONLY_NAME)/x86'
+    Contents: 'AviSynth.dll'
+    TargetFolder: '$(Build.SourcesDirectory)/artifacts/build/bin'
+    flattenFolders: true
+
+- task: CopyFiles@2
+  displayName: "Prepare x86 DevIL DLL"
+  inputs:
+    SourceFolder: '$(AVSPLUS_CACHE_FOLDER)/$(AVSPLUS_FILESONLY_NAME)/x86/system'
+    Contents: 'DevIL.dll'
+    TargetFolder: '$(Build.SourcesDirectory)/artifacts/build/bin'
+    flattenFolders: true
+
+- task: CopyFiles@2
+  displayName: "Prepare x86 core function DLLs"
+  inputs:
+    SourceFolder: '$(AVSPLUS_CACHE_FOLDER)/$(AVSPLUS_FILESONLY_NAME)/x86/plugins'
+    Contents: '*.dll'
+    TargetFolder: '$(Build.SourcesDirectory)/artifacts/build/lib'
+    flattenFolders: true
+
+- task: PowerShell@2
+  displayName: "Test x86"
+  inputs:
+    targetType: 'inline'
+    script: |
+      cd $(Build.SourcesDirectory)/artifacts/build/bin
+
+      $ArgList = '--testRoot="$(Build.SourcesDirectory)/test"'
+
+      $TurnsTileTestProcess = (Start-Process .\TurnsTile-test -ArgumentList $ArgList -NoNewWindow -PassThru -Wait)
+      if ($TurnsTileTestProcess.ExitCode -ne 0)
+      {
+        Write-Error "TurnsTile-test failed with exit code $($TurnsTileTestProcess.ExitCode)!"
+      }
