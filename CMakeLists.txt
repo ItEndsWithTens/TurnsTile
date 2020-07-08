@@ -19,10 +19,11 @@ set(TURNSTILE_VERSION ${TURNSTILE_MAJOR}.${TURNSTILE_MINOR}.${TURNSTILE_PATCH})
 set(TURNSTILE_AUTHOR "Rob Martens")
 set(TURNSTILE_AUTHOR_EMAIL "<robert.martens@gmail.com>")
 
-if(CMAKE_GENERATOR_PLATFORM STREQUAL "" OR
-   CMAKE_GENERATOR_PLATFORM STREQUAL "x64")
+string(TOLOWER ${CMAKE_GENERATOR_PLATFORM} CMAKE_GENERATOR_PLATFORM_LOWER)
+if(CMAKE_GENERATOR_PLATFORM_LOWER STREQUAL "" OR
+   CMAKE_GENERATOR_PLATFORM_LOWER STREQUAL "x64")
   set(TURNSTILE_ARCH "x64")
-elseif(CMAKE_GENERATOR_PLATFORM STREQUAL "Win32")
+elseif(CMAKE_GENERATOR_PLATFORM_LOWER STREQUAL "win32")
   set(TURNSTILE_ARCH "x86")
 endif()
 set(TURNSTILE_HOST "Avisynth+ ${TURNSTILE_ARCH}")
@@ -133,7 +134,7 @@ endif()
 ### Source files ###
 
 # Add the Avisynth+ header to the project for easy reference.
-set(SRCS ${AVISYNTHPLUS_INCLUDE_DIR}/avisynth.h)
+set(SRCS ${AVISYNTHPLUS_HDR})
 
 list(APPEND SRCS
   src/interface.h
@@ -179,7 +180,7 @@ if(TURNSTILE_TESTS)
     test/include/md5/md5.h
     test/include/md5/md5.c
 
-    ${TURNSTILE_HOST_HDR}
+    ${AVISYNTHPLUS_HDR}
     test/src/avs/errors.cpp
     test/src/avs/main.cpp
     test/src/avs/output.cpp
@@ -214,6 +215,8 @@ if(TURNSTILE_TESTS)
   )
 
 endif()
+
+
 
 ### Packaging options ###
 
