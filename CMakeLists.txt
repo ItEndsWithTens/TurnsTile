@@ -226,7 +226,6 @@ set(CPACK_SOURCE_IGNORE_FILES
   "build"
   "include"
   "scratch"
-  "temp"
   # Project files
   "gitignore$"
   "\\\\.db$"
