@@ -1,6 +1,5 @@
 artifacts/
 scratch/
-temp/
 include/avs_plus
 *.rc
 *.ffindex
