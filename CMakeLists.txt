@@ -10,7 +10,11 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/artifacts/build/l
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_SOURCE_DIR}/artifacts/build/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/artifacts/build/bin)
 
-project(TurnsTile CXX)
+if(WIN32)
+  project(TurnsTile CXX)
+else()
+  project(turnstile CXX)
+endif()
 
 set(TURNSTILE_MAJOR 0)
 set(TURNSTILE_MINOR 3)
@@ -19,7 +23,7 @@ set(TURNSTILE_VERSION ${TURNSTILE_MAJOR}.${TURNSTILE_MINOR}.${TURNSTILE_PATCH})
 set(TURNSTILE_AUTHOR "Rob Martens")
 set(TURNSTILE_AUTHOR_EMAIL "<robert.martens@gmail.com>")
 
-string(TOLOWER ${CMAKE_GENERATOR_PLATFORM} CMAKE_GENERATOR_PLATFORM_LOWER)
+string(TOLOWER "${CMAKE_GENERATOR_PLATFORM}" CMAKE_GENERATOR_PLATFORM_LOWER)
 if(CMAKE_GENERATOR_PLATFORM_LOWER STREQUAL "" OR
    CMAKE_GENERATOR_PLATFORM_LOWER STREQUAL "x64")
   set(TURNSTILE_ARCH "x64")
@@ -55,33 +59,37 @@ endif()
 
 ### Find Avisynth header ###
 
-# Check current user's plugins directory first, if it exists...
-get_filename_component(
-    HOST_PLUGIN_DIR
-    [HKEY_CURRENT_USER\\SOFTWARE\\AviSynth;plugindir+] ABSOLUTE
-)
-
-# ...otherwise, use the local machine's folder...
-if(${HOST_PLUGIN_DIR} STREQUAL "/registry")
+if(WIN32)
+  # Check current user's plugins directory first, if it exists...
   get_filename_component(
       HOST_PLUGIN_DIR
-      [HKEY_LOCAL_MACHINE\\SOFTWARE\\AviSynth;plugindir+] ABSOLUTE
+      [HKEY_CURRENT_USER\\SOFTWARE\\AviSynth;plugindir+] ABSOLUTE
   )
-endif()
 
-# ...but fall back to the 2.5 directories if all else fails.
-if(${HOST_PLUGIN_DIR} STREQUAL "/registry")
-  get_filename_component(
-      HOST_PLUGIN_DIR
-      [HKEY_CURRENT_USER\\SOFTWARE\\AviSynth;plugindir2_5] ABSOLUTE
-  )
-endif()
+  # ...otherwise, use the local machine's folder...
+  if(${HOST_PLUGIN_DIR} STREQUAL "/registry")
+    get_filename_component(
+        HOST_PLUGIN_DIR
+        [HKEY_LOCAL_MACHINE\\SOFTWARE\\AviSynth;plugindir+] ABSOLUTE
+    )
+  endif()
 
-if(${HOST_PLUGIN_DIR} STREQUAL "/registry")
-  get_filename_component(
-      HOST_PLUGIN_DIR
-      [HKEY_LOCAL_MACHINE\\SOFTWARE\\AviSynth;plugindir2_5] ABSOLUTE
-  )
+  # ...but fall back to the 2.5 directories if all else fails.
+  if(${HOST_PLUGIN_DIR} STREQUAL "/registry")
+    get_filename_component(
+        HOST_PLUGIN_DIR
+        [HKEY_CURRENT_USER\\SOFTWARE\\AviSynth;plugindir2_5] ABSOLUTE
+    )
+  endif()
+
+  if(${HOST_PLUGIN_DIR} STREQUAL "/registry")
+    get_filename_component(
+        HOST_PLUGIN_DIR
+        [HKEY_LOCAL_MACHINE\\SOFTWARE\\AviSynth;plugindir2_5] ABSOLUTE
+    )
+  endif()
+else()
+  set(AVISYNTHPLUS_HDR "/usr/local/include/avisynth/avisynth.h")
 endif()
 
 set(AVISYNTHPLUS_HDR_DOCSTRING "The copy of avisynth.h ${PROJECT_NAME} should compile with.")
@@ -133,19 +141,29 @@ endif()
 
 ### Source files ###
 
+# Export compile_commands.json, so VS Code Intellisense can find the AVS header.
+set(CMAKE_EXPORT_COMPILE_COMMANDS on)
+
+include_directories(${CMAKE_SOURCE_DIR}/test/include/catch)
+include_directories(${CMAKE_SOURCE_DIR}/test/include/md5)
+include_directories(${CMAKE_SOURCE_DIR}/include)
+
 # Add the Avisynth+ header to the project for easy reference.
 set(SRCS ${AVISYNTHPLUS_HDR})
 
 list(APPEND SRCS
+  include/lodepng/lodepng.h
+  include/lodepng/lodepng.cpp)
+
+list(APPEND SRCS
   src/interface.h
   src/TurnsTile.h
-  src/TurnsTileBmpSource.h
+  src/TurnsTileTestSource.h
   src/CLUTer.h
   src/interface.cpp
   src/TurnsTile.cpp
-  src/TurnsTileBmpSource.cpp
-  src/CLUTer.cpp
-)
+  src/TurnsTileTestSource.cpp
+  src/CLUTer.cpp)
 
 configure_file(src/TurnsTile.rc.in ${CMAKE_SOURCE_DIR}/src/TurnsTile.rc)
 list(APPEND SRCS src/TurnsTile.rc)
@@ -160,11 +178,20 @@ string(REPLACE "+" "PLUS" TURNSTILE_HOST_DEFINE ${TURNSTILE_HOST_DEFINE})
 string(REPLACE "." "" TURNSTILE_HOST_DEFINE ${TURNSTILE_HOST_DEFINE})
 string(REPLACE " " "_" TURNSTILE_HOST_DEFINE ${TURNSTILE_HOST_DEFINE})
 
-add_library(${PROJECT_NAME} MODULE ${SRCS})
+add_library(${PROJECT_NAME} SHARED ${SRCS})
+
+# In Windows, defining a library as SHARED means it's considered runtime output,
+# and will end up in the runtime output directory unless forced elsewhere. In
+# Linux and macOS, on the other hand, SHARED libraries are considered library
+# output, and will go where one expects with no special property overrides.
 set_target_properties(
   ${PROJECT_NAME}
   PROPERTIES
   COMPILE_DEFINITIONS "TURNSTILE_HOST_${TURNSTILE_HOST_DEFINE}"
+  RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_SOURCE_DIR}/artifacts/build/lib
+  RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/artifacts/build/lib
+  LIBRARY_OUTPUT_DIRECTORY_DEBUG ${CMAKE_SOURCE_DIR}/artifacts/build/lib
+  LIBRARY_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/artifacts/build/lib
 )
 
 
@@ -213,6 +240,13 @@ if(TURNSTILE_TESTS)
     PROPERTIES
     COMPILE_DEFINITIONS "TURNSTILE_HOST_${TURNSTILE_HOST_DEFINE}"
   )
+
+  if(NOT WIN32)
+    find_path(DL_INCLUDE_DIR NAMES dlfcn.h)
+    find_library(DL_LIBRARIES NAMES dl)
+    include_directories(${DL_INCLUDE_DIR})
+    target_link_libraries(${PROJECT_NAME}-test ${DL_LIBRARIES})
+  endif()
 
 endif()
 
@@ -269,7 +303,11 @@ install(
 # replacing the path if necessary for your particular circumstances.
 set(CPACK_SOURCE_GENERATOR "ZIP")
 set(TURNSTILE_HOST_ABBR "AVS+")
-set(CPACK_GENERATOR "ZIP")
+if(WIN32)
+  set(CPACK_GENERATOR "ZIP")
+else()
+  set(CPACK_GENERATOR "TGZ")
+endif()
 set(CPACK_OUTPUT_FILE_PREFIX ${CMAKE_SOURCE_DIR}/artifacts/pack)
 
 set(CPACK_PACKAGE_VERSION_MAJOR ${TURNSTILE_MAJOR})
