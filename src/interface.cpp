@@ -24,7 +24,7 @@
 
 #include "CLUTer.h"
 #include "TurnsTile.h"
-#include "TurnsTileBmpSource.h"
+#include "TurnsTileTestSource.h"
 
 #include <cmath>
 #include <cstring>
@@ -335,6 +335,19 @@ AVSValue __cdecl Create_CLUTer(
 
 
 
+AVSValue __cdecl Create_TurnsTileTestSource(
+  AVSValue args, void* user_data, IScriptEnvironment* env)
+{
+
+  std::string filename = args[0].AsString(""),
+              pixel_type = args[1].AsString("RGB32");
+
+  return new TurnsTileTestSource(filename, pixel_type, env);
+
+}
+
+
+
 const AVS_Linkage* AVS_linkage = 0;
 extern "C" __declspec(dllexport) const char* __stdcall AvisynthPluginInit3(
   IScriptEnvironment* env, const AVS_Linkage* const vectors)
@@ -349,8 +362,8 @@ extern "C" __declspec(dllexport) const char* __stdcall AvisynthPluginInit3(
                                 "[lotile]i[hitile]i[interlaced]b",
                                 Create_TurnsTile, 0);
 
-  env->AddFunction("TurnsTileBMPSource", "s[pixel_type]s",
-                                         Create_TurnsTileBmpSource, 0);
+  env->AddFunction("TurnsTileTestSource", "s[pixel_type]s",
+                                          Create_TurnsTileTestSource, 0);
 
   return "`TurnsTile' - Mosaic and palette effects";
 
