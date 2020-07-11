@@ -2,203 +2,334 @@ trigger:
 - master
 - feature/*
 
-pool:
-  vmImage: 'windows-latest'
-
 variables:
   AVSPLUS_VERSION: 3.6.1
   AVSPLUS_FILESONLY_NAME: AviSynthPlus_3.6.1_20200619-filesonly
   AVSPLUS_CACHE_FOLDER: $(Pipeline.Workspace)/.avsplus
+  
+  # ONLY HERE FOR TESTING, it'll be removed once the cache-less build works properly.
+  AVSPLUS_CACHE_RESTORED: false
 
-steps:
-- checkout: self
-  submodules: recursive
+resources:
+  repositories:
+    - repository: AviSynthPlus
+      type: github
+      endpoint: ItEndsWithTens
+      name: AviSynth/AviSynthPlus
+      ref: refs/tags/v$(AVSPLUS_VERSION)
 
-- task: Cache@2
-  inputs:
-    key: 'avsplus | "$(AVSPLUS_VERSION)" | "$(Agent.OS)"'
-    path: $(AVSPLUS_CACHE_FOLDER)
-    cacheHitVar: AVSPLUS_CACHE_RESTORED
 
-- task: PowerShell@2
-  displayName: "Download AviSynth+ source archive"
-  condition: ne(variables.AVSPLUS_CACHE_RESTORED, 'true')
-  inputs:
-    targetType: 'inline'
-    script: |
-      New-Item -Path $(AVSPLUS_CACHE_FOLDER) -ItemType directory
 
-      $PreviousProgressPreference = $ProgressPreference
+jobs:
+- job:
+  displayName: "Windows"
 
-      $ProgressPreference = "SilentlyContinue"
+  pool:
+    vmImage: 'windows-latest'
 
-      Invoke-WebRequest -Uri https://github.com/AviSynth/AviSynthPlus/archive/v$(AVSPLUS_VERSION).zip -OutFile $(AVSPLUS_CACHE_FOLDER)\v$(AVSPLUS_VERSION).zip
+  steps:
+  - checkout: self
+    submodules: recursive
 
-      $ProgressPreference = $PreviousProgressPreference
+  - task: Cache@2
+    inputs:
+      key: 'avsplus | "$(AVSPLUS_VERSION)" | "$(Agent.OS)"'
+      path: $(AVSPLUS_CACHE_FOLDER)
+      cacheHitVar: AVSPLUS_CACHE_RESTORED
 
-- task: PowerShell@2
-  displayName: "Download AviSynth+ binary archive"
-  condition: ne(variables.AVSPLUS_CACHE_RESTORED, 'true')
-  inputs:
-    targetType: 'inline'
-    script: |
-      $PreviousProgressPreference = $ProgressPreference
+  - task: PowerShell@2
+    displayName: "Download AviSynth+ source archive"
+    condition: ne(variables.AVSPLUS_CACHE_RESTORED, 'true')
+    inputs:
+      targetType: 'inline'
+      script: |
+        New-Item -Path $(AVSPLUS_CACHE_FOLDER) -ItemType directory
 
-      $ProgressPreference = "SilentlyContinue"
+        $PreviousProgressPreference = $ProgressPreference
 
-      Invoke-WebRequest -Uri https://github.com/AviSynth/AviSynthPlus/releases/download/v$(AVSPLUS_VERSION)/$(AVSPLUS_FILESONLY_NAME).7z -OutFile $(AVSPLUS_CACHE_FOLDER)\$(AVSPLUS_FILESONLY_NAME).7z
+        $ProgressPreference = "SilentlyContinue"
 
-      $ProgressPreference = $PreviousProgressPreference
+        Invoke-WebRequest -Uri https://github.com/AviSynth/AviSynthPlus/archive/v$(AVSPLUS_VERSION).zip -OutFile $(AVSPLUS_CACHE_FOLDER)\v$(AVSPLUS_VERSION).zip
 
-- task: ExtractFiles@1
-  condition: ne(variables.AVSPLUS_CACHE_RESTORED, 'true')
-  displayName: "Extract AviSynth+ source"
-  inputs:
-    archiveFilePatterns: '$(AVSPLUS_CACHE_FOLDER)/*.zip'
-    destinationFolder: '$(AVSPLUS_CACHE_FOLDER)'
-    cleanDestinationFolder: false
+        $ProgressPreference = $PreviousProgressPreference
 
-- task: ExtractFiles@1
-  condition: ne(variables.AVSPLUS_CACHE_RESTORED, 'true')
-  displayName: "Extract AviSynth+ binaries"
-  inputs:
-    archiveFilePatterns: '$(AVSPLUS_CACHE_FOLDER)/*.7z'
-    destinationFolder: '$(AVSPLUS_CACHE_FOLDER)'
-    cleanDestinationFolder: false
+  - task: PowerShell@2
+    displayName: "Download AviSynth+ binary archive"
+    condition: ne(variables.AVSPLUS_CACHE_RESTORED, 'true')
+    inputs:
+      targetType: 'inline'
+      script: |
+        $PreviousProgressPreference = $ProgressPreference
 
-- task: DeleteFiles@1
-  displayName: "Remove downloaded archives"
-  condition: ne(variables.AVSPLUS_CACHE_RESTORED, 'true')
-  inputs:
-    SourceFolder: '$(AVSPLUS_CACHE_FOLDER)'
-    Contents: |
-      v$(AVSPLUS_VERSION).zip
-      $(AVSPLUS_FILESONLY_NAME).7z
+        $ProgressPreference = "SilentlyContinue"
 
-- task: CopyFiles@2
-  displayName: "Copy Avs headers into position"
-  inputs:
-    SourceFolder: '$(AVSPLUS_CACHE_FOLDER)/AviSynthPlus-$(AVSPLUS_VERSION)/avs_core/include'
-    Contents: '**'
-    TargetFolder: '$(Build.SourcesDirectory)/include/avs_plus/include'
+        Invoke-WebRequest -Uri https://github.com/AviSynth/AviSynthPlus/releases/download/v$(AVSPLUS_VERSION)/$(AVSPLUS_FILESONLY_NAME).7z -OutFile $(AVSPLUS_CACHE_FOLDER)\$(AVSPLUS_FILESONLY_NAME).7z
 
-- task: CMake@1
-  displayName: "Configure/generate x86"
-  inputs:
-    workingDirectory: '$(Build.SourcesDirectory)/build'
-    cmakeArgs: '.. -G "Visual Studio 16 2019" -A "Win32" -DAVISYNTHPLUS_HDR="$(Build.SourcesDirectory)/include/avs_plus/include/avisynth.h"'
+        $ProgressPreference = $PreviousProgressPreference
 
-- task: CMake@1
-  displayName: "Build/pack x86"
-  inputs:
-    workingDirectory: '$(Build.SourcesDirectory)/build'
-    cmakeArgs: '--build . --config Release --target PACKAGE'
+  - task: ExtractFiles@1
+    condition: ne(variables.AVSPLUS_CACHE_RESTORED, 'true')
+    displayName: "Extract AviSynth+ source"
+    inputs:
+      archiveFilePatterns: '$(AVSPLUS_CACHE_FOLDER)/*.zip'
+      destinationFolder: '$(AVSPLUS_CACHE_FOLDER)'
+      cleanDestinationFolder: false
 
-- task: CopyFiles@2
-  displayName: "Prepare x86 Avisynth DLL"
-  inputs:
-    SourceFolder: '$(AVSPLUS_CACHE_FOLDER)/$(AVSPLUS_FILESONLY_NAME)/x86'
-    Contents: 'AviSynth.dll'
-    TargetFolder: '$(Build.SourcesDirectory)/artifacts/build/bin'
-    flattenFolders: true
+  - task: ExtractFiles@1
+    condition: ne(variables.AVSPLUS_CACHE_RESTORED, 'true')
+    displayName: "Extract AviSynth+ binaries"
+    inputs:
+      archiveFilePatterns: '$(AVSPLUS_CACHE_FOLDER)/*.7z'
+      destinationFolder: '$(AVSPLUS_CACHE_FOLDER)'
+      cleanDestinationFolder: false
 
-- task: CopyFiles@2
-  displayName: "Prepare x86 DevIL DLL"
-  inputs:
-    SourceFolder: '$(AVSPLUS_CACHE_FOLDER)/$(AVSPLUS_FILESONLY_NAME)/x86/system'
-    Contents: 'DevIL.dll'
-    TargetFolder: '$(Build.SourcesDirectory)/artifacts/build/bin'
-    flattenFolders: true
+  - task: DeleteFiles@1
+    displayName: "Remove downloaded archives"
+    condition: ne(variables.AVSPLUS_CACHE_RESTORED, 'true')
+    inputs:
+      SourceFolder: '$(AVSPLUS_CACHE_FOLDER)'
+      Contents: |
+        v$(AVSPLUS_VERSION).zip
+        $(AVSPLUS_FILESONLY_NAME).7z
 
-- task: CopyFiles@2
-  displayName: "Prepare x86 core function DLLs"
-  inputs:
-    SourceFolder: '$(AVSPLUS_CACHE_FOLDER)/$(AVSPLUS_FILESONLY_NAME)/x86/plugins'
-    Contents: '*.dll'
-    TargetFolder: '$(Build.SourcesDirectory)/artifacts/build/lib'
-    flattenFolders: true
+  - task: CopyFiles@2
+    displayName: "Copy Avs headers into position"
+    inputs:
+      SourceFolder: '$(AVSPLUS_CACHE_FOLDER)/AviSynthPlus-$(AVSPLUS_VERSION)/avs_core/include'
+      Contents: '**'
+      TargetFolder: '$(Build.SourcesDirectory)/include/avs_plus/include'
 
-- task: PowerShell@2
-  displayName: "Test x86"
-  inputs:
-    targetType: 'inline'
-    script: |
-      cd $(Build.SourcesDirectory)/artifacts/build/bin
+  - task: CMake@1
+    displayName: "Configure/generate x86"
+    inputs:
+      workingDirectory: '$(Build.SourcesDirectory)/build'
+      cmakeArgs: '.. -G "Visual Studio 16 2019" -A "Win32" -DAVISYNTHPLUS_HDR="$(Build.SourcesDirectory)/include/avs_plus/include/avisynth.h"'
 
-      $ArgList = '--testRoot="$(Build.SourcesDirectory)/test"'
+  - task: CMake@1
+    displayName: "Build/pack x86"
+    inputs:
+      workingDirectory: '$(Build.SourcesDirectory)/build'
+      cmakeArgs: '--build . --config Release --target PACKAGE'
 
-      $TurnsTileTestProcess = (Start-Process .\TurnsTile-test -ArgumentList $ArgList -NoNewWindow -PassThru -Wait)
-      if ($TurnsTileTestProcess.ExitCode -ne 0)
-      {
-        Write-Error "TurnsTile-test failed with exit code $($TurnsTileTestProcess.ExitCode)!"
-      }
+  - task: CopyFiles@2
+    displayName: "Prepare x86 Avisynth DLL"
+    inputs:
+      SourceFolder: '$(AVSPLUS_CACHE_FOLDER)/$(AVSPLUS_FILESONLY_NAME)/x86'
+      Contents: 'AviSynth.dll'
+      TargetFolder: '$(Build.SourcesDirectory)/artifacts/build/bin'
+      flattenFolders: true
 
-- task: DeleteFiles@1
-  displayName: "Remove generated project files"
-  inputs:
-    SourceFolder: '$(Build.SourcesDirectory)/build'
-    Contents: '**'
+  - task: CopyFiles@2
+    displayName: "Prepare x86 DevIL DLL"
+    inputs:
+      SourceFolder: '$(AVSPLUS_CACHE_FOLDER)/$(AVSPLUS_FILESONLY_NAME)/x86/system'
+      Contents: 'DevIL.dll'
+      TargetFolder: '$(Build.SourcesDirectory)/artifacts/build/bin'
+      flattenFolders: true
 
-- task: DeleteFiles@1
-  displayName: "Remove x86 binaries"
-  inputs:
-    SourceFolder: '$(Build.SourcesDirectory)/artifacts/build'
-    Contents: '**'
+  - task: CopyFiles@2
+    displayName: "Prepare x86 core function plugins"
+    inputs:
+      SourceFolder: '$(AVSPLUS_CACHE_FOLDER)/$(AVSPLUS_FILESONLY_NAME)/x86/plugins'
+      Contents: '*.dll'
+      TargetFolder: '$(Build.SourcesDirectory)/artifacts/build/lib'
+      flattenFolders: true
 
-- task: CMake@1
-  displayName: "Configure/generate x64"
-  inputs:
-    workingDirectory: '$(Build.SourcesDirectory)/build'
-    cmakeArgs: '.. -G "Visual Studio 16 2019" -A "x64" -DAVISYNTHPLUS_HDR="$(Build.SourcesDirectory)/include/avs_plus/include/avisynth.h"'
+  - task: PowerShell@2
+    displayName: "Test x86"
+    inputs:
+      targetType: 'inline'
+      script: |
+        cd $(Build.SourcesDirectory)/artifacts/build/bin
 
-- task: CMake@1
-  displayName: "Build/pack x64"
-  inputs:
-    workingDirectory: '$(Build.SourcesDirectory)/build'
-    cmakeArgs: '--build . --config Release --target PACKAGE'
+        $ArgList = '--testRoot="$(Build.SourcesDirectory)/test"'
 
-- task: CopyFiles@2
-  displayName: "Prepare x64 Avisynth DLL"
-  inputs:
-    SourceFolder: '$(AVSPLUS_CACHE_FOLDER)/$(AVSPLUS_FILESONLY_NAME)/x64'
-    Contents: 'AviSynth.dll'
-    TargetFolder: '$(Build.SourcesDirectory)/artifacts/build/bin'
-    flattenFolders: true
+        $TurnsTileTestProcess = (Start-Process .\TurnsTile-test -ArgumentList $ArgList -NoNewWindow -PassThru -Wait)
+        if ($TurnsTileTestProcess.ExitCode -ne 0)
+        {
+          Write-Error "TurnsTile-test failed with exit code $($TurnsTileTestProcess.ExitCode)!"
+        }
 
-- task: CopyFiles@2
-  displayName: "Prepare x64 DevIL DLL"
-  inputs:
-    SourceFolder: '$(AVSPLUS_CACHE_FOLDER)/$(AVSPLUS_FILESONLY_NAME)/x64/system'
-    Contents: 'DevIL.dll'
-    TargetFolder: '$(Build.SourcesDirectory)/artifacts/build/bin'
-    flattenFolders: true
+  - task: DeleteFiles@1
+    displayName: "Remove generated project files"
+    inputs:
+      SourceFolder: '$(Build.SourcesDirectory)/build'
+      Contents: '**'
 
-- task: CopyFiles@2
-  displayName: "Prepare x64 core function DLLs"
-  inputs:
-    SourceFolder: '$(AVSPLUS_CACHE_FOLDER)/$(AVSPLUS_FILESONLY_NAME)/x64/plugins'
-    Contents: '*.dll'
-    TargetFolder: '$(Build.SourcesDirectory)/artifacts/build/lib'
-    flattenFolders: true
+  - task: DeleteFiles@1
+    displayName: "Remove x86 binaries"
+    inputs:
+      SourceFolder: '$(Build.SourcesDirectory)/artifacts/build'
+      Contents: '**'
 
-- task: PowerShell@2
-  displayName: "Test x64"
-  inputs:
-    targetType: 'inline'
-    script: |
-      cd $(Build.SourcesDirectory)/artifacts/build/bin
+  - task: CMake@1
+    displayName: "Configure/generate x64"
+    inputs:
+      workingDirectory: '$(Build.SourcesDirectory)/build'
+      cmakeArgs: '.. -G "Visual Studio 16 2019" -A "x64" -DAVISYNTHPLUS_HDR="$(Build.SourcesDirectory)/include/avs_plus/include/avisynth.h"'
 
-      $ArgList = '--testRoot="$(Build.SourcesDirectory)/test"'
+  - task: CMake@1
+    displayName: "Build/pack x64"
+    inputs:
+      workingDirectory: '$(Build.SourcesDirectory)/build'
+      cmakeArgs: '--build . --config Release --target PACKAGE'
 
-      $TurnsTileTestProcess = (Start-Process .\TurnsTile-test -ArgumentList $ArgList -NoNewWindow -PassThru -Wait)
-      if ($TurnsTileTestProcess.ExitCode -ne 0)
-      {
-        Write-Error "TurnsTile-test failed with exit code $($TurnsTileTestProcess.ExitCode)!"
-      }
+  - task: CopyFiles@2
+    displayName: "Prepare x64 Avisynth DLL"
+    inputs:
+      SourceFolder: '$(AVSPLUS_CACHE_FOLDER)/$(AVSPLUS_FILESONLY_NAME)/x64'
+      Contents: 'AviSynth.dll'
+      TargetFolder: '$(Build.SourcesDirectory)/artifacts/build/bin'
+      flattenFolders: true
 
-- task: PublishPipelineArtifact@1
-  displayName: "Publish packages"
-  inputs:
-    targetPath: '$(Build.SourcesDirectory)/artifacts/pack/'
-    artifact: 'TurnsTile binaries'
-    publishLocation: 'pipeline'
+  - task: CopyFiles@2
+    displayName: "Prepare x64 DevIL DLL"
+    inputs:
+      SourceFolder: '$(AVSPLUS_CACHE_FOLDER)/$(AVSPLUS_FILESONLY_NAME)/x64/system'
+      Contents: 'DevIL.dll'
+      TargetFolder: '$(Build.SourcesDirectory)/artifacts/build/bin'
+      flattenFolders: true
+
+  - task: CopyFiles@2
+    displayName: "Prepare x64 core function DLLs"
+    inputs:
+      SourceFolder: '$(AVSPLUS_CACHE_FOLDER)/$(AVSPLUS_FILESONLY_NAME)/x64/plugins'
+      Contents: '*.dll'
+      TargetFolder: '$(Build.SourcesDirectory)/artifacts/build/lib'
+      flattenFolders: true
+
+  - task: PowerShell@2
+    displayName: "Test x64"
+    inputs:
+      targetType: 'inline'
+      script: |
+        cd $(Build.SourcesDirectory)/artifacts/build/bin
+
+        $ArgList = '--testRoot="$(Build.SourcesDirectory)/test"'
+
+        $TurnsTileTestProcess = (Start-Process .\TurnsTile-test -ArgumentList $ArgList -NoNewWindow -PassThru -Wait)
+        if ($TurnsTileTestProcess.ExitCode -ne 0)
+        {
+          Write-Error "TurnsTile-test failed with exit code $($TurnsTileTestProcess.ExitCode)!"
+        }
+
+  - task: PublishPipelineArtifact@1
+    displayName: "Publish packages"
+    inputs:
+      targetPath: '$(Build.SourcesDirectory)/artifacts/pack/'
+      artifact: 'TurnsTile Windows binaries'
+      publishLocation: 'pipeline'
+
+
+
+- job:
+  displayName: "Mac"
+
+  pool:
+    vmImage: 'macOS-latest'
+
+  steps:
+  - checkout: self
+    submodules: recursive
+
+  - task: Cache@2
+    inputs:
+      key: 'avsplus | "$(AVSPLUS_VERSION)" | "$(Agent.OS)"'
+      path: $(AVSPLUS_CACHE_FOLDER)
+      cacheHitVar: AVSPLUS_CACHE_RESTORED
+
+  - checkout: AviSynthPlus
+    displayName: 'Clone AviSynthPlus repo'
+    condition: ne(variables.AVSPLUS_CACHE_RESTORED, 'true')
+
+  - task: CopyFiles@2
+    displayName: "Cache AviSynth+ headers"
+    condition: ne(variables.AVSPLUS_CACHE_RESTORED, 'true')
+    inputs:
+      SourceFolder: '$(Build.SourcesDirectory)/AviSynthPlus/avs_core/include'
+      Contents: '**'
+      TargetFolder: '$(AVSPLUS_CACHE_FOLDER)/include'
+
+  - task: CopyFiles@2
+    displayName: "Copy Avs headers into position"
+    inputs:
+      SourceFolder: '$(AVSPLUS_CACHE_FOLDER)/include'
+      Contents: '**'
+      TargetFolder: '$(Build.SourcesDirectory)/TurnsTile/include/avs_plus/include'
+
+  - task: Bash@3
+    displayName: 'Install Ninja'
+    condition: ne(variables.AVSPLUS_CACHE_RESTORED, 'true')
+    inputs:
+      targetType: 'inline'
+      script: brew install ninja
+
+  - task: CMake@1
+    displayName: "Configure/generate TurnsTile"
+    inputs:
+      workingDirectory: '$(Build.SourcesDirectory)/TurnsTile/build'
+      cmakeArgs: '.. -G Ninja -DAVISYNTHPLUS_HDR="$(Build.SourcesDirectory)/TurnsTile/include/avs_plus/include/avisynth.h"'
+
+  - task: CMake@1
+    displayName: "Build/pack TurnsTile"
+    inputs:
+      workingDirectory: '$(Build.SourcesDirectory)/TurnsTile/build'
+      cmakeArgs: '--build . --config Release --target package'
+
+  - task: Bash@3
+    displayName: 'Build AviSynthPlus'
+    condition: ne(variables.AVSPLUS_CACHE_RESTORED, 'true')
+    inputs:
+      targetType: 'inline'
+      script: |
+        cd $(Build.SourcesDirectory)/AviSynthPlus
+        mkdir avisynth-build
+        cd avisynth-build
+        cmake ../ -G Ninja
+        ninja
+
+  - task: CopyFiles@2
+    displayName: "Cache AviSynth+ libs"
+    condition: ne(variables.AVSPLUS_CACHE_RESTORED, 'true')
+    inputs:
+      SourceFolder: '$(Build.SourcesDirectory)/AviSynthPlus/avisynth-build/avs_core'
+      Contents: '*.dylib'
+      TargetFolder: '$(AVSPLUS_CACHE_FOLDER)/lib'
+
+  - task: CopyFiles@2
+    displayName: "Cache AviSynth+ core function plugins"
+    condition: ne(variables.AVSPLUS_CACHE_RESTORED, 'true')
+    inputs:
+      SourceFolder: '$(Build.SourcesDirectory)/AviSynthPlus/avisynth-build/plugins'
+      Contents: '**/*.dylib'
+      TargetFolder: '$(AVSPLUS_CACHE_FOLDER)/plugins'
+      flattenFolders: true
+
+  - task: CopyFiles@2
+    displayName: "Prepare Avisynth+ libs"
+    inputs:
+      SourceFolder: '$(AVSPLUS_CACHE_FOLDER)/lib'
+      Contents: '*.dylib'
+      TargetFolder: '$(Build.SourcesDirectory)/TurnsTile/artifacts/build/bin'
+
+  - task: CopyFiles@2
+    displayName: "Prepare Avisynth+ core function plugins"
+    inputs:
+      SourceFolder: '$(AVSPLUS_CACHE_FOLDER)/plugins'
+      Contents: '*.dylib'
+      TargetFolder: '$(Build.SourcesDirectory)/TurnsTile/artifacts/build/lib'
+
+  - task: Bash@3
+    displayName: 'Test'
+    inputs:
+      targetType: 'inline'
+      script: |
+        cd $(Build.SourcesDirectory)/TurnsTile/artifacts/build/bin
+        ./turnstile-test --testRoot=$(Build.SourcesDirectory)/TurnsTile/test
+
+  - task: PublishPipelineArtifact@1
+    displayName: "Publish packages"
+    inputs:
+      targetPath: '$(Build.SourcesDirectory)/TurnsTile/artifacts/pack/'
+      artifact: 'TurnsTile macOS binaries'
+      publishLocation: 'pipeline'
