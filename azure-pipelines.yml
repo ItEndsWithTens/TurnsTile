@@ -330,3 +330,125 @@ jobs:
       targetPath: '$(Build.SourcesDirectory)/TurnsTile/artifacts/pack/'
       artifact: 'TurnsTile macOS binaries'
       publishLocation: 'pipeline'
+
+
+
+- job:
+  displayName: "Linux"
+
+  pool:
+    vmImage: 'ubuntu-latest'
+
+  variables:
+    # Contrary to macOS, dlopen in Linux doesn't search the executable directory
+    # for libraries it's trying to load. This environment variable fixes that.
+    LD_LIBRARY_PATH: $(Build.SourcesDirectory)/TurnsTile/artifacts/build/bin
+
+    # TEST TEST TEST
+    AVSPLUS_CACHE_RESTORED: false
+
+  steps:
+  - checkout: self
+    submodules: recursive
+
+#  - task: Cache@2
+#    inputs:
+#      key: 'avsplus | "$(AVSPLUS_VERSION)" | "$(Agent.OS)"'
+#      path: $(AVSPLUS_CACHE_FOLDER)
+#      cacheHitVar: AVSPLUS_CACHE_RESTORED
+
+  - checkout: AviSynthPlus
+    displayName: 'Clone AviSynthPlus repo'
+    condition: ne(variables.AVSPLUS_CACHE_RESTORED, 'true')
+
+  - task: CopyFiles@2
+    displayName: "Cache AviSynth+ headers"
+    condition: ne(variables.AVSPLUS_CACHE_RESTORED, 'true')
+    inputs:
+      SourceFolder: '$(Build.SourcesDirectory)/AviSynthPlus/avs_core/include'
+      Contents: '**'
+      TargetFolder: '$(AVSPLUS_CACHE_FOLDER)/include'
+
+  - task: CopyFiles@2
+    displayName: "Copy Avs headers into position"
+    inputs:
+      SourceFolder: '$(AVSPLUS_CACHE_FOLDER)/include'
+      Contents: '**'
+      TargetFolder: '$(Build.SourcesDirectory)/TurnsTile/include/avs_plus/include'
+
+  - task: Bash@3
+    displayName: 'Install Ninja'
+    condition: ne(variables.AVSPLUS_CACHE_RESTORED, 'true')
+    inputs:
+      targetType: 'inline'
+      script: brew install ninja
+
+  - task: CMake@1
+    displayName: "Configure/generate TurnsTile"
+    inputs:
+      workingDirectory: '$(Build.SourcesDirectory)/TurnsTile/build'
+      cmakeArgs: '.. -G Ninja -DAVISYNTHPLUS_HDR="$(Build.SourcesDirectory)/TurnsTile/include/avs_plus/include/avisynth.h"'
+
+  - task: CMake@1
+    displayName: "Build/pack TurnsTile"
+    inputs:
+      workingDirectory: '$(Build.SourcesDirectory)/TurnsTile/build'
+      cmakeArgs: '--build . --config Release --target package'
+
+  - task: Bash@3
+    displayName: 'Build AviSynthPlus'
+    condition: ne(variables.AVSPLUS_CACHE_RESTORED, 'true')
+    inputs:
+      targetType: 'inline'
+      script: |
+        cd $(Build.SourcesDirectory)/AviSynthPlus
+        mkdir avisynth-build
+        cd avisynth-build
+        cmake ../ -G Ninja
+        ninja
+
+  - task: CopyFiles@2
+    displayName: "Cache AviSynth+ libs"
+    condition: ne(variables.AVSPLUS_CACHE_RESTORED, 'true')
+    inputs:
+      SourceFolder: '$(Build.SourcesDirectory)/AviSynthPlus/avisynth-build/avs_core'
+      Contents: '*.so*'
+      TargetFolder: '$(AVSPLUS_CACHE_FOLDER)/lib'
+
+  - task: CopyFiles@2
+    displayName: "Cache AviSynth+ core function plugins"
+    condition: ne(variables.AVSPLUS_CACHE_RESTORED, 'true')
+    inputs:
+      SourceFolder: '$(Build.SourcesDirectory)/AviSynthPlus/avisynth-build/plugins'
+      Contents: '**/*.so'
+      TargetFolder: '$(AVSPLUS_CACHE_FOLDER)/plugins'
+      flattenFolders: true
+
+  - task: CopyFiles@2
+    displayName: "Prepare Avisynth+ libs"
+    inputs:
+      SourceFolder: '$(AVSPLUS_CACHE_FOLDER)/lib'
+      Contents: '*.so*'
+      TargetFolder: '$(Build.SourcesDirectory)/TurnsTile/artifacts/build/bin'
+
+  - task: CopyFiles@2
+    displayName: "Prepare Avisynth+ core function plugins"
+    inputs:
+      SourceFolder: '$(AVSPLUS_CACHE_FOLDER)/plugins'
+      Contents: '*.so'
+      TargetFolder: '$(Build.SourcesDirectory)/TurnsTile/artifacts/build/lib'
+
+  - task: Bash@3
+    displayName: 'Test'
+    inputs:
+      targetType: 'inline'
+      script: |
+        cd $(Build.SourcesDirectory)/TurnsTile/artifacts/build/bin
+        ./turnstile-test --testRoot=$(Build.SourcesDirectory)/TurnsTile/test
+
+  - task: PublishPipelineArtifact@1
+    displayName: "Publish packages"
+    inputs:
+      targetPath: '$(Build.SourcesDirectory)/TurnsTile/artifacts/pack/'
+      artifact: 'TurnsTile Linux binaries'
+      publishLocation: 'pipeline'
