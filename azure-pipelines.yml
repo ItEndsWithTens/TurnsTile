@@ -6,9 +6,6 @@ variables:
   AVSPLUS_VERSION: 3.6.1
   AVSPLUS_FILESONLY_NAME: AviSynthPlus_3.6.1_20200619-filesonly
   AVSPLUS_CACHE_FOLDER: $(Pipeline.Workspace)/.avsplus
-  
-  # ONLY HERE FOR TESTING, it'll be removed once the cache-less build works properly.
-  AVSPLUS_CACHE_RESTORED: false
 
 resources:
   repositories:
