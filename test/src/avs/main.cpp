@@ -36,7 +36,7 @@
 
 
 
-const AVS_Linkage* AVS_linkage = 0;
+const AVS_Linkage* AVS_linkage = nullptr;
 
 
 
@@ -88,26 +88,28 @@ int main(int argc, char* argv[])
 
   typedef IScriptEnvironment* (__stdcall *CSE)(int);
 
-#if defined(__APPLE__)
+#if defined(WIN32)
+  const char* libname = "avisynth";
+#elif defined(__APPLE__)
   const char* libname = "libavisynth.dylib";
 #else
-  const char* libname = "avisynth";
+  const char* libname = "libavisynth.so";
 #endif
 
-#if defined(__APPLE__)
-  void* lib = dlopen(libname, RTLD_LAZY);
-#else
+#ifdef WIN32
   HMODULE lib = LoadLibrary(libname);
+#else
+  void* lib = dlopen(libname, RTLD_LAZY);
 #endif
   if (!lib) {
     std::cerr << "Couldn't load Avisynth!" << std::endl;
     return -1;
   }
 
-#ifndef WIN32
-  CSE makeEnv = (CSE)dlsym(lib, "CreateScriptEnvironment");
-#else
+#ifdef WIN32
   CSE makeEnv = (CSE)GetProcAddress(lib, "CreateScriptEnvironment");
+#else
+  CSE makeEnv = (CSE)dlsym(lib, "CreateScriptEnvironment");
 #endif
   if (!makeEnv) {
     std::cerr << "Couldn't find CreateScriptEnvironment function!" << std::endl;
@@ -143,10 +145,10 @@ int main(int argc, char* argv[])
     env->DeleteScriptEnvironment();
 
   if (lib)
-#ifndef WIN32
-    dlclose(lib);
+#ifdef WIN32
+    FreeLibrary(lib);  
 #else
-    FreeLibrary(lib);
+    dlclose(lib);
 #endif
 
   return result;

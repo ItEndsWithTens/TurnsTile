@@ -21,6 +21,14 @@ function InitializeTurnsTileTestEnvironment()
 
   try
   {
+    LoadPlugin("../../../artifacts/build/lib/libconvertstacked.so")
+  }
+  catch(err_msg)
+  {
+  }
+
+  try
+  {
     LoadPlugin("../../../artifacts/build/lib/libconvertstacked.dylib")
   }
   catch(err_msg)
@@ -29,7 +37,7 @@ function InitializeTurnsTileTestEnvironment()
 
   try
   {
-    LoadPlugin("../../../artifacts/build/lib/libturnstile.dylib")
+    LoadPlugin("../../../artifacts/build/lib/TurnsTile.dll")
   }
   catch(err_msg)
   {
@@ -37,7 +45,15 @@ function InitializeTurnsTileTestEnvironment()
 
   try
   {
-    LoadPlugin("../../../artifacts/build/lib/TurnsTile.dll")
+    LoadPlugin("../../../artifacts/build/lib/libturnstile.so")
+  }
+  catch(err_msg)
+  {
+  }
+
+  try
+  {
+    LoadPlugin("../../../artifacts/build/lib/libturnstile.dylib")
   }
   catch(err_msg)
   {

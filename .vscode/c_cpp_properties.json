@@ -1,6 +1,11 @@
 {
     "configurations": [
         {
+            "name": "Linux",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
+            "intelliSenseMode": "${default}"
+        },
+        {
             "name": "Mac",
             "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "macFrameworkPath": [

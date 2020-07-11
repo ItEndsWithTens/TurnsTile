@@ -248,7 +248,15 @@ if(TURNSTILE_TESTS)
     find_path(DL_INCLUDE_DIR NAMES dlfcn.h)
     find_library(DL_LIBRARIES NAMES dl)
     include_directories(${DL_INCLUDE_DIR})
-    target_link_libraries(${PROJECT_NAME}-test ${DL_LIBRARIES})
+
+    # Ugly workaround that it is, it's necessary for some reason to link against
+    # libpthreads, at least in Linux. For details, see the following:
+    #   https://stackoverflow.com/questions/51209268/using-stdthread-in-a-library-loaded-with-dlopen-leads-to-a-sigsev
+    #   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67791
+    set(THREADS_PREFER_PTHREAD_FLAG ON)
+    find_package(Threads REQUIRED)
+  
+    target_link_libraries(${PROJECT_NAME}-test PRIVATE ${DL_LIBRARIES} Threads::Threads)
   endif()
 
 endif()
