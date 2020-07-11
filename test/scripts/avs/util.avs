@@ -21,6 +21,14 @@ function InitializeTurnsTileTestEnvironment()
 
   try
   {
+    LoadPlugin("../../../artifacts/build/lib/libconvertstacked.dylib")
+  }
+  catch(err_msg)
+  {
+  }
+
+  try
+  {
     LoadPlugin("../../../artifacts/build/lib/libturnstile.dylib")
   }
   catch(err_msg)

@@ -59,6 +59,8 @@ endif()
 
 ### Find Avisynth header ###
 
+set(AVISYNTHPLUS_HDR_DOCSTRING "The copy of avisynth.h ${PROJECT_NAME} should compile with.")
+
 if(WIN32)
   # Check current user's plugins directory first, if it exists...
   get_filename_component(
@@ -89,10 +91,8 @@ if(WIN32)
     )
   endif()
 else()
-  set(AVISYNTHPLUS_HDR "/usr/local/include/avisynth/avisynth.h")
+  set(AVISYNTHPLUS_HDR "/usr/local/include/avisynth/avisynth.h" CACHE FILEPATH "The copy of avisynth.h ${PROJECT_NAME} should compile with.")
 endif()
-
-set(AVISYNTHPLUS_HDR_DOCSTRING "The copy of avisynth.h ${PROJECT_NAME} should compile with.")
 
 # If the header location is undefined, create a baseline to start with.
 if(NOT DEFINED AVISYNTHPLUS_HDR)
