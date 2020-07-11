@@ -3,6 +3,9 @@
 # A built-in abstraction to set MSVC runtime linking flags was added in 3.15.
 cmake_minimum_required(VERSION 3.15.0 FATAL_ERROR)
 
+set(CMAKE_CXX_STANDARD 11)
+set(CXX_STANDARD_REQUIRED ON)
+
 # For simplicity of testing, spit everything out into the same directories,
 # thus allowing only one set of binaries (the current build) to exist at once.
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/artifacts/build/lib)
