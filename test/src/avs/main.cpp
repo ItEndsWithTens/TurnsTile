@@ -44,44 +44,28 @@ IScriptEnvironment* env = 0;
 
 bool writeRefData = false;
 
-std::string testRoot = "./", scriptDir = "", refDir = "";
+std::string testRoot = "../../../test/", scriptDir = "", refDir = "";
 
 
 
 int main(int argc, char* argv[])
 {
 
-  // The Catch test framework will eventually support custom command line
-  // options, but the feature isn't finished or documented yet, so for now I'm
-  // manually parsing argv and setting a global to generate reference data.
-  std::vector<char*> args;
+  Catch::Session session;
 
-  for (int i = 0; i < argc; ++i) {
+  using namespace Catch::clara;
+  auto cli = session.cli() |
+    Opt(testRoot, "testRoot")["--testRoot"]("the directory containing 'ref' and 'scripts'") |
+    Opt(writeRefData)["--writeRefData"]("write test output to disk");
 
-    std::string arg = argv[i];
+  session.cli(cli);
 
-    if (arg == "--writeRefData") {
+  int returnCode = session.applyCommandLine(argc, argv);
+  if (returnCode != 0)
+    return returnCode;
 
-      writeRefData = true;
-
-    } else if (arg.find("--testRoot") != std::string::npos) {
-
-      testRoot = arg.substr(arg.find('=') + 1, std::string::npos);
-      if (*testRoot.rbegin() != '/' && *testRoot.rbegin() != '\\')
-        testRoot.push_back('/');
-
-    } else {
-
-      args.push_back(argv[i]);
-
-    }
-
-  }
-
-  if (writeRefData == true)
-    argc--;
-  if (testRoot != ".")
-    argc--;
+  if (*testRoot.rbegin() != '/' && *testRoot.rbegin() != '\\')
+    testRoot.push_back('/');
 
   scriptDir = testRoot + "scripts/avs/";
   refDir = testRoot + "ref/avs/";
@@ -139,7 +123,7 @@ int main(int argc, char* argv[])
 
   }
 
-  int result = Catch::Session().run(argc, args.data());
+  int result = session.run();
 
   if (env)
     env->DeleteScriptEnvironment();

@@ -139,9 +139,7 @@ jobs:
       script: |
         cd $(Build.SourcesDirectory)/artifacts/build/bin
 
-        $ArgList = '--testRoot="$(Build.SourcesDirectory)/test"'
-
-        $TurnsTileTestProcess = (Start-Process .\TurnsTile-test -ArgumentList $ArgList -NoNewWindow -PassThru -Wait)
+        $TurnsTileTestProcess = (Start-Process .\TurnsTile-test -NoNewWindow -PassThru -Wait)
         if ($TurnsTileTestProcess.ExitCode -ne 0)
         {
           Write-Error "TurnsTile-test failed with exit code $($TurnsTileTestProcess.ExitCode)!"
@@ -202,9 +200,7 @@ jobs:
       script: |
         cd $(Build.SourcesDirectory)/artifacts/build/bin
 
-        $ArgList = '--testRoot="$(Build.SourcesDirectory)/test"'
-
-        $TurnsTileTestProcess = (Start-Process .\TurnsTile-test -ArgumentList $ArgList -NoNewWindow -PassThru -Wait)
+        $TurnsTileTestProcess = (Start-Process .\TurnsTile-test -NoNewWindow -PassThru -Wait)
         if ($TurnsTileTestProcess.ExitCode -ne 0)
         {
           Write-Error "TurnsTile-test failed with exit code $($TurnsTileTestProcess.ExitCode)!"
@@ -321,7 +317,7 @@ jobs:
       targetType: 'inline'
       script: |
         cd $(Build.SourcesDirectory)/TurnsTile/artifacts/build/bin
-        ./turnstile-test --testRoot=$(Build.SourcesDirectory)/TurnsTile/test
+        ./turnstile-test
 
   - task: PublishPipelineArtifact@1
     displayName: "Publish packages"
@@ -346,9 +342,6 @@ jobs:
     # Contrary to macOS, dlopen in Linux doesn't search the executable directory
     # for libraries it's trying to load. This environment variable fixes that.
     LD_LIBRARY_PATH: $(Build.SourcesDirectory)/TurnsTile/artifacts/build/bin
-
-    # TEST TEST TEST
-    AVSPLUS_CACHE_RESTORED: false
 
   steps:
   - checkout: self
@@ -446,7 +439,7 @@ jobs:
       targetType: 'inline'
       script: |
         cd $(Build.SourcesDirectory)/TurnsTile/artifacts/build/bin
-        ./turnstile-test --testRoot=$(Build.SourcesDirectory)/TurnsTile/test
+        ./turnstile-test
 
   - task: PublishPipelineArtifact@1
     displayName: "Publish packages"
