@@ -301,11 +301,21 @@ install(
     WORLD_READ WORLD_EXECUTE
 )
 
+# To keep documentation easily accessible, the readme filename should match the
+# plugin filename, but GitHub won't show docs up front unless they're named a
+# certain way. To deal with that, README.txt gets renamed on install; the need
+# for a separate variable here is thanks to CMake for some reason not allowing
+# the use of generator expressions with the 'install' command's RENAME option.
+set(TURNSTILE_OUTPUT_NAME ${PROJECT_NAME})
+if(NOT WIN32)
+  set(TURNSTILE_OUTPUT_NAME "lib${TURNSTILE_OUTPUT_NAME}")
+endif()
+
 install(
   FILES
   README.txt
   DESTINATION .
-  RENAME ${PROJECT_NAME}.txt
+  RENAME ${TURNSTILE_OUTPUT_NAME}.txt
 )
 
 # The binary package can be built with the PACKAGE target in the Visual Studio
