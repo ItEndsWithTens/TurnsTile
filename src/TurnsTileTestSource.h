@@ -58,7 +58,7 @@ public:
   PVideoFrame __stdcall GetFrame(int n, IScriptEnvironment* env) { return frm; }
   bool __stdcall GetParity(int n) { return false; }
   const VideoInfo& __stdcall GetVideoInfo() { return vi; }
-  int __stdcall SetCacheHints(int cachehints, int frame_range) { return 0; }
+  int __stdcall SetCacheHints(int cachehints, int frame_range);
 
 private:
 

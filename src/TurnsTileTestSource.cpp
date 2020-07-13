@@ -35,6 +35,28 @@
 
 
 
+TurnsTileTestSource::TurnsTileTestSource(
+  std::string filename, std::string pixel_type, IScriptEnvironment* env)
+{
+
+  std::vector<unsigned char> raw;
+
+  int type = OpenFile(filename, raw, env);
+
+  vi.audio_samples_per_second = 0;
+  vi.fps_denominator = 1;
+  vi.fps_numerator = 24;
+  vi.num_frames = 240;
+
+  if (type == FILETYPE_PNG)
+    DecodePng(raw, pixel_type, env);
+  else
+    DecodeBmp(raw, env);
+
+}
+
+
+
 void TurnsTileTestSource::DecodeBmp(std::vector<unsigned char>& raw, IScriptEnvironment* env)
 {
 
@@ -248,22 +270,24 @@ int TurnsTileTestSource::OpenFile(std::string& filename, std::vector<unsigned ch
 
 
 
-TurnsTileTestSource::TurnsTileTestSource(
-  std::string filename, std::string pixel_type, IScriptEnvironment* env)
+int __stdcall TurnsTileTestSource::SetCacheHints(int cachehints, int frame_range)
 {
 
-  std::vector<unsigned char> raw;
+  int hints = 0;
 
-  int type = OpenFile(filename, raw, env);
+  if (cachehints == CACHE_GETCHILD_ACCESS_COST) {
+    hints = CACHE_ACCESS_RAND;
+  }
+  else if (cachehints == CACHE_GETCHILD_COST) {
+    hints = CACHE_COST_LOW;
+  }
+  else if (cachehints == CACHE_GETCHILD_THREAD_MODE) {
+    hints = CACHE_THREAD_SAFE;
+  }
+  else if (cachehints == CACHE_GET_MTMODE) {
+    hints = MT_NICE_FILTER;
+  }
 
-  vi.audio_samples_per_second = 0;
-  vi.fps_denominator = 1;
-  vi.fps_numerator = 24;
-  vi.num_frames = 240;
-
-  if (type == FILETYPE_PNG)
-    DecodePng(raw, pixel_type, env);
-  else
-    DecodeBmp(raw, env);
+  return hints;
 
 }

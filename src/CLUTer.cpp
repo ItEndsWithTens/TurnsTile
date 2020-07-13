@@ -414,3 +414,27 @@ void CLUTer::fillComponentVectors(std::vector<int>* plt)
   }
 
 }
+
+
+
+int __stdcall CLUTer::SetCacheHints(int cachehints, int frame_range)
+{
+
+  int hints = 0;
+
+  if (cachehints == CACHE_GETCHILD_ACCESS_COST) {
+    hints = CACHE_ACCESS_RAND;
+  }
+  else if (cachehints == CACHE_GETCHILD_COST) {
+    hints = CACHE_COST_LOW;
+  }
+  else if (cachehints == CACHE_GETCHILD_THREAD_MODE) {
+    hints = CACHE_THREAD_SAFE;
+  }
+  else if (cachehints == CACHE_GET_MTMODE) {
+    hints = MT_NICE_FILTER;
+  }
+
+  return hints;
+
+}

@@ -46,6 +46,8 @@ public:
   PVideoFrame __stdcall GetFrame(
     int n, IScriptEnvironment* env);
 
+  int __stdcall SetCacheHints(int cachehints, int frame_range);
+
 private:
 
   std::vector<unsigned char> vecYR, vecUG, vecVB;

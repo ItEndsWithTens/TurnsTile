@@ -70,6 +70,8 @@ public:
     const int DST_PITCH_SAMPLES_Y, const int DST_PITCH_SAMPLES_U,
     IScriptEnvironment* env);
 
+  int __stdcall SetCacheHints(int cachehints, int frame_range);
+
   static int gcf(int a, int b);
 
   static int mod(int num, int mod, int min, int max, int dir);
