@@ -153,7 +153,7 @@ jobs:
       testResultsFiles: '**/TEST-Windows-x86.xml'
       searchFolder: '$(Build.SourcesDirectory)'
       failTaskOnFailedTests: true
-      testRunTitle: 'Windows tests'
+      testRunTitle: 'Windows x86 tests'
       buildPlatform: 'x86'
 
   - task: DeleteFiles@1
@@ -225,7 +225,7 @@ jobs:
       testResultsFiles: '**/TEST-Windows-x64.xml'
       searchFolder: '$(Build.SourcesDirectory)'
       failTaskOnFailedTests: true
-      testRunTitle: 'Windows tests'
+      testRunTitle: 'Windows x64 tests'
       buildPlatform: 'x64'
 
   - task: PublishPipelineArtifact@1
