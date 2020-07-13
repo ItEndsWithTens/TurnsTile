@@ -139,7 +139,9 @@ jobs:
       script: |
         cd $(Build.SourcesDirectory)/artifacts/build/bin
 
-        $TurnsTileTestProcess = (Start-Process .\TurnsTile-test -NoNewWindow -PassThru -Wait)
+        $ArgList = '-r junit -o ../../../TEST-Windows-x86.xml'
+
+        $TurnsTileTestProcess = (Start-Process .\TurnsTile-test -ArgumentList $ArgList -NoNewWindow -PassThru -Wait)
         if ($TurnsTileTestProcess.ExitCode -ne 0)
         {
           Write-Error "TurnsTile-test failed with exit code $($TurnsTileTestProcess.ExitCode)!"
@@ -200,11 +202,21 @@ jobs:
       script: |
         cd $(Build.SourcesDirectory)/artifacts/build/bin
 
-        $TurnsTileTestProcess = (Start-Process .\TurnsTile-test -NoNewWindow -PassThru -Wait)
+        $ArgList = '-r junit -o ../../../TEST-Windows-x64.xml'
+
+        $TurnsTileTestProcess = (Start-Process .\TurnsTile-test -ArgumentList $ArgList -NoNewWindow -PassThru -Wait)
         if ($TurnsTileTestProcess.ExitCode -ne 0)
         {
           Write-Error "TurnsTile-test failed with exit code $($TurnsTileTestProcess.ExitCode)!"
         }
+
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFormat: 'JUnit'
+      testResultsFiles: '**/TEST-*.xml'
+      searchFolder: '$(Build.SourcesDirectory)'
+      failTaskOnFailedTests: true
+      testRunTitle: 'Windows tests'
 
   - task: PublishPipelineArtifact@1
     displayName: "Publish packages"
@@ -317,7 +329,15 @@ jobs:
       targetType: 'inline'
       script: |
         cd $(Build.SourcesDirectory)/TurnsTile/artifacts/build/bin
-        ./turnstile-test
+        ./turnstile-test -r junit -o ../../../TEST-Mac.xml
+
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFormat: 'JUnit'
+      testResultsFiles: '**/TEST-*.xml'
+      searchFolder: '$(Build.SourcesDirectory)'
+      failTaskOnFailedTests: true
+      testRunTitle: 'Mac tests'
 
   - task: PublishPipelineArtifact@1
     displayName: "Publish packages"
@@ -439,7 +459,15 @@ jobs:
       targetType: 'inline'
       script: |
         cd $(Build.SourcesDirectory)/TurnsTile/artifacts/build/bin
-        ./turnstile-test
+        ./turnstile-test -r junit -o ../../../TEST-Linux.xml
+
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFormat: 'JUnit'
+      testResultsFiles: '**/TEST-*.xml'
+      searchFolder: '$(Build.SourcesDirectory)'
+      failTaskOnFailedTests: true
+      testRunTitle: 'Linux tests'
 
   - task: PublishPipelineArtifact@1
     displayName: "Publish packages"
