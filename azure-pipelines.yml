@@ -139,13 +139,22 @@ jobs:
       script: |
         cd $(Build.SourcesDirectory)/artifacts/build/bin
 
-        $ArgList = '-r junit -o ../../../TEST-Windows-x86.xml'
+        $ArgList = '-r junit -o TEST-Windows-x86.xml'
 
         $TurnsTileTestProcess = (Start-Process .\TurnsTile-test -ArgumentList $ArgList -NoNewWindow -PassThru -Wait)
         if ($TurnsTileTestProcess.ExitCode -ne 0)
         {
           Write-Error "TurnsTile-test failed with exit code $($TurnsTileTestProcess.ExitCode)!"
         }
+
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFormat: 'JUnit'
+      testResultsFiles: '**/TEST-Windows-x86.xml'
+      searchFolder: '$(Build.SourcesDirectory)'
+      failTaskOnFailedTests: true
+      testRunTitle: 'Windows tests'
+      buildPlatform: 'x86'
 
   - task: DeleteFiles@1
     displayName: "Remove generated project files"
@@ -202,7 +211,7 @@ jobs:
       script: |
         cd $(Build.SourcesDirectory)/artifacts/build/bin
 
-        $ArgList = '-r junit -o ../../../TEST-Windows-x64.xml'
+        $ArgList = '-r junit -o TEST-Windows-x64.xml'
 
         $TurnsTileTestProcess = (Start-Process .\TurnsTile-test -ArgumentList $ArgList -NoNewWindow -PassThru -Wait)
         if ($TurnsTileTestProcess.ExitCode -ne 0)
@@ -213,10 +222,11 @@ jobs:
   - task: PublishTestResults@2
     inputs:
       testResultsFormat: 'JUnit'
-      testResultsFiles: '**/TEST-*.xml'
+      testResultsFiles: '**/TEST-Windows-x64.xml'
       searchFolder: '$(Build.SourcesDirectory)'
       failTaskOnFailedTests: true
       testRunTitle: 'Windows tests'
+      buildPlatform: 'x64'
 
   - task: PublishPipelineArtifact@1
     displayName: "Publish packages"
@@ -329,13 +339,13 @@ jobs:
       targetType: 'inline'
       script: |
         cd $(Build.SourcesDirectory)/TurnsTile/artifacts/build/bin
-        ./turnstile-test -r junit -o ../../../TEST-Mac.xml
+        ./turnstile-test -r junit -o TEST-Mac.xml
 
   - task: PublishTestResults@2
     inputs:
       testResultsFormat: 'JUnit'
-      testResultsFiles: '**/TEST-*.xml'
-      searchFolder: '$(Build.SourcesDirectory)'
+      testResultsFiles: '**/TEST-Mac.xml'
+      searchFolder: '$(Build.SourcesDirectory)/TurnsTile'
       failTaskOnFailedTests: true
       testRunTitle: 'Mac tests'
 
@@ -459,13 +469,13 @@ jobs:
       targetType: 'inline'
       script: |
         cd $(Build.SourcesDirectory)/TurnsTile/artifacts/build/bin
-        ./turnstile-test -r junit -o ../../../TEST-Linux.xml
+        ./turnstile-test -r junit -o TEST-Linux.xml
 
   - task: PublishTestResults@2
     inputs:
       testResultsFormat: 'JUnit'
-      testResultsFiles: '**/TEST-*.xml'
-      searchFolder: '$(Build.SourcesDirectory)'
+      testResultsFiles: '**/TEST-Linux.xml'
+      searchFolder: '$(Build.SourcesDirectory)/TurnsTile'
       failTaskOnFailedTests: true
       testRunTitle: 'Linux tests'
 
