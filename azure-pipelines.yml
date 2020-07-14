@@ -1,6 +1,11 @@
 trigger:
-- master
-- feature/*
+  branches:
+    include:
+      - master
+      - feature/*
+  tags:
+    include:
+      - v*.*.*
 
 variables:
   AVSPLUS_VERSION: 3.6.1
@@ -18,7 +23,7 @@ resources:
 
 
 jobs:
-- job:
+- job: Windows
   displayName: "Windows"
 
   pool:
@@ -237,7 +242,7 @@ jobs:
 
 
 
-- job:
+- job: Mac
   displayName: "Mac"
 
   pool:
@@ -358,7 +363,7 @@ jobs:
 
 
 
-- job:
+- job: Linux
   displayName: "Linux"
 
   pool:
@@ -485,3 +490,41 @@ jobs:
       targetPath: '$(Build.SourcesDirectory)/TurnsTile/artifacts/pack/'
       artifact: 'TurnsTile Linux binaries'
       publishLocation: 'pipeline'
+
+
+
+- deployment:
+  displayName: "Create GitHub release"
+  condition: startsWith(variables['build.sourceBranch'], 'refs/tags/v')
+  dependsOn:
+    - Windows
+    - Mac
+    - Linux
+
+  pool:
+    vmImage: 'ubuntu-latest'
+
+  strategy:
+    runOnce:
+      deploy:
+        steps:
+          - task: DownloadPipelineArtifact@2
+            inputs:
+              buildType: 'current'
+              targetPath: '$(Pipeline.Workspace)'
+
+          - task: GitHubRelease@1
+            inputs:
+              gitHubConnection: 'GitHub release creation'
+              repositoryName: 'ItEndsWithTens/TurnsTile'
+              action: 'create'
+              target: '$(Build.SourceVersion)'
+              tagSource: 'gitTag'
+              tagPattern: 'v*.*.*'
+              assets: |
+                $(Pipeline.Workspace)/**/*.zip
+                $(Pipeline.Workspace)/**/*.gz
+              releaseNotesSource: 'inline'
+              isDraft: true
+              isPreRelease: true
+              addChangeLog: false
