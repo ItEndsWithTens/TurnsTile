@@ -501,6 +501,8 @@ jobs:
     - Mac
     - Linux
 
+  environment: 'GitHubReleases'
+
   pool:
     vmImage: 'ubuntu-latest'
 
