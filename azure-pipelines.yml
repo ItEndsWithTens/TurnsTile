@@ -1,11 +1,7 @@
 trigger:
-  branches:
-    include:
-      - master
-      - feature/*
-  tags:
-    include:
-      - v*.*.*
+  - master
+  - feature/*
+  - refs/tags/v*.*.*
 
 variables:
   AVSPLUS_VERSION: 3.6.1
