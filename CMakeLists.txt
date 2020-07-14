@@ -16,11 +16,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/artifacts/build/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_SOURCE_DIR}/artifacts/build/bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/artifacts/build/bin)
 
-if(WIN32)
-  project(TurnsTile CXX)
-else()
-  project(turnstile CXX)
-endif()
+project("TurnsTile" CXX)
 
 set(TURNSTILE_MAJOR 0)
 set(TURNSTILE_MINOR 3)
@@ -65,7 +61,7 @@ endif()
 
 ### Find Avisynth header ###
 
-set(AVISYNTHPLUS_HDR_DOCSTRING "The copy of avisynth.h ${PROJECT_NAME} should compile with.")
+set(AVISYNTHPLUS_HDR_DOCSTRING "The copy of avisynth.h TurnsTile should compile with.")
 
 if(WIN32)
   # Check current user's plugins directory first, if it exists...
@@ -97,7 +93,7 @@ if(WIN32)
     )
   endif()
 else()
-  set(AVISYNTHPLUS_HDR "/usr/local/include/avisynth/avisynth.h" CACHE FILEPATH "The copy of avisynth.h ${PROJECT_NAME} should compile with.")
+  set(AVISYNTHPLUS_HDR "/usr/local/include/avisynth/avisynth.h" CACHE FILEPATH "The copy of avisynth.h TurnsTile should compile with.")
 endif()
 
 # If the header location is undefined, create a baseline to start with.
@@ -139,7 +135,7 @@ if(NOT AVISYNTHPLUS_FOUND)
 Suitable Avisynth header not found!\n \
 \tThis plugin needs the header for Avisynth+ (plugin interface >= version 8).\n \
 \n \
-\tOnce built, ${PROJECT_NAME} will run in Avisynth 2.6 without issue, but\n \
+\tOnce built, TurnsTile will run in Avisynth 2.6 without issue, but\n \
 \tit needs the plus version of the header to successfully compile.")
 endif()
 
@@ -148,7 +144,7 @@ endif()
 ### Source files ###
 
 # Export compile_commands.json, so VS Code Intellisense can find the AVS header.
-set(CMAKE_EXPORT_COMPILE_COMMANDS on)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include_directories(${CMAKE_SOURCE_DIR}/test/include/catch)
 include_directories(${CMAKE_SOURCE_DIR}/test/include/md5)
@@ -184,20 +180,21 @@ string(REPLACE "+" "PLUS" TURNSTILE_HOST_DEFINE ${TURNSTILE_HOST_DEFINE})
 string(REPLACE "." "" TURNSTILE_HOST_DEFINE ${TURNSTILE_HOST_DEFINE})
 string(REPLACE " " "_" TURNSTILE_HOST_DEFINE ${TURNSTILE_HOST_DEFINE})
 
-add_library(${PROJECT_NAME} SHARED ${SRCS})
+add_library(TurnsTile SHARED ${SRCS})
 
 # In Windows, defining a library as SHARED means it's considered runtime output,
 # and will end up in the runtime output directory unless forced elsewhere. In
 # Linux and macOS, on the other hand, SHARED libraries are considered library
 # output, and will go where one expects with no special property overrides.
 set_target_properties(
-  ${PROJECT_NAME}
+  TurnsTile
   PROPERTIES
   COMPILE_DEFINITIONS "TURNSTILE_HOST_${TURNSTILE_HOST_DEFINE}"
   RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_SOURCE_DIR}/artifacts/build/lib
   RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/artifacts/build/lib
   LIBRARY_OUTPUT_DIRECTORY_DEBUG ${CMAKE_SOURCE_DIR}/artifacts/build/lib
   LIBRARY_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/artifacts/build/lib
+  OUTPUT_NAME $<IF:$<BOOL:WIN32>,TurnsTile,turnstile>
 )
 
 
@@ -239,12 +236,13 @@ if(TURNSTILE_TESTS)
     source_group("Resource Files" FILES test/src/TurnsTile-test.rc)
   endif()
 
-  add_executable(${PROJECT_NAME}-test ${SRCS_TEST})
+  add_executable(TurnsTile-test ${SRCS_TEST})
 
   set_target_properties(
-    ${PROJECT_NAME}-test
+    TurnsTile-test
     PROPERTIES
     COMPILE_DEFINITIONS "TURNSTILE_HOST_${TURNSTILE_HOST_DEFINE}"
+    OUTPUT_NAME $<IF:$<BOOL:WIN32>,TurnsTile-test,turnstile-test>
   )
 
   if(NOT WIN32)
@@ -259,7 +257,7 @@ if(TURNSTILE_TESTS)
     set(THREADS_PREFER_PTHREAD_FLAG ON)
     find_package(Threads REQUIRED)
   
-    target_link_libraries(${PROJECT_NAME}-test PRIVATE ${DL_LIBRARIES} Threads::Threads)
+    target_link_libraries(TurnsTile-test PRIVATE ${DL_LIBRARIES} Threads::Threads)
   endif()
 
 endif()
@@ -292,7 +290,7 @@ set(CPACK_SOURCE_IGNORE_FILES
 set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/artifacts/install CACHE INTERNAL "")
 
 install(
-  TARGETS ${PROJECT_NAME}
+  TARGETS TurnsTile
   RUNTIME DESTINATION .
   LIBRARY DESTINATION .
   PERMISSIONS
@@ -306,9 +304,9 @@ install(
 # certain way. To deal with that, README.txt gets renamed on install; the need
 # for a separate variable here is thanks to CMake for some reason not allowing
 # the use of generator expressions with the 'install' command's RENAME option.
-set(TURNSTILE_OUTPUT_NAME ${PROJECT_NAME})
+set(TURNSTILE_OUTPUT_NAME TurnsTile)
 if(NOT WIN32)
-  set(TURNSTILE_OUTPUT_NAME "lib${TURNSTILE_OUTPUT_NAME}")
+  set(TURNSTILE_OUTPUT_NAME libturnstile)
 endif()
 
 install(
@@ -326,7 +324,6 @@ install(
 #
 # replacing the path if necessary for your particular circumstances.
 set(CPACK_SOURCE_GENERATOR "ZIP")
-set(TURNSTILE_HOST_ABBR "AVS+")
 if(WIN32)
   set(CPACK_GENERATOR "ZIP")
 else()
@@ -338,6 +335,6 @@ set(CPACK_PACKAGE_VERSION_MAJOR ${TURNSTILE_MAJOR})
 set(CPACK_PACKAGE_VERSION_MINOR ${TURNSTILE_MINOR})
 set(CPACK_PACKAGE_VERSION_PATCH ${TURNSTILE_PATCH})
 
-set(CPACK_PACKAGE_FILE_NAME ${PROJECT_NAME}-${TURNSTILE_VERSION}-${TURNSTILE_HOST_ABBR}${TURNSTILE_HOST_VERSION}-${CMAKE_SYSTEM_NAME}-${TURNSTILE_ARCH})
+set(CPACK_PACKAGE_FILE_NAME TurnsTile-${TURNSTILE_VERSION}-${CMAKE_SYSTEM_NAME}-${TURNSTILE_ARCH}-${CMAKE_CXX_COMPILER_ID})
 
 include(CPack)
