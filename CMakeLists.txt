@@ -194,7 +194,7 @@ set_target_properties(
   RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/artifacts/build/lib
   LIBRARY_OUTPUT_DIRECTORY_DEBUG ${CMAKE_SOURCE_DIR}/artifacts/build/lib
   LIBRARY_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/artifacts/build/lib
-  OUTPUT_NAME $<IF:$<BOOL:WIN32>,TurnsTile,turnstile>
+  OUTPUT_NAME $<IF:$<BOOL:${WIN32}>,TurnsTile,turnstile>
 )
 
 
@@ -242,7 +242,7 @@ if(TURNSTILE_TESTS)
     TurnsTile-test
     PROPERTIES
     COMPILE_DEFINITIONS "TURNSTILE_HOST_${TURNSTILE_HOST_DEFINE}"
-    OUTPUT_NAME $<IF:$<BOOL:WIN32>,TurnsTile-test,turnstile-test>
+    OUTPUT_NAME $<IF:$<BOOL:${WIN32}>,TurnsTile-test,turnstile-test>
   )
 
   if(NOT WIN32)
