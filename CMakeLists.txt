@@ -310,8 +310,7 @@ if(NOT WIN32)
 endif()
 
 install(
-  FILES
-  README.txt
+  FILES README.txt
   DESTINATION .
   RENAME ${TURNSTILE_OUTPUT_NAME}.txt
 )
@@ -337,4 +336,31 @@ set(CPACK_PACKAGE_VERSION_PATCH ${TURNSTILE_PATCH})
 
 set(CPACK_PACKAGE_FILE_NAME TurnsTile-${TURNSTILE_VERSION}-${CMAKE_SYSTEM_NAME}-${TURNSTILE_ARCH}-${CMAKE_CXX_COMPILER_ID})
 
+# These need to be defined before including CPack, otherwise they take on values
+# intended for packaging source files. The vagaries of CPack, it would seem.
+set(TURNSTILE_BINARY_PACKAGE_NAME ${CPACK_PACKAGE_FILE_NAME})
+set(TURNSTILE_BINARY_PACKAGE_GENERATOR ${CPACK_GENERATOR})
+
 include(CPack)
+
+# Needs to be defined after including CPack, to get the right value of CPACK_SYSTEM_NAME.
+set(TURNSTILE_CPACK_TEMP_DIR "${CMAKE_BINARY_DIR}/_CPack_Packages/${CPACK_SYSTEM_NAME}/${TURNSTILE_BINARY_PACKAGE_GENERATOR}/${TURNSTILE_BINARY_PACKAGE_NAME}")
+
+# The content of the extras directory is potentially helpful and instructive for
+# users, but doesn't really belong in the install location. Unfortunately, CPack
+# will only package things specified by an 'install' command. Luckily the CODE
+# signature of 'install' allows arbitrary CMake script like this, allowing the
+# 'extras' files to stay out of the install destination while remaining in the
+# binary distribution. Users then don't have to download anything else.
+#
+# This is a variation on Jeremy Tan's source package customization technique:
+#
+#   https://jtanx.github.io/2019/08/22/cmake-dist-customisation/
+#
+install(
+  CODE "
+    file(
+      INSTALL ${CMAKE_SOURCE_DIR}/extras
+      DESTINATION ${TURNSTILE_CPACK_TEMP_DIR})
+  "
+)
