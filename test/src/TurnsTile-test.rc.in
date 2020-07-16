@@ -17,7 +17,7 @@
             VALUE "FileDescription", "${TURNSTILE_TEST_DESCRIPTION}"
             VALUE "FileVersion", "${TURNSTILE_VERSION}.0"
             VALUE "InternalName", "${PROJECT_NAME}-test"
-            VALUE "LegalCopyright", "2013 ${TURNSTILE_AUTHOR}"
+            VALUE "LegalCopyright", "${TURNSTILE_YEAR} ${TURNSTILE_AUTHOR}"
             VALUE "OriginalFilename", "${PROJECT_NAME}-test.exe"
             VALUE "ProductName", "${PROJECT_NAME}-test"
             VALUE "ProductVersion", "${TURNSTILE_VERSION}.0"
