@@ -1,7 +1,7 @@
 # Changelog
 Changes listed according to the [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) standard. This project attempts to use [Semantic Versioning](https://semver.org/spec/v2.0.0.html), to the best of its author's ability.
 
-## [Unreleased]
+## [1.0.0] 2020-07-16
 ### Added
 - Add 64-bit builds
 - Add Avisynth+ Linux and macOS support

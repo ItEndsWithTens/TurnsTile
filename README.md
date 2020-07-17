@@ -1,8 +1,9 @@
-
-  TurnsTile [![Build Status](https://dev.azure.com/robertmartens0491/TurnsTile/_apis/build/status/ItEndsWithTens.TurnsTile?repoName=ItEndsWithTens%2FTurnsTile&branchName=master)](https://dev.azure.com/robertmartens0491/TurnsTile/_build/latest?definitionId=4&repoName=ItEndsWithTens%2FTurnsTile&branchName=master)
-  ===============
+  TurnsTile
+  =========
 
   A mosaic and palette effects plugin for [Avisynth](http://www.avisynth.nl).
+
+  [![Build Status](https://dev.azure.com/robertmartens0491/TurnsTile/_apis/build/status/ItEndsWithTens.TurnsTile?repoName=ItEndsWithTens%2FTurnsTile&branchName=master)](https://dev.azure.com/robertmartens0491/TurnsTile/_build/latest?definitionId=4&repoName=ItEndsWithTens%2FTurnsTile&branchName=master)
 
   ### Requirements ###
   1. Avisynth 2.6 or greater, or Avisynth+
